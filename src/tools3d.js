@@ -1,10 +1,10 @@
-// Herramientas 3D LA FURY (con calcomanías grabadas/serigrafiadas) + timegrapher y soporte en el banco
+// Herramientas 3D LA FORY (con calcomanías grabadas/serigrafiadas) + timegrapher y soporte en el banco
 import * as THREE from 'three';
-import { makeTGScreen } from './textures.js';
+import { makeTGScreen, velvetTexture } from './textures.js';
 
 function imgTex(img) { const t = new THREE.Texture(img); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; t.needsUpdate = true; return t; }
 
-export function makeTools(M, images) {
+export function makeTools(M, images, movR = 12.8) {
   const engrave = new THREE.MeshStandardMaterial({ map: imgTex(images.decalGold), transparent: true, metalness: 0.9, roughness: 0.35, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 });
   const print = new THREE.MeshStandardMaterial({ map: imgTex(images.decalWhite), transparent: true, metalness: 0, roughness: 0.6, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 });
   const logoMat = new THREE.MeshBasicMaterial({ map: imgTex(images.logo), transparent: true, depthWrite: false });
@@ -26,9 +26,39 @@ export function makeTools(M, images) {
     for (let k = 0; k < 12; k++) { const r = new THREE.Mesh(new THREE.BoxGeometry(0.3, 14, 0.5), anod(0x1c3a90)); const a = k / 12 * Math.PI * 2; r.position.set(Math.cos(a) * 2.2, 14, Math.sin(a) * 2.2); r.rotation.y = -a; if (k % 3) g.add(r); }
     const cap = new THREE.Mesh(new THREE.CylinderGeometry(2.4, 2.4, 1.2, 24), M.steel); cap.position.y = 23.6; g.add(cap);
     const blade = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.6, 10, 12), M.steel); blade.position.y = 0; g.add(blade);
-    const tip = new THREE.Mesh(new THREE.BoxGeometry(1.0, 1.2, 0.2), M.steel); tip.position.y = -5.4; g.add(tip);
+    const tip = new THREE.Mesh(new THREE.BoxGeometry(1.0, 1.2, 0.2), M.steel); tip.position.y = -5.4; tip.name = 'tip'; g.add(tip);
     g.add(wrapDecal(2.2, 7, engrave, 14));
+    const band = new THREE.Mesh(new THREE.CylinderGeometry(2.25, 2.25, 1.2, 24), anod(0xd8a133)); band.position.y = 21.6; band.name = 'band'; g.add(band);
+    g.userData.setSize = (sz) => { tip.scale.x = sz / 1.0; const cols = { 0.8: 0xc23b3b, 1: 0xd8a133, 1.2: 0x3aa35b, 1.4: 0x2a6fd8, 1.6: 0x8b4bd0 }; band.material.color.set(cols[sz] || 0xffffff); };
     models.screwdriver = g; }
+  // Cuchilla de fondo a presión
+  { const g = new THREE.Group();
+    const h = new THREE.Mesh(new THREE.BoxGeometry(3, 14, 2), plastic(0x6b3b1f)); h.position.y = 14; g.add(h);
+    const bl = new THREE.Mesh(new THREE.BoxGeometry(2.6, 8, 0.25), M.steel); bl.position.y = 3; g.add(bl);
+    const d = flatDecal(2.6, engrave); d.position.set(0, 15, 1.02); g.add(d);
+    models.caseKnife = g; }
+  // Multímetro con puntas
+  { const g = new THREE.Group();
+    const b = new THREE.Mesh(new THREE.BoxGeometry(12, 3, 18), plastic(0xe0b81f)); b.position.y = 1.5; g.add(b);
+    const sc = new THREE.Mesh(new THREE.BoxGeometry(9, 0.2, 6), plastic(0x9fc8a0)); sc.position.set(0, 3.05, -4.5); g.add(sc);
+    for (const [x, c] of [[-2.5, 0xd32f2f], [2.5, 0x111111]]) { const pr = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.2, 12, 8), plastic(c)); pr.position.set(x, 6, 10); pr.rotation.x = -0.6; g.add(pr); }
+    const d = flatDecal(4, print); d.rotation.x = -Math.PI / 2; d.position.set(0, 3.06, 3.5); g.add(d);
+    models.meter = g; }
+  // Pinzas plásticas
+  { const g = new THREE.Group();
+    for (const s2 of [-1, 1]) { const arm = new THREE.Mesh(new THREE.BoxGeometry(1.6, 24, 0.8), plastic(0xf0f0f0)); arm.position.set(s2 * 1.5, 12, 0); arm.rotation.z = s2 * 0.06; g.add(arm); }
+    const d = flatDecal(3, print); d.position.set(1.6, 16, 0.42); g.add(d);
+    models.plasticTweezers = g; }
+  // Protector de esfera
+  { const g = new THREE.Group(); const disc = new THREE.Mesh(new THREE.CylinderGeometry(9, 9, 0.3, 40), M.protector); disc.position.y = 1; g.add(disc); const tab = new THREE.Mesh(new THREE.BoxGeometry(3, 0.3, 6), plastic(0x6ec6ff)); tab.position.set(0, 1, 11); g.add(tab); models.dialProtector = g; }
+  // Prensa de agujas
+  { const g = new THREE.Group();
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(6, 7, 3, 24), plastic(0x1a1a1a)); base.position.y = 1.5; g.add(base);
+    const col = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 16, 12), M.steel); col.position.set(-4, 9, 0); g.add(col);
+    const arm = new THREE.Mesh(new THREE.BoxGeometry(8, 2, 2.4), M.steel); arm.position.set(0, 16, 0); g.add(arm);
+    const punch = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.4, 6, 12), plastic(0xd8a133)); punch.position.set(2, 12, 0); g.add(punch);
+    const d = flatDecal(4, engrave); d.position.set(0, 16, 1.25); g.add(d);
+    models.handPress = g; }
   // Pinzas
   { const g = new THREE.Group();
     for (const s of [-1, 1]) { const arm = new THREE.Mesh(new THREE.BoxGeometry(1.4, 26, 0.6), M.steel); arm.position.set(s * 1.4, 12, 0); arm.rotation.z = s * 0.06; g.add(arm); }
@@ -98,14 +128,23 @@ export function makeTools(M, images) {
   const clamp = new THREE.Mesh(new THREE.BoxGeometry(14, 3, 3), M.darkSteel); clamp.position.set(-42, 7.5, 4); tg.add(clamp);
   tg.traverse(o => { if (o.isMesh && !o.material.transparent) { o.castShadow = true; o.receiveShadow = true; } });
 
-  // ── Soporte de movimiento en el banco (con grabado LA FURY) ──
+  // ── Soporte de movimiento: aro con hueco central (las piezas del lado de abajo no chocan) + mordazas ──
   const holder = new THREE.Group(); holder.userData.partId = 'holderBench';
-  const base = new THREE.Mesh(new THREE.BoxGeometry(44, 6, 22), plastic(0x2f2f33)); base.position.y = 3; holder.add(base);
-  const ring = new THREE.Mesh(new THREE.TorusGeometry(15, 1.6, 12, 64).rotateX(Math.PI / 2), M.darkSteel); ring.position.y = 6.5; holder.add(ring);
-  for (const s of [-1, 1]) { const jaw = new THREE.Mesh(new THREE.BoxGeometry(5, 4, 6), M.steel); jaw.position.set(s * 14.6, 7.5, 0); holder.add(jaw); }
-  const hd = flatDecal(9, engrave); hd.position.set(14, 3.2, 11.05); holder.add(hd);
-  const hd2 = flatDecal(9, engrave); hd2.position.set(-14, 3.2, 11.05); holder.add(hd2);
+  const ringM = new THREE.Mesh(new THREE.LatheGeometry([[movR + 0.6, 7.6], [movR + 6.5, 7.6], [movR + 6.5, 9.0], [movR + 0.6, 9.0]].map(([r, y]) => new THREE.Vector2(r, y)), 64), plastic(0x2f2f33)); ringM.material.side = THREE.DoubleSide; holder.add(ringM);
+  for (let i = 0; i < 3; i++) { const a = i / 3 * Math.PI * 2 + 0.5; const leg = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.8, 7.6, 12), M.darkSteel); leg.position.set(Math.cos(a) * (movR + 4), 3.8, Math.sin(a) * (movR + 4)); holder.add(leg); }
+  for (const sx of [-1, 1]) { const jaw = new THREE.Mesh(new THREE.BoxGeometry(2.4, 2.4, 6), M.steel); jaw.position.set(sx * (movR + 1.3), 9.6, 0); holder.add(jaw); }
+  const hd = flatDecal(7, engrave); hd.rotation.x = -Math.PI / 2; hd.position.set(0, 9.02, movR + 3.6); holder.add(hd);
   holder.traverse(o => { if (o.isMesh && !o.material.transparent) { o.castShadow = true; o.receiveShadow = true; } });
 
-  return { models, tg, tgScreen: scr, screen, holder, logoMat };
+  // ── Bandeja de piezas con compartimentos (6 × 7) ──
+  const tray = new THREE.Group();
+  const tb = new THREE.Mesh(new THREE.BoxGeometry(104, 1.2, 120), new THREE.MeshStandardMaterial({ map: velvetTexture('#0d2a20', 6), roughness: 1 })); tb.position.set(52, 0.6, 56); tray.add(tb);
+  const wallM = new THREE.MeshStandardMaterial({ color: 0x1a120c, roughness: 0.5 }); const trimM = new THREE.MeshStandardMaterial({ color: 0xc9a24b, metalness: 1, roughness: 0.3 });
+  for (let i = 0; i <= 6; i++) { const w = new THREE.Mesh(new THREE.BoxGeometry(0.8, 2.4, 118), wallM); w.position.set(1 + i * 17, 1.6, 56); tray.add(w); if (i === 0 || i === 6) { const t2 = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.3, 118), trimM); t2.position.set(1 + i * 17, 2.9, 56); tray.add(t2); } }
+  for (let j = 0; j <= 7; j++) { const w = new THREE.Mesh(new THREE.BoxGeometry(102, 2.4, 0.8), wallM); w.position.set(52, 1.6, -1 + j * 16.6); tray.add(w); }
+  const td = flatDecal(14, print); td.rotation.x = -Math.PI / 2; td.position.set(52, 1.25, 124); tray.add(td);
+  tray.traverse(o => { if (o.isMesh && !o.material.transparent) o.receiveShadow = true; });
+  const traySlot = (i) => new THREE.Vector3(9.5 + (i % 6) * 17, 1.4, 7.3 + Math.floor(i / 6) * 16.6);
+
+  return { models, tg, tgScreen: scr, screen, holder, tray, traySlot, logoMat };
 }

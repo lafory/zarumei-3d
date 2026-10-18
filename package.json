@@ -2,7 +2,8 @@
   "name": "zarumei-web3d",
   "version": "0.1.0",
   "private": true,
-  "description": "ZARUMEI · Taller de Relojería 3D (Three.js) — LA FURY Tools & Jewelry",
+  "type": "module",
+  "description": "ZARUMEI · Taller de Relojería 3D (Three.js) — LA FORY Tools & Jewelry",
   "scripts": {
     "build": "node scripts/build.mjs",
     "serve": "python3 -m http.server 8080",

@@ -1,101 +1,90 @@
-# ZARUMEI 3D · Taller de Relojería
-### por **LA FURY Tools & Jewelry**
+# ZARUMEI 3D · Atelier de Relojería
+### por **Maison LA FORY · Tools & Jewelry**
 
-Simulador 3D de reparación de relojes para el navegador del celular (iPhone/Android), hecho con **Three.js**.
-El reloj es el **ZARUMEI Oro "Miami"**: un diseño propio, procedural, en oro, con la esfera del oso Miami (el 12 arriba).
-Por dentro lleva el **calibre ZR-28**, cuya arquitectura sigue la de los calibres ETA 2824-2 y Sellita SW200-1:
-Ø 25,6 mm, 4 Hz y el orden de piezas de la documentación técnica del fabricante.
-Todos los textos del juego están en español.
+Simulador 3D de reparación de relojes para el navegador del móvil (iPhone y Android), hecho con **Three.js**. Todo el juego está en español.
+La interfaz tiene estética de boutique de alta joyería: ónix, terciopelo verde y burdeos, filetes de pan de oro, tipografía Cormorant Garamond y Cinzel con Jost para el texto, y destellos y focos suaves. El banco es de cuero negro con pespunte dorado y la bandeja de piezas, de terciopelo.
 
 ## Jugar
+- **Sin servidor:** abre `index.html`. Funciona desde `file://`, porque las imágenes y las fuentes van incrustadas en `game.js` y `fonts.css`.
+- **Servidor local:** ejecuta `python3 -m http.server 8080` y abre `http://localhost:8080` (o `http://IP:8080` desde el móvil).
 
-- **Sin servidor:** abre `index.html` directo en el navegador. Funciona desde `file://` porque las imágenes van incrustadas en `game.js`.
-- **Con servidor local:** `python3 -m http.server 8080` y luego abre `http://localhost:8080`. Desde el celular en la misma red Wi-Fi, abre `http://IP-de-tu-compu:8080`.
+### Modos
+- **Historia:** 7 órdenes de trabajo con los 3 relojes (`src/data/story.js`). Cada caso nuevo se desbloquea al terminar el anterior y el progreso se guarda en `localStorage`.
+- **Modo libre:** eliges cualquier reloj y cualquier falla compatible con su calibre, o **«sin falla»** para desarmarlo por completo y volver a montarlo. Las herramientas de diagnóstico (timegrapher, brújula, multímetro, lupa) muestran la falla que elegiste.
+- **Boutique LA FORY:** vitrinas con foco sobre terciopelo y tres colecciones (Relojes, Herramientas, Joyería), con fichas y precios. La vista de detalle es 3D y se gira con el dedo. Las piezas se compran con los honorarios que cobras en cada reparación; es moneda del juego, no hay pagos reales.
 
-**Controles táctiles**
-- **1 dedo:** girar la vista.
-- **2 dedos:** zoom.
-- **Toque corto:** usar la herramienta elegida sobre una pieza.
-- **↻ Voltear:** dar vuelta el reloj.
-- **💡 Pista:** ilumina la herramienta y la pieza correctas (cuesta 2 puntos).
+### Controles
+- **Vista:** un dedo gira, dos dedos hacen zoom. Los botones ⌚ / 🛠 / 🗃 / 🔍 cambian entre reloj, soporte, bandeja y alfombrilla.
+- **Herramientas:** eliges la herramienta y tocas la pieza. Las piezas que están en la bandeja también aparecen como fichas abajo; para colocar una, eliges la herramienta y tocas su ficha.
+- **Tornillos, uno a uno:** con el **destornillador**, elige la **punta** (0,8 a 1,6 mm) y **mantén pulsado** el tornillo para girarlo, o tócalo varias veces.
+  - Si la punta es demasiado grande, no entra. Si es demasiado pequeña, resbala y marca la cabeza; al segundo resbalón el tornillo **salta y se pierde**, y hay que usar uno de repuesto.
+  - Los tornillos van a la bandeja, al compartimento de su pieza. Para volver a ponerlos, toca la ficha 🔩 de su grupo (con eso se cargan en la punta) y luego cada agujero fantasma. Si usas los tornillos de otra pieza, cuenta como **tornillo equivocado**.
+  - La rueda de corona tiene **rosca a izquierdas**.
+- **↻ Voltear:** da la vuelta al reloj, o al movimiento cuando está en el soporte.
+- **Dar cuerda:** antes de la prueba final en el timegrapher.
+- **✦ Pista:** ilumina la herramienta, la punta y el objetivo, y cuesta 2 puntos.
 
-## Casos (definidos como datos en `src/cases.js`)
+### Montaje manual
+El montaje sigue el orden inverso al desarme y lo controlan los datos. Una pieza solo se puede colocar si ya están montadas todas las que van debajo de ella (`coveredBy`), y cada tornillo hay que apretarlo a mano.
+Se lubrica donde hace falta: 9010 en el rodaje, 9415 en las paletas, 8217 en el barrilete y grasa en la junta del fondo antes de cerrar. El protector de esfera es obligatorio para quitar y clavar las agujas; la de horas se clava a las 12:00, en el salto de fecha.
+Para terminar hay que dar cuerda y hacer la prueba final en el timegrapher. La puntuación descuenta errores de orden, herramientas equivocadas, tornillos dañados, perdidos o equivocados, repuestos y pistas.
 
-1. **Caso 1 · "Se atrasa"** (16 pasos):
-   1. Timegrapher (−52 s/día, 188°).
-   2. Brújula (descarta el magnetismo; el desmagnetizador es opcional).
-   3. Fondo roscado (con llave Jaxa).
-   4. Rotor.
-   5. Tija y corona.
-   6. Movimiento al soporte LA FURY.
-   7. Módulo automático.
-   8. Descargar el muelle real con el cliquet.
-   9. Tornillo del puente de volante.
-   10. Volante.
-   11. Lupa: aparece la falla, **aceite seco** en el amortiguador.
-   12. Abrir el resorte del amortiguador.
-   13. Limpiar.
-   14. Aceitar con 9010.
-   15. Reensamblar (automático, en orden inverso).
-   16. Timegrapher final (+3 s/día, 286°).
-2. **Práctica · Desarme del lado de puentes** (23 pasos). Sigue el orden real, que es el inverso del orden de montaje de ETA: … → volante → puente de áncora → áncora → rochet → cliquet → rueda de corona → puente de barrilete → barrilete → puente de rodaje → ruedas de segundos, media, escape e intermedia.
+## Relojes y calibres (datos en `src/data/`)
+| Reloj | Caja | Calibre |
+|---|---|---|
+| ZARUMEI Oro «Miami» | Buceo de 40 mm en oro amarillo, bisel grabado, fondo roscado, brazalete Oyster | **ZR-28**, automático de 4 Hz (arquitectura tipo ETA 2824-2 / SW200-1) |
+| ZARUMEI «Cuba Azul» | Buceo de 41 mm en acero, bisel de cerámica azul, esfera azul con rayos de sol y el oso de la bandera | **ZR-28** |
+| ZARUMEI Rosé Slim | Reloj de vestir extraplano de 38 mm en oro rosa, fondo a presión, esfera blanca, índices de bastón y brazalete de eslabones | **ZQ-11**, cuarzo fino (tipo Ronda 762 / Miyota GL20) |
 
-Si usas una herramienta equivocada o tocas piezas fuera de orden, recibes un mensaje que explica el error y pierdes 5 puntos. Un ejemplo de mensaje: "el rotor está tapado por el fondo roscado".
-El volante oscila de verdad a 4 Hz con la amplitud del caso (188° → 286°). El segundero avanza en 8 pasos por segundo (28.800 A/h).
+El ZR-28 tiene **35 piezas y 25 tornillos**:
+- **Caja y exterior:** fondo, rotor, tija y bridas de caja.
+- **Lado de puentes:**
+  - Módulo automático, volante (con raqueta y amortiguador con rubí visible), puente de áncora y áncora.
+  - Rochet, rueda de corona (rosca a izquierdas) y cliquet.
+  - Puente de barrilete y barrilete; puente de rodaje y las 4 ruedas.
+- **Lado de esfera:**
+  - Agujas (palancas, prensa y protector) y esfera con sus 2 tornillos de pie.
+  - Calendario: placa, disco, rueda de horas, arrastre, minutería y piñón de cañón.
+  - Remontoir: placa, balancín, tirette, **palanca de stop** y piñones.
 
-**Para añadir un caso**, agrega un objeto a `CASES` con sus `steps`. Cada paso define:
-- `tool` (la herramienta correcta) y `target` (la pieza).
-- `done`: la lista de acciones que se ejecutan al completarlo. Las disponibles son `msg`, `tg`, `flip`, `view`, `remove`, `toHolder`, `toInspect`, `letdown`, `reveal`, `openSpring`, `clean`, `oil` y `finish`.
+El ZQ-11 tiene: brida de pila, pila, circuito con el cuarzo, bobina, puente de rodaje, rotor del motor paso a paso, 4 ruedas, agujas, esfera, minutería y remontoir.
 
-## Marca LA FURY
+## Fallas (`src/data/faults.js`)
+| Falla | Calibre |
+|---|---|
+| Aceite seco en el amortiguador del volante | auto |
+| Magnetizado | auto |
+| Muelle real fatigado | auto |
+| Eje de volante roto | auto |
+| Desregulado (raqueta) | auto |
+| Pila agotada | cuarzo |
+| Bobina cortada | cuarzo |
+| Sin falla | ambos |
 
-- La caja de herramientas lleva un encabezado con el logo y un sello en cada herramienta.
-- Las herramientas 3D llevan calcomanías: grabadas en oro en el destornillador, la llave de fondo, las pinzas, la aceitera y el soporte, y serigrafiadas en blanco en la lupa, la limpieza, la brújula, el desmagnetizador y el timegrapher.
-- La pantalla del timegrapher arranca con el logo ("LA FURY TIMEGRAPHER TG-1").
-- La alfombrilla del banco lleva el logo, y la pantalla final muestra la tienda "LA FURY Tools & Jewelry".
-- El reloj se sigue llamando **ZARUMEI**.
-
-Los archivos de marca están en `assets/`; su `README.md` explica cada uno.
+Cada falla define sus pasos de reparación (herramienta, sobre qué pieza o subpieza, y si la pieza tiene que estar puesta o fuera), las lecturas del timegrapher, la brújula o el multímetro, y lo que se aprende al resolverla.
 
 ## Desarrollo
-
 ```bash
-npm install          # three, esbuild, playwright (solo para desarrollar)
-npm run build        # incrusta assets → src/assets-inline.js y empaqueta src/ → game.js
-npm test             # prueba E2E en iPhone 13 (Chromium headless + WebGL SwiftShader)
+npm install
+npm run build             # assets → src/assets-inline.js, fuentes → fonts.css, src/ → game.js
+node tests/engine-sim.mjs # juega sin interfaz todas las combinaciones reloj × falla y los 7 casos de historia
+npm test                  # E2E en iPhone 13 (Playwright + Chromium + WebGL SwiftShader) → shots/ y shots/results.json
 ```
-
-**Estructura**
-
 | Archivo | Contenido |
 |---|---|
-| `src/main.js` | Motor: escena, cámara, toques (raycast), tweens, lógica de pasos e interfaz |
-| `src/watch.js` | Reloj y movimiento procedurales (en mm): caja torneada, bisel grabado, esfera, agujas tipo espada, platina con perlage, puentes con côtes de Genève, ruedas, barrilete, rochet, cliquet, áncora, volante con espiral, amortiguador, módulo automático, rotor, tija |
-| `src/tools3d.js` | Herramientas 3D con calcomanías LA FURY, el timegrapher y el soporte |
-| `src/textures.js` | Texturas generadas en canvas |
-| `src/cases.js` | Herramientas, piezas y casos (los datos del juego) |
-| `game.js` | El paquete ya compilado. **Se sube al repositorio** para que GitHub Pages funcione sin compilar |
+| `src/data/*.js` | Relojes, calibres (piezas, tornillos, lubricación), fallas, historia, herramientas y catálogo de la boutique |
+| `src/engine.js` | Reglas sin 3D: estados, acceso por lado, tornillos, aceite, pasos de falla, puntuación y planificador de pistas |
+| `src/movement.js` · `src/dialside.js` · `src/case3d.js` | Geometría procedural de los calibres ZR-28 y ZQ-11, de la esfera y las agujas, y de las cajas y brazaletes |
+| `src/materials.js` · `src/textures.js` · `src/geom.js` | Materiales PBR (côtes de Genève, perlage, rubíes, tornillos azulados, PCB), texturas en canvas (cuero, terciopelo, ónix, esferas) y utilidades |
+| `src/tools3d.js` | Herramientas 3D LA FORY, timegrapher, soporte de anillo y bandeja de terciopelo |
+| `src/boutique.js` | Boutique: miniaturas 3D en caché, detalle 3D giratorio y saldo |
+| `src/main.js` | Escena, cámara, toques y pulsación larga, animaciones, interfaz y API de pruebas (`window.__game`) |
+| `scripts/make_logo.py` · `derive_brand.py` · `prep_dials.py` | Logo LA FORY, versiones derivadas de la marca y recorte de las esferas |
 
-## Publicar en GitHub Pages
+## Publicar
+Repositorio `lafory/zarumei-3d`, con GitHub Pages desde la rama `main` (raíz). Hay que subir `game.js` y `fonts.css`, que son archivos compilados.
 
-Este repositorio es **local**: no se creó ningún repositorio en GitHub ni se subió nada. Para publicarlo:
-
-```bash
-cd web3d
-# 1) crea un repositorio vacío en github.com (por ejemplo zarumei-3d), sin README
-git remote add origin https://github.com/TU-USUARIO/zarumei-3d.git
-git branch -M main
-git push -u origin main
-# 2) En GitHub: Settings → Pages → Source: "Deploy from a branch" → Branch: main / (root) → Save
-# 3) En 1–2 minutos queda en https://TU-USUARIO.github.io/zarumei-3d/
-```
-
-El archivo `.nojekyll` evita que GitHub Pages procese el sitio con Jekyll. Todas las rutas son relativas.
-
-## Limitaciones conocidas
-
-- **Geometría:** es procedural y estilizada. Las piezas siguen el orden y la disposición general del calibre, pero no son modelos CAD a escala exacta. Faltan, entre otras, la palanca de stop, la raqueta fina y los tornillos individuales como piezas separables.
-- **Alcance del desarme:** el lado de la esfera (agujas, esfera, calendario, minutería, remontoir) todavía no se desarma.
-- **Reensamblado:** es automático, en orden inverso.
-- **Valores del timegrapher:** son valores de diseño del caso, no una simulación física.
-- **Pruebas:** el rendimiento se probó solo en Chromium con WebGL por software (SwiftShader). Hay que probar en iPhone y Android reales.
+## Limitaciones
+- **Geometría:** es procedural y estilizada, no CAD a escala exacta. El arte de la esfera Rosé tiene pequeñas manchas donde se borraron las agujas impresas.
+- **Timegrapher:** muestra valores de diseño por falla, no una simulación física.
+- **Rendimiento:** se midió con WebGL por software (SwiftShader), así que los FPS no son representativos. Faltan pruebas en dispositivos reales.
