@@ -246,3 +246,54 @@ export function onyxTexture() {
   for (let i = 0; i < 14; i++) { x.beginPath(); let px = Math.random() * 512, py = Math.random() * 512; x.moveTo(px, py); for (let k = 0; k < 8; k++) { px += (Math.random() - 0.5) * 120; py += Math.random() * 70; x.lineTo(px, py); } x.stroke(); }
   return tex(c, { repeat: 6 });
 }
+export function galaxyTexture(tone) {
+  const S = 1024, c = canvas(S), x = c.getContext('2d');
+  const g = x.createRadialGradient(S * 0.48, S * 0.42, 30, S / 2, S / 2, S * 0.62);
+  if (tone === 'blue') { g.addColorStop(0, '#2450a4'); g.addColorStop(0.42, '#071433'); g.addColorStop(1, '#02040c'); }
+  else { g.addColorStop(0, '#7a32a4'); g.addColorStop(0.4, '#2a0848'); g.addColorStop(1, '#07010f'); }
+  x.fillStyle = g; x.fillRect(0, 0, S, S);
+  for (let i = 0; i < 7; i++) {
+    const cx = S * (0.25 + Math.random() * 0.5), cy = S * (0.25 + Math.random() * 0.5);
+    const rg = x.createRadialGradient(cx, cy, 8, cx, cy, 90 + Math.random() * 120);
+    rg.addColorStop(0, tone === 'blue' ? 'rgba(90,150,255,.28)' : 'rgba(190,90,255,.3)'); rg.addColorStop(1, 'rgba(0,0,0,0)');
+    x.fillStyle = rg; x.beginPath(); x.arc(cx, cy, 220, 0, 7); x.fill();
+  }
+  for (let i = 0; i < 900; i++) {
+    const a = Math.random(); x.fillStyle = `rgba(255,255,255,${0.25 + a * 0.75})`;
+    const s = a > 0.98 ? 2.4 : a > 0.9 ? 1.4 : 0.7; x.fillRect(Math.random() * S, Math.random() * S, s, s);
+  }
+  return tex(c);
+}
+export function subdialTexture() {
+  const S = 512, c = canvas(S), x = c.getContext('2d'), R = S / 2; x.translate(R, R);
+  const g = x.createRadialGradient(-30, -40, 8, 0, 0, R); g.addColorStop(0, '#f6e6b4'); g.addColorStop(0.5, '#d4ae58'); g.addColorStop(1, '#8d6424');
+  x.fillStyle = g; x.beginPath(); x.arc(0, 0, R, 0, 7); x.fill();
+  x.strokeStyle = '#3a2a10';
+  for (let i = 0; i < 60; i++) {
+    const a = i / 60 * Math.PI * 2, r0 = i % 5 ? R * 0.8 : R * 0.7;
+    x.lineWidth = i % 5 ? 2 : 4; x.beginPath(); x.moveTo(Math.sin(a) * r0, -Math.cos(a) * r0); x.lineTo(Math.sin(a) * R * 0.9, -Math.cos(a) * R * 0.9); x.stroke();
+  }
+  x.fillStyle = '#2a1c08'; x.textAlign = 'center'; x.font = '600 52px Georgia, Times, serif'; x.fillText('ZARUMEI', 0, -R * 0.22);
+  x.font = '500 22px Georgia, Times, serif'; x.fillText('ZT-18', 0, R * 0.38);
+  return tex(c);
+}
+export function engraveBand() {
+  const c = canvas(2048, 256), x = c.getContext('2d');
+  x.fillStyle = '#ffffff'; x.fillRect(0, 0, 2048, 256);
+  x.fillStyle = '#4a3214'; x.font = '600 118px Georgia, Times, serif'; x.textAlign = 'center'; x.textBaseline = 'middle';
+  for (let i = 0; i < 4; i++) x.fillText('ZARUMEI', 256 + i * 512, 132);
+  return tex(c);
+}
+export function gatorColor() {
+  const c = canvas(256, 512), x = c.getContext('2d');
+  x.fillStyle = '#1a140f'; x.fillRect(0, 0, 256, 512);
+  for (let row = 0; row < 36; row++) {
+    const off = row % 2 ? 10 : 0;
+    for (let col = 0; col < 12; col++) {
+      x.fillStyle = (row + col) % 2 ? '#2c241c' : '#100e0c';
+      x.beginPath(); x.ellipse(off + col * 22, row * 14 + 7, 9, 6, 0, 0, 7); x.fill();
+      x.strokeStyle = '#3a3128'; x.lineWidth = 1; x.stroke();
+    }
+  }
+  return tex(c);
+}

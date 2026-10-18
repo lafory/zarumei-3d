@@ -19,5 +19,19 @@ export const WATCHES = {
     blurb: 'Reloj de vestir extraplano, 38 mm, acero con baño de oro rosa, esfera blanca y brazalete de eslabones.',
     case: { style: 'slim', metal: 'rose', r: 19, bezel: 'polished', crownGuards: false, caseback: 'snap', backText: 'ZARUMEI · QUARTZ · STAINLESS STEEL · IP ROSE GOLD · 3 ATM · ', backMono: 'Z' },
     dial: { kind: 'rose', r: 15.6, date: false }, hands: { style: 'leaf', metal: 'rose' }, bracelet: { style: 'multilink', metal: 'rose' }
+  },
+  astralMiami: {
+    id: 'astralMiami', name: 'ZARUMEI Astral «Miami»', caliber: 'ZT18',
+    blurb: 'Turbillón de oro 18 k, nebulosa violeta, diamante y el oso Miami. Cuerda manual.',
+    case: { style: 'astral', metal: 'gold', r: 21, bezel: 'polished', crownGuards: false, caseback: 'screw', backText: 'ZARUMEI · TOURBILLON · ZT-18 · 18 RUBIS · ORO 18K · ASTRAL MIAMI · Nº 018 · ', backMono: 'Z' },
+    dial: { kind: 'astral', r: 12.2, date: false }, hands: { style: 'leaf', metal: 'gold' }, bracelet: { style: 'alligator', metal: 'gold' },
+    astral: { sky: 'purple', bear: 'miami', layout: { time: [0, -7.6], bear: [7.05, 1.25], diamond: [-7.15, 2.25], balance: [0.15, 4.55] } }
+  },
+  astralCuba: {
+    id: 'astralCuba', name: 'ZARUMEI Astral «Cuba»', caliber: 'ZT18',
+    blurb: 'Turbillón de oro, cielo azul, jaula de volante, diamante y el oso Cuba.',
+    case: { style: 'astral', metal: 'gold', r: 21, bezel: 'polished', crownGuards: false, caseback: 'screw', backText: 'ZARUMEI · TOURBILLON · ZT-18 · 18 RUBIS · ORO 18K · ASTRAL CUBA · Nº 019 · ', backMono: '★' },
+    dial: { kind: 'astral', r: 12.2, date: false }, hands: { style: 'leaf', metal: 'gold' }, bracelet: { style: 'alligator', metal: 'gold' },
+    astral: { sky: 'blue', bear: 'cuba', layout: { time: [0, -7.5], bear: [7.15, 1.55], diamond: [-6.5, 4.85], balance: [-6.7, -2.7] } }
   }
 };

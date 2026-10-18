@@ -25,6 +25,18 @@ export function buildCase(M, watch, movR) {
     const crystal = new THREE.Mesh(new THREE.CylinderGeometry(16.1 * k, 16.1 * k, 0.8, 96), M.crystal); crystal.position.y = 3.3; crystal.renderOrder = 5; body.add(crystal);
     bracelet(body, M, watch, k, -2.2, 21.5 * k + 5.6, 7.6);
     dims = { cbY: -5.95, yFront: 6.55, yBack: 3.8 };
+  } else if (C.style === 'astral') {
+    const prof = V2([[15.2, -4.4], [18.4, -4.4], [20.4, -3.1], [20.7, 0.2], [20.0, 1.7], [17.6, 2.55], [15.2, 2.55]], k);
+    const cm = new THREE.Mesh(new THREE.LatheGeometry(prof, 128), metal.clone()); cm.material.side = THREE.DoubleSide; body.add(cm);
+    const inner = new THREE.Mesh(new THREE.CylinderGeometry(15.2 * k, 15.2 * k, 6.6, 96, 1, true), brushed.clone()); inner.material.side = THREE.BackSide; inner.position.y = -1.1; body.add(inner);
+    const spacer = new THREE.Mesh(new THREE.LatheGeometry(V2([[movR + 0.15, -2.8], [15.05 * k, -2.8], [15.05 * k, 0.15], [movR + 0.15, 0.15]]), 96), M.spacer); spacer.material.side = THREE.DoubleSide; body.add(spacer);
+    const band = new THREE.Mesh(new THREE.CylinderGeometry(20.65 * k, 20.65 * k, 1.25, 96, 1, true), brushed.clone()); band.position.y = -1.35; body.add(band);
+    const eng = new THREE.Mesh(new THREE.CylinderGeometry(20.78 * k, 20.78 * k, 0.7, 128, 1, true), new THREE.MeshStandardMaterial({ color: metal.color, metalness: 1, roughness: 0.38, map: TX.engraveBand(), transparent: true })); eng.position.y = -2.45; body.add(eng);
+    for (const s of [-1, 1]) for (const xx of [-6.4, 6.4]) { const lug = new THREE.Mesh(new THREE.BoxGeometry(3.1, 2.8, 6.4), brushed); lug.position.set(xx, -1.05, s * 19.6 * k); lug.rotation.x = s * 0.28; body.add(lug); }
+    const bz = new THREE.Mesh(new THREE.LatheGeometry(V2([[15.0, 2.45], [19.6, 2.5], [20.15, 3.15], [19.2, 3.7], [15.0, 3.75]], k), 128), metal.clone()); bz.material.side = THREE.DoubleSide; body.add(bz);
+    const crystal = new THREE.Mesh(new THREE.SphereGeometry(42, 72, 24, 0, Math.PI * 2, 0, Math.asin(15.1 * k / 42)), M.crystal); crystal.position.y = 3.7 - 42; crystal.renderOrder = 5; body.add(crystal);
+    alligator(body, -1.05, 21.2 * k + 4.2);
+    dims = { cbY: -4.85, yFront: 6.15, yBack: 3.6 };
   } else {
     const prof = V2([[15.4, -3.0], [18.2, -3.0], [18.9, -2.2], [19.0, 0.2], [18.6, 1.3], [15.4, 1.3]], k);
     const cm = new THREE.Mesh(new THREE.LatheGeometry(prof, 128), metal.clone()); cm.material.side = THREE.DoubleSide; body.add(cm);
@@ -39,7 +51,14 @@ export function buildCase(M, watch, movR) {
   // fondo
   const cb = tag(new THREE.Group(), 'caseback');
   const cbMat = new THREE.MeshStandardMaterial({ color: metal.color, metalness: 1, roughness: 0.28, map: TX.casebackTexture(C.backText, C.backMono) });
-  if (C.caseback === 'screw') {
+  if (C.style === 'astral') {
+    const kk = C.r / 20;
+    cb.add(new THREE.Mesh(new THREE.TorusGeometry(14.2 * kk, 1.15, 12, 80).rotateX(Math.PI / 2), metal));
+    const glass = new THREE.Mesh(new THREE.CylinderGeometry(13.1 * kk, 13.1 * kk, 0.28, 64), M.crystal); glass.position.y = 0.05; cb.add(glass);
+    const lip = new THREE.Mesh(new THREE.CylinderGeometry(16.2 * kk, 16.6 * kk, 0.7, 80), [metal, metal, cbMat]); cb.add(lip);
+    for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2; const n = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.45, 0.9), M.darkSteel); n.position.set(Math.cos(a) * 15.6 * kk, -0.2, Math.sin(a) * 15.6 * kk); n.rotation.y = -a; cb.add(n); }
+    cb.add(hitProxy(M, 16.4 * kk, 1.2));
+  } else if (C.caseback === 'screw') {
     cb.add(new THREE.Mesh(new THREE.CylinderGeometry(17.6 * k, 18.2 * k, 1.1, 96), [metal, metal, cbMat]));
     for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2; const n = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.6, 1.2), M.darkSteel); n.position.set(Math.cos(a) * 17.2 * k, -0.35, Math.sin(a) * 17.2 * k); n.rotation.y = -a; cb.add(n); }
     cb.add(hitProxy(M, 18.2 * k, 1.4));
@@ -50,6 +69,19 @@ export function buildCase(M, watch, movR) {
   }
   cb.position.y = dims.cbY;
   return { body, caseback: cb, dims };
+}
+function alligator(body, y, z0) {
+  const map = TX.gatorColor();
+  const leather = new THREE.MeshStandardMaterial({ map, color: 0x3a2e24, roughness: 0.92, metalness: 0 });
+  const edge = new THREE.MeshStandardMaterial({ color: 0x0c0b09, roughness: 0.8 });
+  for (const s of [-1, 1]) {
+    const strap = new THREE.Mesh(new THREE.BoxGeometry(15.5, 2.4, 46), leather);
+    strap.position.set(0, y - 0.4, s * (z0 + 20));
+    body.add(strap);
+    const side = new THREE.Mesh(new THREE.BoxGeometry(16.3, 1.6, 46), edge);
+    side.position.set(0, y - 0.9, s * (z0 + 20));
+    body.add(side);
+  }
 }
 function bracelet(body, M, watch, k, y, z0, w) {
   const B = watch.bracelet, pol = M.metal(B.metal), br = M.metal(B.metal, true);

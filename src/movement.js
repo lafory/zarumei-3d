@@ -6,7 +6,7 @@ import * as TX from './textures.js';
 import { extrudeShape, polyShape, gearShape, gearMesh, ringShape, hitProxy, boxHit, tag, at, cyl, jewelMesh, shadowAll, screwMesh } from './geom.js';
 import { buildDial, buildHands } from './dialside.js';
 
-function screwsFor(M, cal, parts) {
+export function screwsFor(M, cal, parts) {
   const out = {};
   for (const p of cal.parts) (p.screws || []).forEach((s, i) => {
     const host = parts[p.id]; if (!host) return;
@@ -24,7 +24,7 @@ function screwsFor(M, cal, parts) {
   });
   return out;
 }
-function stemGroup(M, R, metal, y, crownR = 3.1, crownL = 3.6) {
+export function stemGroup(M, R, metal, y, crownR = 3.1, crownL = 3.6) {
   const stem = tag(new THREE.Group(), 'stem');
   const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 9.6, 12).rotateZ(Math.PI / 2), M.steel); rod.position.set(-R - 3.6, 0, 0); stem.add(rod);
   const crown = new THREE.Mesh(new THREE.CylinderGeometry(crownR, crownR, crownL, 28).rotateZ(Math.PI / 2), metal); crown.position.set(-R - 6.6 - crownL / 2 - 1, 0, 0); stem.add(crown);
@@ -38,7 +38,7 @@ function stemGroup(M, R, metal, y, crownR = 3.1, crownL = 3.6) {
 // ───────────────────────── ZR-28 ─────────────────────────
 // Protector de esfera: lámina plástica con ranura que se desliza SOBRE la esfera y BAJO las agujas
 // (las palancas apoyan en ella). Nunca intercepta los toques (noPick) para no tapar las agujas.
-function makeProtector(M, watch, ys) {
+export function makeProtector(M, watch, ys) {
   const g = new THREE.RingGeometry(1.1, watch.dial.r - 0.6, 64, 1, 0.12, Math.PI * 2 - 0.24).rotateX(-Math.PI / 2);
   const m = new THREE.Mesh(g, M.protector); m.position.y = ys.dial + 0.06; m.visible = false; m.renderOrder = 2; m.userData.noPick = true; m.raycast = () => {};
   return m;

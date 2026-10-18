@@ -85,5 +85,38 @@ export const CALIBERS = {
       { id: 'yoke', name: 'el balancín', side: 'dial', coveredBy: ['keylessPlate'], tool: 'tweezers' },
       { id: 'settingLever', name: 'la tirette', side: 'dial', coveredBy: ['keylessPlate', 'yoke'], tool: 'tweezers' }
     ]
+  },
+  ZT18: {
+    id: 'ZT18', name: 'ZT-18', type: 'tourbillon',
+    desc: 'Turbillón volante, cuerda manual, jaula a la vista, 21.600 A/h, 18 rubíes. Arquitectura propia ZARUMEI Astral.',
+    lift: 50, ampOk: [270, 310],
+    parts: [
+      { id: 'caseback', name: 'el fondo de zafiro', side: 'case', coveredBy: [], tool: 'caseWrench', oil: { when: 'before', lube: 'grasa de silicona', msg: 'Grasa de silicona en la junta del fondo de zafiro.' } },
+      { id: 'stem', name: 'la tija y corona', side: 'case', coveredBy: ['caseback'], tool: 'screwdriver', anySize: true, placeTool: 'tweezers', removeMsg: 'Presionaste el pulsador y salió la corona con su tija.' },
+      { id: 'clamps', name: 'las bridas de caja', side: 'case', coveredBy: ['caseback'], tool: 'tweezers', screws: [{ s: 1.2, k: 'clamp', p: [-8.4, 1.45, 8.2] }, { s: 1.2, k: 'clamp', p: [9.2, 1.45, -5.4] }] },
+      { id: 'movement', name: 'el movimiento', side: 'case', coveredBy: ['stem', 'clamps'], tool: 'holder', placeNeedsDial: true },
+      { id: 'click', name: 'el cliquet', side: 'bridge', coveredBy: [], tool: 'tweezers', action: { tool: 'tweezers', flag: 'letdown', needOut: [], msg: '✅ Muelle real descargado poco a poco. El turbillón se detiene: ya se puede tocar la jaula.' } },
+      { id: 'crownWheel', name: 'la rueda de corona', side: 'bridge', coveredBy: [], tool: 'tweezers', requires: ['letdown'], screws: [{ s: 1.0, k: 'crownLH', lh: true, p: [0, 0.32, 0] }] },
+      { id: 'ratchet', name: 'el rochet', side: 'bridge', coveredBy: [], tool: 'tweezers', requires: ['letdown'], screws: [{ s: 1.4, k: 'ratchet', p: [0, 0.36, 0] }] },
+      { id: 'barrelBridge', name: 'el puente de barrilete', side: 'bridge', coveredBy: ['ratchet', 'crownWheel', 'click'], tool: 'tweezers', screws: [{ s: 1.2, k: 'bridge', p: [-6.4, 0.78, -6.6] }, { s: 1.2, k: 'bridge', p: [-1.2, 0.78, -7.4] }, { s: 1.2, k: 'bridge', p: [-3.4, 0.78, -2.0] }] },
+      { id: 'barrel', name: 'el barrilete', side: 'bridge', coveredBy: ['barrelBridge'], tool: 'tweezers', requires: ['letdown'], inspect: true, oil: { when: 'after', lube: '8217', msg: 'Grasa 8217 en la pared del barrilete.' } },
+      { id: 'palletBridge', name: 'el puente de áncora', side: 'bridge', coveredBy: [], tool: 'tweezers', requires: ['letdown'], screws: [{ s: 1.0, k: 'pallet', p: [3.4, 0.62, 6.0] }, { s: 1.0, k: 'pallet', p: [6.6, 0.62, 5.4] }], oil: { when: 'after', lube: '9415', msg: '9415 en las paletas del áncora.' } },
+      { id: 'palletFork', name: 'el áncora', side: 'bridge', coveredBy: ['palletBridge'], tool: 'tweezers', requires: ['letdown'] },
+      { id: 'secHand', name: 'el segundero de la subesfera', side: 'dial', coveredBy: [], tool: 'handLevers', placeTool: 'handPress', requires: ['protector'], placeRequires: ['protector'] },
+      { id: 'minHand', name: 'la aguja de minutos', side: 'dial', coveredBy: ['secHand'], tool: 'handLevers', placeTool: 'handPress', requires: ['protector'], placeRequires: ['protector'] },
+      { id: 'hourHand', name: 'la aguja de horas', side: 'dial', coveredBy: ['minHand'], tool: 'handLevers', placeTool: 'handPress', requires: ['protector'], placeRequires: ['protector'] },
+      { id: 'timeDial', name: 'la subesfera ZARUMEI', side: 'dial', coveredBy: ['hourHand'], tool: 'tweezers', screws: [{ s: 0.8, k: 'sub', p: [0, 0.22, -2.15] }, { s: 0.8, k: 'sub', p: [0, 0.22, 2.15] }] },
+      { id: 'bearCage', name: 'la jaula del oso', side: 'dial', coveredBy: [], tool: 'tweezers', screws: [{ s: 0.8, k: 'cage', p: [0, 0.42, -2.7] }, { s: 0.8, k: 'cage', p: [2.7, 0.42, 0] }, { s: 0.8, k: 'cage', p: [0, 0.42, 2.7] }, { s: 0.8, k: 'cage', p: [-2.7, 0.42, 0] }] },
+      { id: 'bear', name: 'el oso LA FORY', side: 'dial', coveredBy: ['bearCage'], tool: 'tweezers' },
+      { id: 'diamondCage', name: 'la jaula del diamante', side: 'dial', coveredBy: [], tool: 'tweezers', screws: [{ s: 0.8, k: 'cage', p: [0, 0.4, -2.55] }, { s: 0.8, k: 'cage', p: [2.55, 0.4, 0] }, { s: 0.8, k: 'cage', p: [0, 0.4, 2.55] }, { s: 0.8, k: 'cage', p: [-2.55, 0.4, 0] }] },
+      { id: 'diamond', name: 'el diamante talla brillante', side: 'dial', coveredBy: ['diamondCage'], tool: 'tweezers' },
+      { id: 'trainBridge', name: 'el puente de diamantes', side: 'dial', coveredBy: [], tool: 'tweezers', screws: [{ s: 1.0, k: 'bridge', p: [1.2, 0.72, 0] }, { s: 1.0, k: 'bridge', p: [-0.6, 0.72, 1.05] }, { s: 1.0, k: 'bridge', p: [-0.6, 0.72, -1.05] }], oil: { when: 'after', lube: '9010', msg: '9010 en los rubíes del rodaje, bajo el puente.' } },
+      { id: 'balance', name: 'la jaula del turbillón', side: 'dial', coveredBy: [], tool: 'tweezers', requires: ['letdown'], inspect: true, screws: [{ s: 1.0, k: 'cage', p: [2.15, 1.05, 0.15] }, { s: 1.0, k: 'cage', p: [-2.15, 1.05, 0.15] }, { s: 1.0, k: 'cage', p: [0, 1.05, -2.35] }] },
+      { id: 'escapeWheel', name: 'la rueda de escape', side: 'dial', coveredBy: ['trainBridge'], tool: 'tweezers', requires: ['letdown'] },
+      { id: 'secondWheel', name: 'la rueda de segundos', side: 'dial', coveredBy: ['trainBridge'], tool: 'tweezers' },
+      { id: 'thirdWheel', name: 'la rueda media', side: 'dial', coveredBy: ['trainBridge'], tool: 'tweezers' },
+      { id: 'interWheel', name: 'la rueda intermedia', side: 'dial', coveredBy: ['trainBridge'], tool: 'tweezers' },
+      { id: 'dial', name: 'la platina estrellada', side: 'dial', coveredBy: ['timeDial', 'bear', 'bearCage', 'diamond', 'diamondCage', 'trainBridge', 'balance', 'escapeWheel', 'secondWheel', 'thirdWheel', 'interWheel'], tool: 'tweezers', screws: [{ s: 1.0, k: 'dial', p: [0, 0.4, -10.4] }, { s: 1.0, k: 'dial', p: [9.0, 0.4, 5.2] }, { s: 1.0, k: 'dial', p: [-9.0, 0.4, 5.2] }] }
+    ]
   }
 };

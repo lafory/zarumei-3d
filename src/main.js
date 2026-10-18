@@ -14,6 +14,7 @@ import { openBoutique, initBoutique, wallet } from './boutique.js';
 import { fmtPrice } from './data/boutique.js';
 import { makeMaterials } from './materials.js';
 import { buildZR28, buildZQ11 } from './movement.js';
+import { buildZT18 } from './tourbillon.js';
 import { buildCase } from './case3d.js';
 import { makeTools } from './tools3d.js';
 import { ICONS } from './icons.js';
@@ -59,7 +60,7 @@ let floatingTool = null, sel = null, size = 1.0, view = 'front', busy = false, s
 function partWorldCenter(obj) { const b = new THREE.Box3().setFromObject(obj); return { c: b.getCenter(new THREE.Vector3()), r: b.getSize(new THREE.Vector3()).length() / 2 }; }
 let loupeTarget = null;
 const VIEWS = {
-  front: () => ({ target: new THREE.Vector3(0, 4, 4), size: G && G.W.case.style === 'slim' ? 46 : 52, dir: new THREE.Vector3(0, 1, 0.5) }),
+  front: () => ({ target: new THREE.Vector3(0, 4, 4), size: G && G.W.case.style === 'slim' ? 46 : G && G.W.case.style === 'astral' ? 50 : 52, dir: new THREE.Vector3(0, 1, 0.5) }),
   back: () => ({ target: new THREE.Vector3(0, 3, 2), size: 46, dir: new THREE.Vector3(0, 1, 0.5) }),
   holder: () => ({ target: HOLDER_POS.clone().add(new THREE.Vector3(0, 10, 0)), size: 36, dir: new THREE.Vector3(0, 1, 0.45) }),
   mat: () => ({ target: INSPECT_POS.clone().add(new THREE.Vector3(0, 2.2, 0)), size: 13, dir: new THREE.Vector3(0, 1, 0.42) }),
@@ -111,10 +112,15 @@ function disposeWorld() {
   G.extra.forEach(o => scene.remove(o));
   for (const o of [G.root, G.mvObj, T.tg, T.holder, T.tray]) o.traverse(c => { if (c.geometry) c.geometry.dispose(); });
 }
+function buildMovement(M, images, W, cal) {
+  if (W.caliber === 'ZQ11') return buildZQ11(M, images, W, cal);
+  if (W.caliber === 'ZT18') return buildZT18(M, images, W, cal);
+  return buildZR28(M, images, W, cal);
+}
 function buildWorld(watchId, faultId, story) {
   disposeWorld();
   const W = WATCHES[watchId], cal = CALIBERS[W.caliber];
-  const MV = W.caliber === 'ZQ11' ? buildZQ11(M, images, W, cal) : buildZR28(M, images, W, cal);
+  const MV = buildMovement(M, images, W, cal);
   const CS = buildCase(M, W, MV.R); mergeStatic(CS.body);
   const root = new THREE.Group(); root.userData.partId = 'watch'; root.add(CS.body);
   CS.body.traverse(o => { if (o.isMesh && !o.material.transparent) { o.castShadow = true; o.receiveShadow = true; } });
@@ -478,7 +484,9 @@ function renderMenu() {
   STORY.forEach((c, i) => {
     const W = WATCHES[c.watch], F = FAULTS[c.fault], locked = i > done;
     const b = document.createElement('button'); b.className = 'casecard' + (locked ? ' locked' : ''); b.dataset.case = c.id;
-    b.innerHTML = `<b>${locked ? '🔒 ' : ''}${c.title}</b><span>${W.name} · ${CALIBERS[W.caliber].name}</span><div class="ticket">CLIENTE: ${c.cliente}<br>RELOJ: ${W.name}<br>CALIBRE: ${CALIBERS[W.caliber].name} (${CALIBERS[W.caliber].type === 'auto' ? 'automático' : 'cuarzo'})<br>QUEJA: <b>${F.symptom}</b></div>`;
+    const kind = CALIBERS[W.caliber].type;
+    const kindLabel = kind === 'auto' ? 'automático' : kind === 'tourbillon' ? 'turbillón' : 'cuarzo';
+    b.innerHTML = `<b>${locked ? '🔒 ' : ''}${c.title}</b><span>${W.name} · ${CALIBERS[W.caliber].name}</span><div class="ticket">CLIENTE: ${c.cliente}<br>RELOJ: ${W.name}<br>CALIBRE: ${CALIBERS[W.caliber].name} (${kindLabel})<br>QUEJA: <b>${F.symptom}</b></div>`;
     b.onclick = () => { if (locked) { b.classList.add('shake'); setTimeout(() => b.classList.remove('shake'), 400); return; } startStory(c.id); }; list.appendChild(b);
   });
   const wl = $('#watchList'); wl.innerHTML = '';
@@ -528,6 +536,12 @@ function loop(now) {
     if (run) { for (const [id, v] of [['secHand', sec / 60], ['minHand', mn / 60], ['hourHand', hr / 12]]) { const r = P[id] && P[id].getObjectByName('rot'); if (r && E.st[id] === 'in') r.rotation.y = -v * Math.PI * 2; } }
     if (G.MV.wheel) { const amp = run ? THREE.MathUtils.degToRad(E.amplitude()) : 0; G.MV.wheel.rotation.y = run ? amp * Math.sin(t * Math.PI * 8) : G.MV.wheel.rotation.y * 0.92; }
     if (run && P.escapeWheel) P.escapeWheel.rotation.y = -Math.floor(t * 8) * (Math.PI * 2 / 20) / 2;
+    if (run && G.MV.kind === 'tourbillon') {
+      for (const [id, spd] of [['balance', 0.85], ['diamondCage', -0.45], ['bearCage', 0.28]]) {
+        const spin = P[id] && P[id].getObjectByName('cageSpin');
+        if (spin && E.st[id] === 'in') spin.rotation.y = t * spd;
+      }
+    }
     if (run && quartz && P.stepRotor) P.stepRotor.rotation.y = d.getSeconds() * Math.PI;
   }
   if (floatingTool && floatingTool.userData.base && !tweens.length && !hold) { floatingTool.rotation.y = t * 0.6; floatingTool.position.y = floatingTool.userData.base.y + Math.sin(t * 2) * 0.4; }

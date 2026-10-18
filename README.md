@@ -54,6 +54,8 @@ Para terminar hay que dar cuerda y hacer la prueba final en el timegrapher. La p
 | ZARUMEI Oro «Miami» | Buceo de 40 mm en oro amarillo, bisel grabado, fondo roscado, brazalete Oyster | **ZR-28**, automático de 4 Hz (arquitectura tipo ETA 2824-2 / SW200-1) |
 | ZARUMEI «Cuba Azul» | Buceo de 41 mm en acero, bisel de cerámica azul, esfera azul con rayos de sol y el oso de la bandera | **ZR-28** |
 | ZARUMEI Rosé Slim | Reloj de vestir extraplano de 38 mm en oro rosa, fondo a presión, esfera blanca, índices de bastón y brazalete de eslabones | **ZQ-11**, cuarzo fino (tipo Ronda 762 / Miyota GL20) |
+| ZARUMEI Astral «Miami» | Turbillón de oro, nebulosa violeta, oso Miami, diamante en jaula, correa de aligátor | **ZT-18**, turbillón manual |
+| ZARUMEI Astral «Cuba» | Turbillón de oro, cielo azul, jaula de volante, oso Cuba, diamante, correa de aligátor | **ZT-18**, turbillón manual |
 
 El ZR-28 tiene **35 piezas y 25 tornillos**:
 - **Caja y exterior:** fondo, rotor, tija y bridas de caja.

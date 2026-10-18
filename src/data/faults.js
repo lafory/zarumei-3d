@@ -81,7 +81,7 @@ export const FAULTS = {
     lessons: ['Si la pila está bien y no hay impulsos, se mide la bobina: circuito abierto = bobina cortada.', 'Antes de tocar el circuito se quita la pila.']
   },
   sinFalla: {
-    id: 'sinFalla', name: 'Sin falla · desarme libre', short: 'Libre', calibers: ['auto', 'quartz'], free: true,
+    id: 'sinFalla', name: 'Sin falla · desarme libre', short: 'Libre', calibers: ['auto', 'quartz', 'tourbillon'], free: true,
     symptom: 'Práctica libre: desarma todo lo que quieras y vuelve a montarlo.',
     tg: { before: { rate: 2, amp: 288, be: 0.2, note: 'Reloj sano.' } },
     steps: [],
