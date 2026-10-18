@@ -37,6 +37,7 @@ for (const eng of ENGINES) {
         await p.keyboard.press('Digit1'); r.key1 = await p.evaluate(() => document.querySelector('.tool.sel')?.dataset.tool);
         await p.keyboard.press('Digit1');
         await p.mouse.move(c.x + 30, c.y + 10); await p.mouse.move(c.x, c.y, { steps: 4 }); await p.waitForTimeout(400); r.hover = await p.evaluate(() => __game.hovered);
+        await p.keyboard.press('KeyF'); await p.waitForFunction(() => !__game.busy); await p.waitForTimeout(300); { const cb = await p.evaluate(() => __game.screenOf({ part: 'caseback' })); await p.mouse.move(cb.x + 20, cb.y); await p.mouse.move(cb.x, cb.y, { steps: 3 }); await p.waitForTimeout(400); r.hoverPart = await p.evaluate(() => __game.hovered); r.flipKey = await p.evaluate(() => __game.state.flags.flipped); }
         await p.mouse.move(c.x, c.y); await p.mouse.down({ button: 'right' }); await p.mouse.move(c.x + 80, c.y + 40, { steps: 6 }); await p.mouse.up({ button: 'right' }); await p.waitForTimeout(300);
         await p.mouse.move(c.x, c.y); await p.mouse.wheel(0, -300); await p.waitForTimeout(300); await shot('2b-banco-raton-hover');
         await p.keyboard.press('KeyH'); r.hintKey = /💡/.test(await p.evaluate(() => document.querySelector('#msg').textContent));

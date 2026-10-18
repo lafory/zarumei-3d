@@ -87,7 +87,7 @@ function resize() {
   renderer.domElement.style.width = r.width + 'px'; renderer.domElement.style.height = r.height + 'px';
   camera.aspect = r.width / Math.max(1, r.height); camera.updateProjectionMatrix(); if (G) renderer.render(scene, camera);
 }
-new ResizeObserver(resize).observe(stage);
+let rzQ = 0; new ResizeObserver(() => { cancelAnimationFrame(rzQ); rzQ = requestAnimationFrame(resize); }).observe(stage);
 for (const ev of ['orientationchange', 'resize', 'fullscreenchange', 'webkitfullscreenchange']) window.addEventListener(ev, () => { setTimeout(() => { resize(); if (G) setView(view === 'loupe' && !loupeTarget ? workView() : view, true); }, 120); });
 document.addEventListener('fullscreenchange', () => resize()); document.addEventListener('webkitfullscreenchange', () => resize());
 renderer.domElement.addEventListener('contextmenu', (e) => e.preventDefault());
@@ -425,13 +425,15 @@ renderer.domElement.addEventListener('pointerdown', (e) => {
 let hovered = null, hoverT = 0; const hoverMats = new Map();
 function clearHover() { for (const [m, orig] of hoverMats) m.material = orig; hoverMats.clear(); hovered = null; renderer.domElement.style.cursor = ''; }
 function setHover(obj) {
-  if (obj === hovered) return; clearHover(); if (!obj) return; hovered = obj; renderer.domElement.style.cursor = 'pointer';
+  if (obj === hovered) return; clearHover(); if (obj === 'watch') return; if (!obj) return; hovered = obj; renderer.domElement.style.cursor = 'pointer';
   obj.traverse(o => { if (o.isMesh && !o.userData.isHit && o.material && o.material.emissive && !Array.isArray(o.material)) { const c = o.material.clone(); c.emissive = new THREE.Color(0x5a4210); c.emissiveIntensity = 1; hoverMats.set(o, o.material); o.material = c; } });
 }
 function hoverAt(x, y) {
   if (!G || !started || busy) return clearHover(); const h = pick(x, y);
   if (h.screw) return setHover(G.MV.screws[h.screw].obj); if (h.ghost) return setHover(G.MV.screws[h.ghost].ghost);
-  const id = h.chain && h.chain.length ? resolveTarget(h.chain) : null; const o = id && id !== 'watch' ? (G.parts[id] || (G.MV.sub && G.MV.sub[id])) : null;
+  const id = h.chain && h.chain.length ? resolveTarget(h.chain) : null;
+  if (id === 'watch') { if (hovered !== 'watch') { clearHover(); hovered = 'watch'; renderer.domElement.style.cursor = 'pointer'; } return; }
+  const o = id ? (G.parts[id] || (G.MV.sub && G.MV.sub[id])) : null;
   setHover(o && o !== G.mvObj ? o : null);
 }
 renderer.domElement.addEventListener('pointerleave', clearHover);
@@ -551,6 +553,6 @@ window.__game = {
     if (target.chip) { const c = document.querySelector(`.chip[data-chip="${target.chip}"]`); if (!c) return null; c.scrollIntoView({ inline: 'center' }); const r = c.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2, chip: true }; }
     const id = target.sub || target.part; const o = id === 'watch' ? G.root : (G.parts[id] || (G.MV.sub && G.MV.sub[id])); if (!o) return null; return screenOfObj(o, id === 'jewel' ? 0.1 : 0);
   },
-  pick: (x, y) => pick(x, y), workView, hoverAt, get hovered() { return !!hovered; }, get dpr() { return renderer.getPixelRatio(); }, fsSupported, toggleFullscreen, get glOK() { return !!renderer.getContext(); }
+  pick: (x, y) => pick(x, y), workView, hoverAt, get hovered() { return hovered === 'watch' ? 'watch' : hovered ? 'part' : null; }, get dpr() { return renderer.getPixelRatio(); }, fsSupported, toggleFullscreen, get glOK() { return !!renderer.getContext(); }
 };
 init().catch(err => { console.error(err); $('#loading').textContent = 'Error al cargar: ' + err.message; });

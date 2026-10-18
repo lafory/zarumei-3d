@@ -1,0 +1,5 @@
+{"eng":"webkit","name":"iphone13","errors":[],"webgl":true,"dpr":2,"layout":{"stage":[374,303],"side":false},"case1":{"n":27,"finished":true,"score":100},"secs":18,"ok":true}
+{"eng":"webkit","name":"ipadpro11-vertical","errors":[],"webgl":true,"dpr":1.9975999520952565,"layout":{"stage":[806,807],"side":false},"case1":{"n":27,"finished":true,"score":100},"secs":25,"ok":true}
+{"eng":"webkit","name":"ipadpro11-horizontal","errors":[],"webgl":true,"dpr":2,"layout":{"stage":[804,758],"side":true},"case1":{"n":27,"finished":true,"score":100},"secs":23,"ok":true}
+{"eng":"webkit","name":"desktop-1440x900","errors":[],"webgl":true,"dpr":1,"layout":{"stage":[978,824],"side":true},"key1":"timegrapher","hover":"watch","hoverPart":"part","flipKey":true,"hintKey":true,"escMenu":true,"fsSupported":true,"case1":{"n":26,"finished":true,"score":98},"secs":20,"ok":true}
+EXIT 0
