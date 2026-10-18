@@ -14,7 +14,7 @@ function canvas(w, h) { const c = document.createElement('canvas'); c.width = w;
 function tex(c, { srgb = true, flipY = true, repeat } = {}) {
   const t = new THREE.CanvasTexture(c);
   if (srgb) t.colorSpace = THREE.SRGBColorSpace;
-  t.flipY = flipY; t.anisotropy = 4;
+  t.flipY = flipY; t.anisotropy = 8;
   if (repeat) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(repeat, repeat); }
   t.needsUpdate = true; return t;
 }
@@ -34,7 +34,7 @@ function dateWindow(x, R, day, frame = '#b8862b') {
   x.fillText(String(day), R * 0.76, R * 0.005);
 }
 export function dialTexture(kind, images, day) {
-  const S = 1024, c = canvas(S), x = c.getContext('2d'), R = S / 2;
+  const S = 2048, c = canvas(S), x = c.getContext('2d'), R = S / 2;
   x.translate(R, R);
   if (kind === 'miami') {
     x.fillStyle = '#0b0b0b'; x.beginPath(); x.arc(0, 0, R, 0, Math.PI * 2); x.fill();
@@ -65,7 +65,7 @@ export function dialTexture(kind, images, day) {
 }
 // Disco de fecha (anillo con 1–31) para la pieza 3D
 export function dateDiscTexture() {
-  const S = 1024, c = canvas(S), x = c.getContext('2d'), R = S / 2; x.translate(R, R);
+  const S = 2048, c = canvas(S), x = c.getContext('2d'), R = S / 2; x.translate(R, R);
   x.fillStyle = '#fbfaf4'; x.beginPath(); x.arc(0, 0, R, 0, Math.PI * 2); x.fill();
   x.fillStyle = '#111'; x.font = `bold ${R * 0.09}px Helvetica`; x.textAlign = 'center'; x.textBaseline = 'middle';
   for (let d = 1; d <= 31; d++) { x.save(); x.rotate((d - 1) / 31 * Math.PI * 2 + Math.PI / 2); x.translate(0, -R * 0.9); x.rotate(-Math.PI / 2); x.fillText(String(d), 0, 0); x.restore(); }
@@ -77,7 +77,7 @@ export function batteryTexture() {
   return tex(c);
 }
 export function ceramicBezelTexture() {
-  const S = 1024, c = canvas(S), x = c.getContext('2d'), R = S / 2; x.translate(R, R);
+  const S = 2048, c = canvas(S), x = c.getContext('2d'), R = S / 2; x.translate(R, R);
   const g = x.createRadialGradient(0, 0, R * 0.6, 0, 0, R); g.addColorStop(0, '#13307a'); g.addColorStop(1, '#0b1d4e'); x.fillStyle = g; x.fillRect(-R, -R, S, S);
   x.fillStyle = '#e9eef7'; x.strokeStyle = '#e9eef7'; x.textAlign = 'center'; x.textBaseline = 'middle';
   for (let i = 1; i < 60; i++) {
@@ -91,7 +91,7 @@ export function ceramicBezelTexture() {
 }
 // BISEL: graduación de 60 min grabada (oro con grabado oscuro), triángulo a las 12
 export function bezelTexture() {
-  const S = 1024, c = canvas(S), x = c.getContext('2d'), R = S / 2;
+  const S = 2048, c = canvas(S), x = c.getContext('2d'), R = S / 2;
   x.translate(R, R);
   x.fillStyle = '#ffffff'; x.fillRect(-R, -R, S, S); // blanco = color del metal sin alterar
   x.fillStyle = '#3a2606'; x.strokeStyle = '#3a2606'; x.textAlign = 'center'; x.textBaseline = 'middle';
@@ -113,7 +113,7 @@ export function bezelTexture() {
 
 // FONDO ROSCADO: grabado circular
 export function casebackTexture(txt = 'ZARUMEI · AUTOMATIC · 28.800 A/h · WATER RESISTANT 100 M · ORO 18K · Nº 001 · ', mono = 'Z') {
-  const S = 1024, c = canvas(S), x = c.getContext('2d'), R = S / 2;
+  const S = 2048, c = canvas(S), x = c.getContext('2d'), R = S / 2;
   x.translate(R, R);
   x.fillStyle = '#ffffff'; x.fillRect(-R, -R, S, S);
   x.strokeStyle = '#6e4a10'; x.lineWidth = 5;

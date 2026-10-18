@@ -33,28 +33,41 @@ let SPEED = 1; const D = (ms) => ms * SPEED; // las pruebas pueden acelerar las 
 
 // ───────── renderer / escena ─────────
 const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true, powerPreference: 'high-performance' });
-// DPR: hasta 2 en móvil; en pantallas grandes se baja para no superar ~2,6 MP de render (rendimiento en iPad/escritorio 4K)
-function applyDPR(w, h) { const dpr = window.devicePixelRatio || 1; const budget = 2.6e6; const cap = Math.min(2, Math.max(1, Math.sqrt(budget / Math.max(1, w * h)))); renderer.setPixelRatio(Math.min(dpr, cap)); }
+let hq = false;
+try { hq = localStorage.getItem('zarumei.hq') === '1'; } catch (e) { /* privado */ }
+// DPR: el modo normal cabe en ~2,6 MP. Vista 8K usa hasta 3× la pantalla (no un framebuffer de 7680²: eso tumba el teléfono).
+function applyDPR(w, h) {
+  const dpr = window.devicePixelRatio || 1;
+  if (hq) { renderer.setPixelRatio(Math.min(3, Math.max(1, dpr))); return; }
+  const budget = 2.6e6;
+  const cap = Math.min(2, Math.max(1, Math.sqrt(budget / Math.max(1, w * h))));
+  renderer.setPixelRatio(Math.min(dpr, cap));
+}
 applyDPR(window.innerWidth, window.innerHeight);
-renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
+renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.08;
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 stage.prepend(renderer.domElement);
-const scene = new THREE.Scene(); scene.background = new THREE.Color(0x080706); scene.fog = new THREE.Fog(0x080706, 260, 560);
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0x080706);
+const baseFog = new THREE.Fog(0x080706, 380, 820);
+scene.fog = baseFog;
 scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
 const camera = new THREE.PerspectiveCamera(32, 1, 1, 1500);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true; controls.enablePan = true; controls.screenSpacePanning = true; controls.panSpeed = 0.6; // ratón: botón derecho = desplazar; táctil: dos dedos controls.maxPolarAngle = 1.3; controls.minPolarAngle = 0.02; controls.rotateSpeed = 0.7; controls.zoomSpeed = 0.9;
-scene.add(new THREE.HemisphereLight(0xfff1dc, 0x140d08, 0.4));
+scene.add(new THREE.HemisphereLight(0xfff1dc, 0x140d08, 0.42));
 // foco de vitrina: cono cálido y suave sobre el banco (sin sombras: barato en móvil)
-const spot = new THREE.SpotLight(0xffe2b0, 1.3, 0, 0.62, 0.85, 0); spot.position.set(0, 230, 70); spot.target.position.set(0, 0, 10); scene.add(spot, spot.target);
-const sun = new THREE.DirectionalLight(0xfff4e6, 1.25); sun.position.set(60, 140, 80); sun.castShadow = true; sun.shadow.mapSize.set(1024, 1024);
-Object.assign(sun.shadow.camera, { left: -150, right: 150, top: 150, bottom: -150, near: 10, far: 420 }); sun.shadow.bias = -0.0005; scene.add(sun);
-const lamp = new THREE.PointLight(0xffd59a, 1.2, 0, 0); lamp.position.set(-40, 90, 40); scene.add(lamp);
+const spot = new THREE.SpotLight(0xffe2b0, 1.45, 0, 0.55, 0.8, 0); spot.position.set(0, 230, 70); spot.target.position.set(0, 0, 10); scene.add(spot, spot.target);
+const sun = new THREE.DirectionalLight(0xfff4e6, 1.35); sun.position.set(60, 140, 80); sun.castShadow = true; sun.shadow.mapSize.set(1024, 1024);
+Object.assign(sun.shadow.camera, { left: -150, right: 150, top: 150, bottom: -150, near: 10, far: 420 }); sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.02; scene.add(sun);
+const lamp = new THREE.PointLight(0xffd59a, 1.35, 0, 0); lamp.position.set(-40, 90, 40); scene.add(lamp);
+const rim = new THREE.DirectionalLight(0xc9d7ff, 0.55); rim.position.set(-90, 50, -70); scene.add(rim);
 
 const HOLDER_POS = new THREE.Vector3(-64, 0, 14), INSPECT_POS = new THREE.Vector3(-36, 0.6, 60), TG_POS = new THREE.Vector3(100, 0, -72), TRAY_POS = new THREE.Vector3(34, 0, -12);
 let images, M, T, G = null; // G = partida actual
 const toolGroup = new THREE.Group(); scene.add(toolGroup);
 let floatingTool = null, sel = null, size = 1.0, view = 'front', busy = false, started = false, t0 = 0, mode = 'story', storyCase = null;
+let seatMode = true, heldId = null, seatRing = null;
+try { if (localStorage.getItem('zarumei.seat') === '0') seatMode = false; } catch (e) { /* privado */ }
 
 // ───────── cámara ─────────
 function partWorldCenter(obj) { const b = new THREE.Box3().setFromObject(obj); return { c: b.getCenter(new THREE.Vector3()), r: b.getSize(new THREE.Vector3()).length() / 2 }; }
@@ -75,7 +88,7 @@ async function setView(v, instant = false) {
   const toPos = cfg.target.clone().add(cfg.dir.clone().normalize().multiplyScalar(dist));
   controls.minDistance = dist * 0.3; controls.maxDistance = dist * 2.4;
   $('#viewtag').textContent = 'Vista: ' + VIEW_NAMES[v]; stage.classList.toggle('loupe', v === 'loupe');
-  document.querySelectorAll('.vbtn').forEach(b => b.classList.toggle('on', b.dataset.view === v || (b.dataset.view === 'watch' && (v === 'front' || v === 'back'))));
+  document.querySelectorAll('.vbtn[data-view]').forEach(b => b.classList.toggle('on', b.dataset.view === v || (b.dataset.view === 'watch' && (v === 'front' || v === 'back'))));
   updateFlipBtn();
   if (instant || SPEED < 0.2) { camera.position.copy(toPos); controls.target.copy(cfg.target); controls.update(); positionFloatingTool(); return; }
   const p0 = camera.position.clone(), t0v = controls.target.clone(); controls.enabled = false;
@@ -107,6 +120,7 @@ function mergeStatic(group) {
   drop.forEach(m => group.remove(m));
 }
 function disposeWorld() {
+  hideSeat();
   if (!G) return;
   scene.remove(G.root); scene.remove(G.mvObj); scene.remove(T.tg); scene.remove(T.holder); scene.remove(T.tray);
   G.extra.forEach(o => scene.remove(o));
@@ -204,6 +218,76 @@ function refreshGhosts() {
   if (!G) return;
   for (const [sid, s] of Object.entries(G.MV.screws)) { const sc = G.E.screws[sid]; s.ghost.visible = G.E.st[sc.part] === 'in' && sc.state !== 'in'; }
 }
+function hideSeat() {
+  heldId = null;
+  if (!seatRing) return;
+  if (seatRing.parent) seatRing.parent.remove(seatRing);
+  seatRing.traverse(o => { if (o.geometry && o.material !== M.hit) { o.geometry.dispose(); if (o.material && o.material.dispose) o.material.dispose(); } });
+  seatRing = null;
+}
+function showSeat(id) {
+  hideSeat();
+  const h = G.home[id], obj = G.parts[id];
+  if (!h || !obj) return;
+  const b = localBox(obj), sz = b.getSize(new THREE.Vector3());
+  const horiz = (isFinite(sz.x) && isFinite(sz.z)) ? Math.max(sz.x, sz.z) : 6;
+  const rad = Math.max(2.2, Math.min(11, horiz * 0.38));
+  const g = new THREE.Group();
+  g.userData.seat = id;
+  g.userData.seatPos = h.pos.clone();
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(rad, Math.max(0.32, rad * 0.11), 14, 56), new THREE.MeshBasicMaterial({ color: 0xffe7a0, toneMapped: false }));
+  ring.rotation.x = Math.PI / 2; ring.userData.seat = id; g.add(ring);
+  const dot = new THREE.Mesh(new THREE.SphereGeometry(Math.max(0.35, rad * 0.08), 12, 8), new THREE.MeshBasicMaterial({ color: 0xfff6d0, toneMapped: false }));
+  dot.userData.seat = id; g.add(dot);
+  const disc = new THREE.Mesh(new THREE.CylinderGeometry(rad * 1.2, rad * 1.2, 1.4, 24), M.hit);
+  disc.userData.seat = id; disc.userData.isHit = true; g.add(disc);
+  h.parent.add(g); seatRing = g; heldId = id; faceSeat();
+}
+function faceSeat() {
+  if (!seatRing || !seatRing.parent) return;
+  const parent = seatRing.parent;
+  parent.updateWorldMatrix(true, false);
+  const camLocal = camera.position.clone().applyMatrix4(new THREE.Matrix4().copy(parent.matrixWorld).invert());
+  const dir = camLocal.sub(seatRing.userData.seatPos).normalize();
+  seatRing.position.copy(seatRing.userData.seatPos).add(dir.clone().multiplyScalar(1.8));
+  seatRing.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
+}
+function applyQuality() {
+  renderer.toneMappingExposure = hq ? 1.16 : 1.08;
+  scene.fog = hq ? null : baseFog;
+  spot.intensity = hq ? 1.7 : 1.45; rim.intensity = hq ? 0.75 : 0.55;
+  const sz = hq ? 2048 : 1024;
+  if (sun.shadow.mapSize.x !== sz) {
+    sun.shadow.mapSize.set(sz, sz);
+    if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; }
+  }
+  const aniso = hq ? renderer.capabilities.getMaxAnisotropy() : 8;
+  scene.traverse(o => {
+    if (!o.isMesh) return;
+    const mats = Array.isArray(o.material) ? o.material : [o.material];
+    for (const m of mats) {
+      if (!m) continue;
+      if (m.metalness > 0.35) m.envMapIntensity = hq ? 1.45 : Math.max(m.envMapIntensity || 1, 1.12);
+      if (m.map && m.map.anisotropy !== aniso) m.map.anisotropy = aniso;
+    }
+  });
+  const b = $('#hqBtn'); if (b) b.classList.toggle('on', hq);
+  resize();
+}
+function setHQ(on, talk) {
+  hq = !!on;
+  try { localStorage.setItem('zarumei.hq', hq ? '1' : '0'); } catch (e) { /* privado */ }
+  applyQuality();
+  if (talk) say(hq ? 'Vista <b>8K</b>: más píxeles, sombra fina y el metal sin niebla. En el teléfono usa la resolución real de la pantalla (hasta 3×), no un lienzo de 7680.' : 'Vista normal: más ligera, para que el taller no se trabe.');
+}
+function setSeatMode(on, talk) {
+  seatMode = !!on;
+  try { localStorage.setItem('zarumei.seat', seatMode ? '1' : '0'); } catch (e) { /* privado */ }
+  const b = $('#seatBtn'); if (b) { b.classList.toggle('on', seatMode); b.textContent = seatMode ? 'SITIO' : 'AUTO'; }
+  if (!seatMode) hideSeat();
+  renderTray();
+  if (talk) say(seatMode ? 'Montaje <b>buscar sitio</b>: toca la pieza y luego el anillo dorado donde va.' : 'Montaje <b>automático</b>: tocar la pieza la encaja sola.');
+}
 async function flipWatch(to) {
   const root = G.root, r0 = root.rotation.z, r1 = to ? Math.PI : 0, y0 = root.position.y, y1 = to ? G.CS.dims.yBack : G.CS.dims.yFront;
   const cam = setView(G.E.flags.mvLoc === 'holder' ? view : (to ? 'back' : 'front'));
@@ -270,7 +354,9 @@ function selectTool(id, talk = false) {
   if (!started || busy) return; sel = id;
   document.querySelectorAll('.tool').forEach(b => { b.classList.toggle('sel', b.dataset.tool === sel); b.classList.remove('hint'); });
   sizesEl.hidden = sel !== 'screwdriver'; showFloatingTool();
+  if (heldId && G) { const p = G.E.P[heldId]; const need = (p && (p.placeTool || p.tool)); if (sel !== need) hideSeat(); }
   if (sel && talk) { const t = TOOLS.find(x => x.id === sel); say(`<b>${t.name}:</b> ${t.desc}<br><span class="small">Ahora toca la pieza${sel === 'screwdriver' ? ' o el tornillo' : ''} donde la quieres usar.</span>`); }
+  renderTray();
 }
 function showFloatingTool() { toolGroup.clear(); floatingTool = null; if (!sel || !T || !T.models[sel]) return; floatingTool = T.models[sel]; toolGroup.add(floatingTool); if (sel === 'screwdriver') T.models.screwdriver.userData.setSize(size); positionFloatingTool(); }
 function positionFloatingTool() {
@@ -287,7 +373,7 @@ function renderTray() {
     if (id === 'movement' || E.st[id] !== 'out') continue;
     const c = document.createElement('button'); c.className = 'chip'; c.dataset.chip = id;
     const nm = E.name(id).replace(/^(el|la|las|los) /, ''); const pend = E.P[id].oil && E.P[id].oil.when === 'before' && !E.oiled.has(id);
-    c.innerHTML = `${nm}${E.replaced.has(id) ? ' <i>nueva</i>' : ''}${pend ? ' 🛢?' : ''}`; c.onclick = () => chipTap(id); el.appendChild(c);
+    c.innerHTML = `${nm}${E.replaced.has(id) ? ' <i>nueva</i>' : ''}${pend ? ' 🛢?' : ''}`; c.classList.toggle('held', heldId === id); c.onclick = () => chipTap(id); el.appendChild(c);
   }
   const groups = {};
   for (const sc of Object.values(E.screws)) if (sc.state !== 'in') { (groups[sc.part] = groups[sc.part] || []).push(sc); }
@@ -338,6 +424,7 @@ function resolveTarget(chain) {
 }
 async function handleTap(hit) {
   if (!started || busy || !G) return;
+  if (hit.seat && heldId && hit.seat === heldId) { const pid = heldId; hideSeat(); await act(G.E.tapChip(pid, sel, size)); return; }
   if (hit.screw || hit.ghost) {
     if (sel !== 'screwdriver') { await act(G.E.screwTurn(hit.screw || hit.ghost, sel, size, 0)); return; }
     await turnScrew(hit.screw || hit.ghost, 0.34); return;
@@ -349,10 +436,25 @@ async function handleTap(hit) {
   if (id === 'timegrapher3d') { if (sel === 'timegrapher') await act(G.E.tapPart('watch', sel, size)); else say('El timegrapher LA FORY: elige la herramienta <b>Timegrapher</b> y toca el reloj.'); return; }
   if (id === 'holderBench') { say('El soporte de movimiento. Usa la herramienta <b>Soporte</b> sobre el movimiento para pasarlo aquí.'); return; }
   const E = G.E;
-  if (E.P[id] && E.st[id] === 'out') await act(E.tapChip(id, sel, size));
-  else await act(E.tapPart(id, sel, size));
+  if (E.P[id] && E.st[id] === 'out') { await chipTap(id); return; }
+  if (heldId && seatMode) { await act(E.missSeat(heldId)); return; }
+  await act(E.tapPart(id, sel, size));
 }
-async function chipTap(id) { if (!started || busy) return; await act(G.E.tapChip(id, sel, size)); }
+async function chipTap(id, force) {
+  if (!started || busy || !G) return;
+  if (!force && seatMode) {
+    const pre = G.E.placeCheck(id, sel, size);
+    if (pre && pre.seek) {
+      showSeat(id); renderTray();
+      say(`Tienes <b>${G.E.name(id)}</b>. Busca el <b>anillo dorado</b> y tócalo: ahí se monta.`);
+      const v = workView(); if (view === 'tray' || view === 'mat' || view === 'tg' || view === 'loupe') setView(v);
+      return;
+    }
+    if (pre && pre.seek !== false) { await act(pre); return; }
+  }
+  if (heldId) hideSeat();
+  await act(G.E.tapChip(id, sel, size));
+}
 async function turnScrew(sid, amount) { const r = G.E.screwTurn(sid, sel, size, amount); await act(r, { keepView: true }); return r; }
 // ── teclado (escritorio / iPad con teclado) ──
 window.addEventListener('keydown', (e) => {
@@ -383,11 +485,13 @@ document.addEventListener('fullscreenchange', updateFsBtn); document.addEventLis
 if ($('#a2hsClose')) $('#a2hsClose').onclick = () => ($('#a2hs').hidden = true);
 $('#actionBtn').onclick = async () => { if (!busy && G) await act(G.E.button('wind')); };
 $('#flipBtn').onclick = async () => { if (busy || !G) return; await act(G.E.button(view === 'holder' ? 'flipHolder' : 'flipWatch'), { keepView: true }); };
-document.querySelectorAll('.vbtn').forEach(b => b.onclick = () => { if (busy || !G) return; const v = b.dataset.view; setView(v === 'watch' ? (G.E.flags.flipped ? 'back' : 'front') : v); });
+document.querySelectorAll('.vbtn[data-view]').forEach(b => b.onclick = () => { if (busy || !G) return; const v = b.dataset.view; setView(v === 'watch' ? (G.E.flags.flipped ? 'back' : 'front') : v); });
+$('#seatBtn').onclick = () => { if (busy) return; setSeatMode(!seatMode, true); };
+$('#hqBtn').onclick = () => { if (busy) return; setHQ(!hq, true); };
 $('#hintBtn').onclick = () => {
   if (!started || busy || !G) return; const h = G.E.hint(); say(h.msg); updateBar(); const a = h.action; if (!a) return;
   if (a.tool) { document.querySelectorAll('.tool').forEach(b => b.classList.toggle('hint', b.dataset.tool === a.tool)); if (a.size) document.querySelectorAll('.size').forEach(b => b.classList.toggle('hint', +b.dataset.size === a.size)); }
-  if (a.target && a.target.chip) { const c = document.querySelector(`.chip[data-chip="${a.target.chip}"]`); if (c) c.classList.add('hint'); }
+  if (a.target && a.target.chip) { const c = document.querySelector(`.chip[data-chip="${a.target.chip}"]`); if (c) c.classList.add('hint'); if (seatMode && a.tool !== 'oiler' && a.tool !== 'screwdriver') say(h.msg + ' Luego toca el <b>anillo dorado</b> donde va.'); }
   const obj = a.target && (a.target.screw ? G.MV.screws[a.target.screw].obj : G.parts[a.target.part || a.target.sub]);
   if (obj && a.target.part !== 'movement') highlight(obj);
 };
@@ -419,6 +523,7 @@ function pick(cx, cy) {
   ndc.set(((cx - r.left) / r.width) * 2 - 1, -((cy - r.top) / r.height) * 2 + 1); ray.setFromCamera(ndc, camera);
   const hits = ray.intersectObjects(scene.children.filter(o => o !== toolGroup), true).filter(h => visibleChain(h.object));
   const firstD = hits.length ? hits[0].distance : 0;
+  for (const h of hits) { if (h.distance - firstD > 2.5) break; for (let n = h.object; n; n = n.parent) if (n.userData.seat) return { seat: n.userData.seat, chain: [] }; }
   for (const h of hits.slice(0, 8)) { if (h.distance - firstD > 8) break; for (let n = h.object; n; n = n.parent) { if (n.userData.screwId) return { screw: n.userData.screwId }; if (n.userData.screwGhost) return { ghost: n.userData.screwGhost }; } }
   for (const h of hits) { const chain = []; for (let n = h.object; n; n = n.parent) if (n.userData.partId) chain.push(n.userData.partId); if (chain.length) return { chain }; if (!h.object.userData.isHit) return { chain: [] }; }
   return { chain: [] };
@@ -442,6 +547,7 @@ function setHover(obj) {
 function hoverAt(x, y) {
   if (!G || !started || busy) return clearHover(); const h = pick(x, y);
   if (h.screw) return setHover(G.MV.screws[h.screw].obj); if (h.ghost) return setHover(G.MV.screws[h.ghost].ghost);
+  if (h.seat && seatRing) return setHover(seatRing);
   const id = h.chain && h.chain.length ? resolveTarget(h.chain) : null;
   if (id === 'watch') { if (hovered !== 'watch') { clearHover(); hovered = 'watch'; renderer.domElement.style.cursor = 'pointer'; } return; }
   const o = id ? (G.parts[id] || (G.MV.sub && G.MV.sub[id])) : null;
@@ -507,7 +613,8 @@ async function begin(watchId, faultId, story) {
   sel = null; selectTool(null); started = true; busy = false; t0 = Date.now(); $('#timer')._t0 = Date.now();
   $('#intro').hidden = true; $('#endOverlay').hidden = true; resize(); await setView('front', true); refresh();
   const W = WATCHES[watchId], F = FAULTS[faultId];
-  say(story ? `<b>${story.title}</b> — ${W.name}. ${story.intro}` : `<b>Modo libre</b> — ${W.name} · ${F.name}. ${F.free ? 'Desarma lo que quieras y vuelve a montarlo todo.' : 'Diagnostica, repara, monta y prueba.'}`);
+  const seatNote = seatMode ? ' Al montar, toca la pieza y luego el anillo dorado.' : '';
+  say(story ? `<b>${story.title}</b> — ${W.name}. ${story.intro}${seatNote}` : `<b>Modo libre</b> — ${W.name} · ${F.name}. ${F.free ? 'Desarma lo que quieras y vuelve a montarlo todo.' : 'Diagnostica, repara, monta y prueba.'}${seatNote}`);
 }
 function startStory(id) { mode = 'story'; storyCase = STORY.find(c => c.id === id); return begin(storyCase.watch, storyCase.fault, storyCase); }
 function startPlay(w, f) { mode = 'play'; storyCase = null; return begin(w, f, null); }
@@ -523,7 +630,7 @@ async function init() {
   const insp = new THREE.Mesh(new THREE.CylinderGeometry(9, 9, 0.5, 40), new THREE.MeshStandardMaterial({ map: velvetTexture('#0e2a21'), roughness: 1 })); insp.position.copy(INSPECT_POS).add(new THREE.Vector3(0, -0.3, 0)); insp.receiveShadow = true; scene.add(insp);
   $('#introLogo').src = images.logo.src; $('#bqLogo').src = images.logo.src; $('#headLogo').src = images.badge.src; $('#toolheadLogo').src = images.logo.src;
   document.querySelectorAll('.tool .stamp').forEach(i => (i.src = images.badge.src));
-  buildWorld('miami', 'aceiteSeco', null); setSize(1.0);
+  buildWorld('miami', 'aceiteSeco', null); setSize(1.0); setSeatMode(seatMode, false); setHQ(hq, false);
   renderMenu(); resize(); await setView('front', true);
   $('#loading').hidden = true; requestAnimationFrame(loop);
 }
@@ -549,6 +656,7 @@ function loop(now) {
     if (run && quartz && P.stepRotor) P.stepRotor.rotation.y = d.getSeconds() * Math.PI;
   }
   if (floatingTool && floatingTool.userData.base && !tweens.length && !hold) { floatingTool.rotation.y = t * 0.6; floatingTool.position.y = floatingTool.userData.base.y + Math.sin(t * 2) * 0.4; }
+  if (seatRing) { faceSeat(); seatRing.scale.setScalar(1 + Math.sin(t * 5) * 0.05); }
   controls.update(); renderer.render(scene, camera);
   frames++; if (now - fpsT > 1000) { fps = frames * 1000 / (now - fpsT); frames = 0; fpsT = now; }
   requestAnimationFrame(loop);
@@ -568,14 +676,15 @@ window.__game = {
     if (a.button) { if (a.button === 'wind') $('#actionBtn').click(); else { await setView(a.button === 'flipHolder' ? 'holder' : workView()); $('#flipBtn').click(); } return; }
     if (a.tool !== sel) selectTool(a.tool); if (a.size) setSize(a.size);
     if (a.target.screw) { let r; do { r = await turnScrew(a.target.screw, 0.34); } while (r.kind === 'turn'); return; }
-    if (a.target.chip) return chipTap(a.target.chip);
+    if (a.target.chip) return chipTap(a.target.chip, true);
     const id = a.target.sub || a.target.part; return handleTap(id === 'watch' ? { chain: ['watch'] } : { chain: a.target.sub ? [a.target.sub, a.target.part] : [id] });
   },
   screenOf(target) {
+    if (target.seat) { if (!seatRing) return null; return screenOfObj(seatRing, 0); }
     if (target.screw) { const s = G.MV.screws[target.screw]; return screenOfObj(G.E.screws[target.screw].state === 'in' ? s.obj : s.ghost); }
     if (target.chip) { const c = document.querySelector(`.chip[data-chip="${target.chip}"]`); if (!c) return null; c.scrollIntoView({ inline: 'center' }); const r = c.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2, chip: true }; }
     const id = target.sub || target.part; const o = id === 'watch' ? G.root : (G.parts[id] || (G.MV.sub && G.MV.sub[id])); if (!o) return null; return screenOfObj(o, id === 'jewel' ? 0.1 : 0);
   },
-  pick: (x, y) => pick(x, y), workView, hoverAt, get hovered() { return hovered === 'watch' ? 'watch' : hovered ? 'part' : null; }, get dpr() { return renderer.getPixelRatio(); }, fsSupported, toggleFullscreen, get glOK() { return !!renderer.getContext(); }
+  pick: (x, y) => pick(x, y), workView, hoverAt, get hovered() { return hovered === 'watch' ? 'watch' : hovered ? 'part' : null; }, get dpr() { return renderer.getPixelRatio(); }, get hq() { return hq; }, get seat() { return seatMode; }, setHQ, setSeat: setSeatMode, fsSupported, toggleFullscreen, get glOK() { return !!renderer.getContext(); }
 };
 init().catch(err => { console.error(err); $('#loading').textContent = 'Error al cargar: ' + err.message; });

@@ -44,7 +44,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:8px
 #progress i{display:block;height:100%;width:0;background:var(--foil);background-size:200% auto;animation:shimmer 3s linear infinite;transition:width .6s cubic-bezier(.2,.8,.2,1)}
 #stage{position:relative;flex:1 1 auto;min-height:200px;border-radius:6px;overflow:hidden;margin-top:6px;touch-action:none;box-shadow:0 0 0 1px var(--hair),0 0 0 4px var(--onyx),0 0 0 5px rgba(217,180,94,.18),0 18px 40px rgba(0,0,0,.6)}
 #stage canvas{display:block;touch-action:none}
-#stage::before{content:'';position:absolute;inset:0;pointer-events:none;z-index:1;background:radial-gradient(120% 90% at 50% 40%,transparent 55%,rgba(0,0,0,.55))}
+#stage::before{content:'';position:absolute;inset:0;pointer-events:none;z-index:1;background:radial-gradient(120% 90% at 50% 40%,transparent 62%,rgba(0,0,0,.32))}
 .viewtag{position:absolute;top:7px;left:8px;font-family:var(--caps);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);background:rgba(10,9,8,.6);padding:4px 9px;border:1px solid var(--hair);border-radius:2px;z-index:2;pointer-events:none}
 #flipBtn{position:absolute;top:5px;right:5px;z-index:2;font-size:9.5px;padding:7px 9px;letter-spacing:.14em}
 #label3d{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);background:rgba(10,9,8,.78);color:var(--gold-hi);padding:6px 12px;border:1px solid var(--hair);border-radius:2px;font-family:var(--serif);font-size:15px;z-index:2;white-space:nowrap;animation:rise .45s cubic-bezier(.2,.8,.2,1)}
@@ -70,13 +70,14 @@ header{display:flex;align-items:center;justify-content:space-between;padding:8px
 #bottom{display:flex;gap:6px;align-items:center;padding-bottom:6px}
 #tray{flex:1;display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;min-height:34px;align-items:center}
 .chip{flex:none;background:var(--grain),linear-gradient(180deg,#123526,#0a1d14);border:1px solid var(--hair);border-radius:2px;padding:6px 9px;white-space:nowrap;color:var(--ink);font-size:11px;cursor:pointer;font-family:var(--sans)}
-.chip.screw{background:linear-gradient(180deg,#1b1a20,#0d0d11);border-color:rgba(170,180,200,.45)}.chip.armed{border-color:var(--gold);box-shadow:0 0 10px rgba(217,180,94,.55)}
+.chip.screw{background:linear-gradient(180deg,#1b1a20,#0d0d11);border-color:rgba(170,180,200,.45)}.chip.armed,.chip.held{border-color:var(--gold);box-shadow:0 0 10px rgba(217,180,94,.55)}
 .chip i{color:var(--bad);font-style:normal;font-size:10px}
 #sizes{position:absolute;left:6px;bottom:26px;z-index:3;display:flex;gap:3px;background:rgba(10,9,8,.78);border:1px solid var(--hair);padding:4px;border-radius:3px}
 #sizes::before{content:'Punta';font-family:var(--caps);font-size:9px;letter-spacing:.14em;color:var(--gold);align-self:center;padding:0 4px}
 .size{background:#15130f;color:var(--ink);border:1px solid rgba(217,180,94,.3);border-radius:2px;font-size:12px;padding:5px 7px;cursor:pointer;font-family:var(--sans)}.size.on{background:var(--foil);color:#1c1406;border-color:var(--gold);font-weight:600}
 #views{position:absolute;top:32px;left:7px;z-index:2;display:flex;flex-direction:column;gap:4px}
 .vbtn{background:rgba(10,9,8,.6);color:var(--ink);border:1px solid var(--hair);border-radius:2px;font-size:15px;padding:4px 6px;line-height:1;cursor:pointer;filter:grayscale(.3)}.vbtn.on{border-color:var(--gold);box-shadow:0 0 8px rgba(217,180,94,.45);filter:none}
+.vbtn.mode{font-family:var(--caps);font-size:8px;letter-spacing:.06em;padding:6px 4px;min-width:28px}
 #stage.loupe::after{content:'';position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at 50% 50%,transparent 0,transparent 41%,rgba(217,180,94,.55) 41.6%,rgba(10,9,8,.95) 43%);z-index:1}
 /* botones de lujo: marco de oro de 1 px, interior ónix, destello */
 .lux,button.btn{position:relative;overflow:hidden;font-family:var(--caps);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold-hi);background:linear-gradient(180deg,#191613,#0b0a09) padding-box,var(--foil) border-box;border:1px solid transparent;border-radius:2px;padding:10px 14px;cursor:pointer;transition:transform .15s,box-shadow .3s}
@@ -214,7 +215,7 @@ button:disabled{opacity:.45}
   <div id="stage">
     <span class="viewtag" id="viewtag">Vista: esfera</span>
     <button class="lux" id="flipBtn">↻ Voltear</button>
-    <div id="views"><button class="vbtn" data-view="watch" title="Reloj">⌚</button><button class="vbtn" data-view="holder" title="Soporte">🛠</button><button class="vbtn" data-view="tray" title="Bandeja">🗃</button><button class="vbtn" data-view="mat" title="Alfombrilla">🔍</button></div>
+    <div id="views"><button class="vbtn" data-view="watch" title="Reloj">⌚</button><button class="vbtn" data-view="holder" title="Soporte">🛠</button><button class="vbtn" data-view="tray" title="Bandeja">🗃</button><button class="vbtn" data-view="mat" title="Alfombrilla">🔍</button><button class="vbtn mode on" id="seatBtn" title="Montaje: buscar el sitio">SITIO</button><button class="vbtn mode" id="hqBtn" title="Vista nítida">8K</button></div>
     <div id="sizes" hidden></div>
     <div id="label3d" hidden></div>
     <span class="gesture">girar: 1 dedo · zoom: 2 · tornillo: mantener</span>
@@ -236,7 +237,7 @@ button:disabled{opacity:.45}
     <h1 class="title foil">ZARUMEI</h1>
     <div class="subtitle">Atelier de relojería 3D</div>
     <hr class="goldrule">
-    <p class="small" style="text-align:center">Elige la herramienta y toca la pieza. Los tornillos salen uno a uno: elige la punta correcta y mantén pulsado el tornillo.</p>
+    <p class="small" style="text-align:center">Elige la herramienta y toca la pieza. Para volver a montar, toca la pieza y luego el anillo dorado en su sitio (o pasa a AUTO). Los tornillos salen uno a uno.</p>
     <div class="tabs"><button class="tab on" data-tab="story">Historia</button><button class="tab" data-tab="play">Modo libre</button></div>
     <div id="storyPane"><div id="caseList"></div></div>
     <div id="playPane" hidden>
@@ -276,7 +277,7 @@ button:disabled{opacity:.45}
   <div id="bqDetail" hidden><button class="lux" id="bqBack">← Volver</button><div id="bqStage"></div><div id="bqInfo"></div></div>
 </div>
 
-<script src="game.js?v=astral2"></script>
+<script src="game.js?v=seat8k"></script>
 <script>
 setInterval(function(){var g=window.__game;if(!g||!g.started)return;var el=document.getElementById('timer');if(!el._t0)el._t0=Date.now();if(document.getElementById('endOverlay').hidden){var e=Math.floor((Date.now()-el._t0)/1000);el.textContent=Math.floor(e/60)+':'+String(e%60).padStart(2,'0');}},500);
 document.getElementById('menuTop').onclick=function(){document.getElementById('intro').hidden=false;};

@@ -229,6 +229,27 @@ export function createEngine({ watchId, faultId, story = null }) {
     if (tool !== placeTool(id)) return bad(`Para colocar ${name(id)} se usa <b>${toolName(placeTool(id)).toLowerCase()}</b>.`);
     return installFx(id);
   }
+  // Misma puerta que tapChip, pero sin montar: el jugador tiene que acertar el sitio.
+  function placeCheck(id, tool) {
+    if (!P[id] || st[id] !== 'out') return { seek: false };
+    if (!tool) return R('info', `Elige la herramienta para colocar ${name(id)}.`);
+    const s = curStep();
+    if (s && !s.removed && s.part === id && (s.on === id || SUB[s.on])) {
+      if (tool === s.tool && stepReady(s)) return { seek: false };
+    }
+    if (tool === 'loupe' || tool === 'screwdriver' || tool === 'dialProtector') return { seek: false };
+    if (tool === 'oiler' && P[id].oil && P[id].oil.when === 'before') return { seek: false };
+    if (['timegrapher', 'compass', 'meter', 'blower', 'demag'].includes(tool)) return { seek: false };
+    const c = canInstall(id);
+    if (c.info) return R('info', c.info);
+    if (c.err) return bad(c.err, 5, c.k);
+    if (tool !== placeTool(id)) return bad(`Para colocar ${name(id)} se usa <b>${toolName(placeTool(id)).toLowerCase()}</b>.`);
+    return { seek: true };
+  }
+  function missSeat(id) {
+    penal(2, 'wrongOrder');
+    return R('bad', `Ahí no va. El anillo dorado marca el sitio de <b>${name(id)}</b>.`);
+  }
   // ── tornillos: contacto + giro ──
   function screwTurn(sid, tool, size, amount) {
     const sc = screws[sid]; if (!sc) return R('info', '');
@@ -385,7 +406,7 @@ export function createEngine({ watchId, faultId, story = null }) {
   return {
     W, C, F, P, st, screws, flags, stats, story, quartz,
     get score() { return score; }, get finished() { return finished; }, get armed() { return armed; }, get fstep() { return fstep; },
-    name, toolName, tapPart, tapChip, screwTurn, button, suggest, describe, hint, goal, progress, tgRead, running, amplitude, missingList, allIn, oilPending, replaced, removedOnce,
+    name, toolName, tapPart, tapChip, placeCheck, missSeat, screwTurn, button, suggest, describe, hint, goal, progress, tgRead, running, amplitude, missingList, allIn, oilPending, replaced, removedOnce,
     screwsOf, access, oiled, history
   };
 }
