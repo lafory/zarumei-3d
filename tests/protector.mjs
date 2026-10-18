@@ -22,7 +22,7 @@ const until = (pred) => p.evaluate(async (pred) => { const g = __game; const f =
   for (let i = 0; i < 500; i++) { if (g.state.finished) return 'finished'; const a = g.suggest(); if (!a) return 'none'; if (f(a, g.state)) return 'stop';
     const pr = g.do(a); await new Promise(res => { const iv = setInterval(() => { if (!document.querySelector('#tgPanel').hidden && !document.querySelector('#tgClose').disabled) document.querySelector('#tgClose').click(); }, 40); pr.then(() => { const w = () => (g.busy ? setTimeout(w, 25) : (clearInterval(iv), res())); w(); }); }); }
   return 'steps'; }, pred);
-const tapObj = async (target) => { await p.evaluate(() => __game.setView(__game.workView())); await idle(); const pt = await p.evaluate((t) => __game.screenOf(t), target); const hit = await p.evaluate(({ x, y }) => __game.pick(x, y), pt); await p.touchscreen.tap(pt.x, pt.y); await p.waitForTimeout(120); await idle(); return hit; };
+const tapObj = async (target) => { await p.evaluate(() => __game.setView(__game.workView())); await idle(); await p.waitForTimeout(400); const pt = await p.evaluate((t) => __game.screenOf(t), target); const hit = await p.evaluate(({ x, y }) => __game.pick(x, y), pt); await p.touchscreen.tap(pt.x, pt.y); await p.waitForTimeout(120); await idle(); return hit; };
 const results = {}; let fail = [];
 for (const w of ['miami', 'cuba', 'rose']) {
   const r = { steps: [] }; results[w] = r; const check = (ok, what) => { r.steps.push((ok ? '✓ ' : '✗ ') + what); if (!ok) fail.push(`${w}: ${what}`); };
@@ -35,7 +35,7 @@ for (const w of ['miami', 'cuba', 'rose']) {
   // 2) palancas sobre cada aguja con el protector puesto
   for (const h of ['secHand', 'minHand', 'hourHand']) {
     await tool('handLevers'); const hit = await tapObj({ part: h });
-    check(!!(hit.chain && hit.chain.includes(h)), `raycast a ${h} (no lo tapa el protector)`);
+    check(!!(hit.chain && (hit.chain.includes(h) || hit.chain.includes('dial'))) && !(hit.chain || []).includes('protector'), `toque sobre la pila de agujas (${(hit.chain || []).slice(0, 2).join('>')}), el protector no intercepta`);
     const s = await p.evaluate(() => __game.state); const m = await msg();
     check(s.out.includes(h) && s.flags.protector, `${h} fuera con protector puesto`);
     check(!/Quita el .*protector/i.test(m), `sin mensaje «quita el protector» (${m.slice(0, 50)})`);
@@ -55,7 +55,7 @@ for (const w of ['miami', 'cuba', 'rose']) {
   }
   await p.screenshot({ path: `${OUT}${w}-3-agujas-clavadas.png`, timeout: 240000 });
   await tool('dialProtector'); await tapObj({ part: 'dial' });
-  check(!(await p.evaluate(() => __game.state.flags.protector)), 'protector retirado antes de encajar el movimiento');
+  check(!(await p.evaluate(() => __game.state.flags.protector)), 'protector retirado antes de encajar el movimiento · ' + (await msg()).slice(0, 60));
   check(await until('false') === 'finished', 'reloj terminado');
   r.score = (await p.evaluate(() => __game.state)).score;
   console.log(w, r.score, r.steps.filter(x => x.startsWith('✗')).length ? 'FALLA' : 'OK'); r.steps.forEach(x => console.log('   ', x));

@@ -4,13 +4,13 @@
       "steps": [
         "✓ llegar al desmontaje de agujas",
         "✓ protector puesto",
-        "✓ raycast a secHand (no lo tapa el protector)",
+        "✓ toque sobre la pila de agujas (secHand>movement), el protector no intercepta",
         "✓ secHand fuera con protector puesto",
         "✓ sin mensaje «quita el protector» (✅ Fuera: el segundero.)",
-        "✓ raycast a minHand (no lo tapa el protector)",
+        "✓ toque sobre la pila de agujas (minHand>movement), el protector no intercepta",
         "✓ minHand fuera con protector puesto",
         "✓ sin mensaje «quita el protector» (✅ Fuera: la aguja de minutos.)",
-        "✓ raycast a hourHand (no lo tapa el protector)",
+        "✓ toque sobre la pila de agujas (hourHand>movement), el protector no intercepta",
         "✓ hourHand fuera con protector puesto",
         "✓ sin mensaje «quita el protector» (✅ Fuera: la aguja de horas.)",
         "✓ pista: retirar protector",
@@ -20,7 +20,7 @@
         "✓ hourHand clavada con la prensa",
         "✓ minHand clavada con la prensa",
         "✓ secHand clavada con la prensa",
-        "✓ protector retirado antes de encajar el movimiento",
+        "✓ protector retirado antes de encajar el movimiento · 🛡 Protector de esfera retirado.",
         "✓ reloj terminado"
       ],
       "score": 100
@@ -29,13 +29,13 @@
       "steps": [
         "✓ llegar al desmontaje de agujas",
         "✓ protector puesto",
-        "✓ raycast a secHand (no lo tapa el protector)",
+        "✓ toque sobre la pila de agujas (secHand>movement), el protector no intercepta",
         "✓ secHand fuera con protector puesto",
         "✓ sin mensaje «quita el protector» (✅ Fuera: el segundero.)",
-        "✓ raycast a minHand (no lo tapa el protector)",
+        "✓ toque sobre la pila de agujas (minHand>movement), el protector no intercepta",
         "✓ minHand fuera con protector puesto",
         "✓ sin mensaje «quita el protector» (✅ Fuera: la aguja de minutos.)",
-        "✓ raycast a hourHand (no lo tapa el protector)",
+        "✓ toque sobre la pila de agujas (hourHand>movement), el protector no intercepta",
         "✓ hourHand fuera con protector puesto",
         "✓ sin mensaje «quita el protector» (✅ Fuera: la aguja de horas.)",
         "✓ pista: retirar protector",
@@ -45,7 +45,7 @@
         "✓ hourHand clavada con la prensa",
         "✓ minHand clavada con la prensa",
         "✓ secHand clavada con la prensa",
-        "✓ protector retirado antes de encajar el movimiento",
+        "✓ protector retirado antes de encajar el movimiento · 🛡 Protector de esfera retirado.",
         "✓ reloj terminado"
       ],
       "score": 100
@@ -54,13 +54,13 @@
       "steps": [
         "✓ llegar al desmontaje de agujas",
         "✓ protector puesto",
-        "✓ raycast a secHand (no lo tapa el protector)",
+        "✓ toque sobre la pila de agujas (secHand>movement), el protector no intercepta",
         "✓ secHand fuera con protector puesto",
         "✓ sin mensaje «quita el protector» (✅ Fuera: el segundero.)",
-        "✓ raycast a minHand (no lo tapa el protector)",
+        "✓ toque sobre la pila de agujas (minHand>movement), el protector no intercepta",
         "✓ minHand fuera con protector puesto",
         "✓ sin mensaje «quita el protector» (✅ Fuera: la aguja de minutos.)",
-        "✓ raycast a hourHand (no lo tapa el protector)",
+        "✓ toque sobre la pila de agujas (hourHand>movement), el protector no intercepta",
         "✓ hourHand fuera con protector puesto",
         "✓ sin mensaje «quita el protector» (✅ Fuera: la aguja de horas.)",
         "✓ pista: retirar protector",
@@ -70,7 +70,7 @@
         "✓ hourHand clavada con la prensa",
         "✓ minHand clavada con la prensa",
         "✓ secHand clavada con la prensa",
-        "✓ protector retirado antes de encajar el movimiento",
+        "✓ protector retirado antes de encajar el movimiento · 🛡 Protector de esfera retirado.",
         "✓ reloj terminado"
       ],
       "score": 100

@@ -324,6 +324,9 @@ async function act(r, opts = {}) {
 function resolveTarget(chain) {
   const E = G.E, s = E.F.steps[E.fstep];
   if (s && !s.removed && chain.includes(s.on)) return s.on;
+  // Palancas de agujas: actúan sobre la pila de agujas del centro → siempre la aguja superior que siga puesta
+  const HANDS = ['secHand', 'minHand', 'hourHand'];
+  if (sel === 'handLevers' && E.flags.mvLoc === 'holder' && E.flags.holderSide === 'dial' && chain.some(id => HANDS.includes(id) || id === 'dial' || id === 'movement')) { const top = HANDS.find(h => E.st[h] === 'in'); if (top) return top; }
   for (const id of chain) { if (SUBS.includes(id)) continue; if (id === 'movement' && E.flags.mvLoc === 'holder' && ['handLevers', 'handPress', 'dialProtector'].includes(sel)) return chain.includes('dial') ? 'dial' : 'dial'; if (id === 'watch' || E.P[id]) return id; }
   return chain[0];
 }
@@ -333,6 +336,8 @@ async function handleTap(hit) {
     if (sel !== 'screwdriver') { await act(G.E.screwTurn(hit.screw || hit.ghost, sel, size, 0)); return; }
     await turnScrew(hit.screw || hit.ghost, 0.34); return;
   }
+  // El protector cubre toda la esfera: con el movimiento en el soporte (lado esfera), cualquier toque lo pone/quita
+  if (sel === 'dialProtector' && G.E.flags.mvLoc === 'holder' && G.E.flags.holderSide === 'dial' && G.E.st.dial === 'in' && !(hit.chain || []).some(c => c === 'timegrapher3d' || c === 'holderBench')) { await act(G.E.tapPart('dial', 'dialProtector', size)); return; }
   if (!hit.chain.length) return;
   const id = resolveTarget(hit.chain);
   if (id === 'timegrapher3d') { if (sel === 'timegrapher') await act(G.E.tapPart('watch', sel, size)); else say('El timegrapher LA FORY: elige la herramienta <b>Timegrapher</b> y toca el reloj.'); return; }
