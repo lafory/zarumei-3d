@@ -147,6 +147,7 @@ function openDetail(p) {
   const bb = $('#bqBuy'); if (bb) bb.onclick = () => { if (wallet.buy(p)) { renderShop(); openDetail(p); } };
 }
 function closeDetail() { cancelAnimationFrame(raf); $('#bqDetail').hidden = true; }
+window.addEventListener('resize', () => { if (R && !$('#bqDetail').hidden) { const r = $('#bqStage').getBoundingClientRect(); R.setSize(r.width, r.height); camera.aspect = r.width / Math.max(1, r.height); camera.updateProjectionMatrix(); } });
 export function openBoutique() {
   $('#boutique').hidden = false; renderShop();
   $('#bqClose').onclick = () => { closeDetail(); $('#boutique').hidden = true; };

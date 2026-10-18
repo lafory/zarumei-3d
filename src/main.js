@@ -32,7 +32,9 @@ let SPEED = 1; const D = (ms) => ms * SPEED; // las pruebas pueden acelerar las 
 
 // ───────── renderer / escena ─────────
 const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true, powerPreference: 'high-performance' });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+// DPR: hasta 2 en móvil; en pantallas grandes se baja para no superar ~2,6 MP de render (rendimiento en iPad/escritorio 4K)
+function applyDPR(w, h) { const dpr = window.devicePixelRatio || 1; const budget = 2.6e6; const cap = Math.min(2, Math.max(1, Math.sqrt(budget / Math.max(1, w * h)))); renderer.setPixelRatio(Math.min(dpr, cap)); }
+applyDPR(window.innerWidth, window.innerHeight);
 renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 stage.prepend(renderer.domElement);
@@ -40,7 +42,7 @@ const scene = new THREE.Scene(); scene.background = new THREE.Color(0x080706); s
 scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
 const camera = new THREE.PerspectiveCamera(32, 1, 1, 1500);
 const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true; controls.enablePan = false; controls.maxPolarAngle = 1.3; controls.minPolarAngle = 0.02; controls.rotateSpeed = 0.7; controls.zoomSpeed = 0.9;
+controls.enableDamping = true; controls.enablePan = true; controls.screenSpacePanning = true; controls.panSpeed = 0.6; // ratón: botón derecho = desplazar; táctil: dos dedos controls.maxPolarAngle = 1.3; controls.minPolarAngle = 0.02; controls.rotateSpeed = 0.7; controls.zoomSpeed = 0.9;
 scene.add(new THREE.HemisphereLight(0xfff1dc, 0x140d08, 0.4));
 // foco de vitrina: cono cálido y suave sobre el banco (sin sombras: barato en móvil)
 const spot = new THREE.SpotLight(0xffe2b0, 1.3, 0, 0.62, 0.85, 0); spot.position.set(0, 230, 70); spot.target.position.set(0, 0, 10); scene.add(spot, spot.target);
@@ -81,11 +83,14 @@ async function setView(v, instant = false) {
 }
 function workView() { if (!G) return 'front'; return G.E.flags.mvLoc === 'holder' ? 'holder' : (G.E.flags.flipped ? 'back' : 'front'); }
 function resize() {
-  const r = stage.getBoundingClientRect(); renderer.setSize(r.width, r.height, false);
+  const r = stage.getBoundingClientRect(); applyDPR(r.width, r.height); renderer.setSize(r.width, r.height, false);
   renderer.domElement.style.width = r.width + 'px'; renderer.domElement.style.height = r.height + 'px';
   camera.aspect = r.width / Math.max(1, r.height); camera.updateProjectionMatrix(); if (G) renderer.render(scene, camera);
 }
 new ResizeObserver(resize).observe(stage);
+for (const ev of ['orientationchange', 'resize', 'fullscreenchange', 'webkitfullscreenchange']) window.addEventListener(ev, () => { setTimeout(() => { resize(); if (G) setView(view === 'loupe' && !loupeTarget ? workView() : view, true); }, 120); });
+document.addEventListener('fullscreenchange', () => resize()); document.addEventListener('webkitfullscreenchange', () => resize());
+renderer.domElement.addEventListener('contextmenu', (e) => e.preventDefault());
 
 // ───────── construir el reloj elegido ─────────
 function mergeStatic(group) {
@@ -338,6 +343,33 @@ async function handleTap(hit) {
 }
 async function chipTap(id) { if (!started || busy) return; await act(G.E.tapChip(id, sel, size)); }
 async function turnScrew(sid, amount) { const r = G.E.screwTurn(sid, sel, size, amount); await act(r, { keepView: true }); return r; }
+// ── teclado (escritorio / iPad con teclado) ──
+window.addEventListener('keydown', (e) => {
+  if (e.target && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
+  if (e.key === 'Escape') { if (!$('#bqDetail').hidden) $('#bqBack').click(); else if (!$('#boutique').hidden) $('#bqClose').click(); else if (!$('#tgPanel').hidden) { if (!$('#tgClose').disabled) $('#tgClose').click(); } else if (started) openMenu(); else if (G && G.active && $('#endOverlay').hidden) { $('#intro').hidden = true; started = true; } return; }
+  if (!started || !G) return;
+  if (e.shiftKey && (e.key === 'F' || e.key === 'f')) { toggleFullscreen(); e.preventDefault(); return; }
+  if (e.key === 'f' || e.key === 'F') { if (!$('#flipBtn').hidden) $('#flipBtn').click(); return; }
+  if (e.key === 'h' || e.key === 'H') { $('#hintBtn').click(); return; }
+  if (e.key === 'w' || e.key === 'W') { if (!$('#actionBtn').hidden) $('#actionBtn').click(); return; }
+  if (/^[1-9]$/.test(e.key)) { const t = TOOLS[+e.key - 1 + (e.altKey ? 9 : 0)]; if (t) selectTool(sel === t.id ? null : t.id, true); return; }
+  if (e.key === '0') { const t = TOOLS[9]; if (t) selectTool(sel === t.id ? null : t.id, true); return; }
+  if ((e.key === '+' || e.key === ']' || e.key === '-' || e.key === '[') && sel === 'screwdriver') { const i = SCREWDRIVER_SIZES.indexOf(size) + (e.key === '+' || e.key === ']' ? 1 : -1); if (SCREWDRIVER_SIZES[i]) setSize(SCREWDRIVER_SIZES[i]); return; }
+  const vk = { r: 'watch', s: 'holder', b: 'tray', a: 'mat' }[e.key.toLowerCase()]; if (vk) document.querySelector(`.vbtn[data-view="${vk}"]`).click();
+});
+// ── pantalla completa (Fullscreen API con prefijos webkit; en iPad Safari → PWA «Agregar a pantalla de inicio») ──
+const fsEl = document.documentElement;
+const fsSupported = !!(fsEl.requestFullscreen || fsEl.webkitRequestFullscreen);
+const isFs = () => !!(document.fullscreenElement || document.webkitFullscreenElement);
+const standalone = () => window.matchMedia('(display-mode: standalone)').matches || window.matchMedia('(display-mode: fullscreen)').matches || navigator.standalone;
+function toggleFullscreen() {
+  if (!fsSupported) { const h = $('#a2hs'); h.hidden = false; clearTimeout(h._t); h._t = setTimeout(() => (h.hidden = true), 7000); return; }
+  try { if (isFs()) (document.exitFullscreen || document.webkitExitFullscreen).call(document); else { const r = (fsEl.requestFullscreen || fsEl.webkitRequestFullscreen).call(fsEl); if (r && r.catch) r.catch(() => {}); } } catch (err) { /* ignorado */ }
+}
+function updateFsBtn() { document.querySelectorAll('.fsBtn').forEach(b => { b.classList.toggle('on', isFs()); b.title = isFs() ? 'Salir de pantalla completa (Shift+F)' : 'Pantalla completa (Shift+F)'; b.hidden = standalone(); }); }
+document.querySelectorAll('.fsBtn').forEach(b => (b.onclick = toggleFullscreen));
+document.addEventListener('fullscreenchange', updateFsBtn); document.addEventListener('webkitfullscreenchange', updateFsBtn); updateFsBtn();
+if ($('#a2hsClose')) $('#a2hsClose').onclick = () => ($('#a2hs').hidden = true);
 $('#actionBtn').onclick = async () => { if (!busy && G) await act(G.E.button('wind')); };
 $('#flipBtn').onclick = async () => { if (busy || !G) return; await act(G.E.button(view === 'holder' ? 'flipHolder' : 'flipWatch'), { keepView: true }); };
 document.querySelectorAll('.vbtn').forEach(b => b.onclick = () => { if (busy || !G) return; const v = b.dataset.view; setView(v === 'watch' ? (G.E.flags.flipped ? 'back' : 'front') : v); });
@@ -381,12 +413,29 @@ function pick(cx, cy) {
   return { chain: [] };
 }
 renderer.domElement.addEventListener('pointerdown', (e) => {
+  if (e.button > 0) return; // botón derecho/central = desplazar con OrbitControls
+  clearHover();
   down = { x: e.clientX, y: e.clientY, t: performance.now() };
   if (started && !busy && G && sel === 'screwdriver') {
     const h = pick(e.clientX, e.clientY); const sid = h.screw || h.ghost;
     if (sid) { controls.enabled = false; hold = { sid, turned: 0, timer: setTimeout(function loopTurn() { if (!hold) return; turnScrew(sid, 0.34).then(r => { if (!hold) return; hold.turned++; if (r.kind === 'turn') hold.timer = setTimeout(loopTurn, 60); else { hold.done = true; } }); }, 280) }; }
   }
 });
+// ── hover con ratón: resalta tornillo o pieza bajo el cursor ──
+let hovered = null, hoverT = 0; const hoverMats = new Map();
+function clearHover() { for (const [m, orig] of hoverMats) m.material = orig; hoverMats.clear(); hovered = null; renderer.domElement.style.cursor = ''; }
+function setHover(obj) {
+  if (obj === hovered) return; clearHover(); if (!obj) return; hovered = obj; renderer.domElement.style.cursor = 'pointer';
+  obj.traverse(o => { if (o.isMesh && !o.userData.isHit && o.material && o.material.emissive && !Array.isArray(o.material)) { const c = o.material.clone(); c.emissive = new THREE.Color(0x5a4210); c.emissiveIntensity = 1; hoverMats.set(o, o.material); o.material = c; } });
+}
+function hoverAt(x, y) {
+  if (!G || !started || busy) return clearHover(); const h = pick(x, y);
+  if (h.screw) return setHover(G.MV.screws[h.screw].obj); if (h.ghost) return setHover(G.MV.screws[h.ghost].ghost);
+  const id = h.chain && h.chain.length ? resolveTarget(h.chain) : null; const o = id && id !== 'watch' ? (G.parts[id] || (G.MV.sub && G.MV.sub[id])) : null;
+  setHover(o && o !== G.mvObj ? o : null);
+}
+renderer.domElement.addEventListener('pointerleave', clearHover);
+renderer.domElement.addEventListener('pointermove', (e) => { if (e.pointerType === 'mouse' && !down && e.buttons === 0) { const n = performance.now(); if (n - hoverT > 90) { hoverT = n; hoverAt(e.clientX, e.clientY); } } });
 renderer.domElement.addEventListener('pointermove', (e) => { if (hold && down && Math.hypot(e.clientX - down.x, e.clientY - down.y) > 14) { clearTimeout(hold.timer); hold = null; controls.enabled = true; } });
 renderer.domElement.addEventListener('pointerup', (e) => {
   if (hold) { const h = hold; hold = null; clearTimeout(h.timer); controls.enabled = true; if (!h.turned && !h.done) handleTap({ screw: h.sid }); down = null; return; }
@@ -435,7 +484,7 @@ let playWatch = 'miami', playFault = 'sinFalla';
 document.querySelectorAll('.tab').forEach(t => t.onclick = () => { document.querySelectorAll('.tab').forEach(x => x.classList.toggle('on', x === t)); $('#storyPane').hidden = t.dataset.tab !== 'story'; $('#playPane').hidden = t.dataset.tab !== 'play'; });
 $('#playBtn').onclick = () => startPlay(playWatch, playFault);
 async function begin(watchId, faultId, story) {
-  buildWorld(watchId, faultId, story);
+  buildWorld(watchId, faultId, story); G.active = true;
   sel = null; selectTool(null); started = true; busy = false; t0 = Date.now(); $('#timer')._t0 = Date.now();
   $('#intro').hidden = true; $('#endOverlay').hidden = true; resize(); await setView('front', true); refresh();
   const W = WATCHES[watchId], F = FAULTS[faultId];
@@ -502,6 +551,6 @@ window.__game = {
     if (target.chip) { const c = document.querySelector(`.chip[data-chip="${target.chip}"]`); if (!c) return null; c.scrollIntoView({ inline: 'center' }); const r = c.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2, chip: true }; }
     const id = target.sub || target.part; const o = id === 'watch' ? G.root : (G.parts[id] || (G.MV.sub && G.MV.sub[id])); if (!o) return null; return screenOfObj(o, id === 'jewel' ? 0.1 : 0);
   },
-  pick: (x, y) => pick(x, y), workView, get glOK() { return !!renderer.getContext(); }
+  pick: (x, y) => pick(x, y), workView, hoverAt, get hovered() { return !!hovered; }, get dpr() { return renderer.getPixelRatio(); }, fsSupported, toggleFullscreen, get glOK() { return !!renderer.getContext(); }
 };
 init().catch(err => { console.error(err); $('#loading').textContent = 'Error al cargar: ' + err.message; });

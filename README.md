@@ -8,6 +8,25 @@ La interfaz tiene estética de boutique de alta joyería: ónix, terciopelo verd
 - **Sin servidor:** abre `index.html`. Funciona desde `file://`, porque las imágenes y las fuentes van incrustadas en `game.js` y `fonts.css`.
 - **Servidor local:** ejecuta `python3 -m http.server 8080` y abre `http://localhost:8080` (o `http://IP:8080` desde el móvil).
 
+### Dispositivos
+- **iPhone:** una columna.
+- **iPad vertical:** una columna más ancha, con botones y textos más grandes.
+- **iPad horizontal y escritorio:** visor 3D grande con un panel lateral para mensajes, caja de herramientas y bandeja. Los textos tienen ancho máximo.
+- **Resolución de render (DPR):** hasta 2, con un tope de ~2,6 MP renderizados. Se recalcula al girar el dispositivo, al redimensionar la ventana y al entrar o salir de pantalla completa.
+- **Ratón:**
+  - Arrastrar gira la vista, la rueda hace zoom y el botón derecho desplaza.
+  - Al pasar por encima, se resalta la pieza o el tornillo.
+  - Un clic usa la herramienta; mantener el clic gira un tornillo.
+- **Teclado:**
+  - `1`–`9` / `0` eligen herramienta (`Alt+1…9` para las demás) y `[` `]` cambian la punta.
+  - `F` voltea, `H` da una pista, `W` da cuerda y `Esc` abre el menú.
+  - `R` / `S` / `B` / `A` cambian de vista y `Shift+F` activa la pantalla completa.
+- **Táctil y Apple Pencil:** Pointer Events con `touch-action: none` y márgenes de *safe area* en iPad y iPhone.
+- **Pantalla completa:**
+  - El botón ⛶ usa la Fullscreen API, con prefijos `webkit`.
+  - Si el navegador no la permite, como Safari en iPhone, aparece la indicación *Compartir → Agregar a pantalla de inicio*.
+  - La PWA (`manifest.json` con `display: fullscreen`, `apple-mobile-web-app-capable` e iconos en `icons/`) se abre a pantalla completa desde el icono. Las rutas son relativas, así que funciona en `/zarumei-3d/`.
+
 ### Modos
 - **Historia:** 7 órdenes de trabajo con los 3 relojes (`src/data/story.js`). Cada caso nuevo se desbloquea al terminar el anterior y el progreso se guarda en `localStorage`.
 - **Modo libre:** eliges cualquier reloj y cualquier falla compatible con su calibre, o **«sin falla»** para desarmarlo por completo y volver a montarlo. Las herramientas de diagnóstico (timegrapher, brújula, multímetro, lupa) muestran la falla que elegiste.
@@ -68,6 +87,7 @@ Cada falla define sus pasos de reparación (herramienta, sobre qué pieza o subp
 npm install
 npm run build             # assets → src/assets-inline.js, fuentes → fonts.css, src/ → game.js
 node tests/engine-sim.mjs # juega sin interfaz todas las combinaciones reloj × falla y los 7 casos de historia
+node tests/devices.mjs    # iPhone 13, iPad Pro 11 vertical/horizontal, escritorio 1440×900 en Chromium y WebKit → shots/devices/
 npm test                  # E2E en iPhone 13 (Playwright + Chromium + WebGL SwiftShader) → shots/ y shots/results.json
 ```
 | Archivo | Contenido |
