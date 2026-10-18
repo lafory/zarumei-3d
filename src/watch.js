@@ -13,7 +13,7 @@ export function makeMaterials(images) {
     goldBrushed: new THREE.MeshStandardMaterial({ color: 0xe8b850, metalness: 1, roughness: 0.42 }),
     goldWheel: new THREE.MeshStandardMaterial({ color: 0xe2b35a, metalness: 1, roughness: 0.3 }),
     bezelTop: new THREE.MeshStandardMaterial({ color: 0xf0c25a, metalness: 1, roughness: 0.25, map: TX.bezelTexture() }),
-    caseback: new THREE.MeshStandardMaterial({ color: 0xf0c25a, metalness: 1, roughness: 0.28, map: (() => { const t = TX.casebackTexture(); t.wrapS = THREE.RepeatWrapping; t.repeat.x = -1; t.offset.x = 1; return t; })() }), // la tapa inferior del cilindro invierte la UV
+    caseback: new THREE.MeshStandardMaterial({ color: 0xf0c25a, metalness: 1, roughness: 0.28, map: TX.casebackTexture() }),
     dial: new THREE.MeshStandardMaterial({ map: TX.dialTexture(images.dial, new Date().getDate()), roughness: 0.55, metalness: 0 }),
     lume: new THREE.MeshStandardMaterial({ color: 0xf2ffe6, roughness: 0.5, emissive: 0x334433, emissiveIntensity: 0.4 }),
     bridge: new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.9, roughness: 0.32, map: cotes }),

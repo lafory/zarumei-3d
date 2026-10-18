@@ -87,6 +87,7 @@ function resize() {
   const r = stage.getBoundingClientRect();
   renderer.setSize(r.width, r.height, false); renderer.domElement.style.width = r.width + 'px'; renderer.domElement.style.height = r.height + 'px';
   camera.aspect = r.width / Math.max(1, r.height); camera.updateProjectionMatrix();
+  if (W) renderer.render(scene, camera); // evita un cuadro vacío al cambiar de tamaño
 }
 new ResizeObserver(() => { resize(); }).observe(stage);
 

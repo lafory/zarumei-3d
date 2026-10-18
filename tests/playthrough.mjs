@@ -22,7 +22,7 @@ const tapPart = async (id) => {
   return p.evaluate(() => ({ step: __game.step, msg: document.querySelector('#msg').textContent.slice(0, 80) }));
 };
 const tgClose = async () => { await p.waitForFunction(() => !document.querySelector('#tgClose').disabled && !document.querySelector('#tgPanel').hidden); await p.tap('#tgClose'); await idle(); };
-const shot = (n) => p.screenshot({ path: SHOTS + n });
+const shot = (n) => p.screenshot({ path: SHOTS + n, timeout: 180000 });
 
 await p.goto(URL);
 await p.waitForFunction(() => document.querySelector('#loading').hidden, null, { timeout: 60000 });
@@ -35,13 +35,13 @@ await shot('02-esfera.png');
 await tool('screwdriver'); log('herramienta incorrecta →', (await tapPart('watch')).msg);
 await tool('timegrapher'); { const pt = await p.evaluate(() => __game.screenOf('watch')); await p.touchscreen.tap(pt.x, pt.y); }
 await p.waitForTimeout(500); await shot('03-timegrapher-boot.png');
-await p.waitForTimeout(1300); await shot('04-timegrapher-antes.png'); await tgClose();
+await p.waitForFunction(() => !document.querySelector('#tgClose').disabled); await p.waitForTimeout(800); await shot('04-timegrapher-antes.png'); await tgClose();
 await tool('demag'); log('desmagnetizador →', (await tapPart('watch')).msg);
 await tool('compass'); log('brújula →', JSON.stringify(await tapPart('watch')));
 // orden incorrecto (rotor antes que el fondo)
 await tool('screwdriver'); await p.evaluate(() => __game.tap('rotor')); log('orden incorrecto →', await p.textContent('#msg'));
 await shot('05-fondo.png');
- await tool('caseWrench'); await p.waitForTimeout(600); await shot('05b-herramienta-LA-FURY.png');
+ await tool('caseWrench'); await p.waitForTimeout(1500); await shot('05b-herramienta-LA-FURY.png');
 const seq = [['caseWrench', 'caseback', true], ['screwdriver', 'rotor'], ['screwdriver', 'stem'], ['holder', 'movement'], ['screwdriver', 'auto'], ['tweezers', 'click'], ['screwdriver', 'balscrew'], ['tweezers', 'balance']];
 for (const [t, part, pre] of seq) {
   if (!pre) await tool(t); const r = await tapPart(part); log(`${t} → ${part}:`, JSON.stringify(r));
@@ -56,7 +56,7 @@ for (const [t, part] of [['loupe', 'jewel'], ['tweezers', 'spring'], ['cleaner',
 await shot('10-aceitado.png');
 await p.tap('#actionBtn'); await p.waitForTimeout(500); await idle(); await p.waitForTimeout(500);
 await tool('timegrapher'); { const pt = await p.evaluate(() => __game.screenOf('watch')); await p.touchscreen.tap(pt.x, pt.y); }
-await p.waitForTimeout(1800); await shot('11-timegrapher-despues.png'); await tgClose();
+await p.waitForFunction(() => !document.querySelector('#tgPanel').hidden && !document.querySelector('#tgClose').disabled, null, { timeout: 60000 }); await p.waitForTimeout(800); await shot('11-timegrapher-despues.png'); await tgClose();
 await p.waitForTimeout(400); await shot('12-fin-tienda.png');
 const c1 = await p.evaluate(() => ({ step: __game.step, steps: __game.steps, score: __game.score, end: !document.querySelector('#endOverlay').hidden }));
 log('CASO 1:', JSON.stringify(c1));
