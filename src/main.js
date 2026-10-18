@@ -324,7 +324,7 @@ async function act(r, opts = {}) {
 function resolveTarget(chain) {
   const E = G.E, s = E.F.steps[E.fstep];
   if (s && !s.removed && chain.includes(s.on)) return s.on;
-  for (const id of chain) { if (SUBS.includes(id)) continue; if (id === 'watch' || E.P[id]) return id; }
+  for (const id of chain) { if (SUBS.includes(id)) continue; if (id === 'movement' && E.flags.mvLoc === 'holder' && ['handLevers', 'handPress', 'dialProtector'].includes(sel)) return chain.includes('dial') ? 'dial' : 'dial'; if (id === 'watch' || E.P[id]) return id; }
   return chain[0];
 }
 async function handleTap(hit) {
@@ -402,7 +402,7 @@ async function showTG(v) {
 // ───────── toque / mantener (raycast) ─────────
 const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
 let down = null, hold = null;
-const visibleChain = (o) => { for (let n = o; n; n = n.parent) if (!n.visible) return false; return true; };
+const visibleChain = (o) => { if (o.userData.noPick) return false; for (let n = o; n; n = n.parent) if (!n.visible) return false; return true; };
 function pick(cx, cy) {
   const r = renderer.domElement.getBoundingClientRect();
   ndc.set(((cx - r.left) / r.width) * 2 - 1, -((cy - r.top) / r.height) * 2 + 1); ray.setFromCamera(ndc, camera);

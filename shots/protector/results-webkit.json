@@ -1,0 +1,81 @@
+{
+  "results": {
+    "miami": {
+      "steps": [
+        "✓ llegar al desmontaje de agujas",
+        "✓ protector puesto",
+        "✓ raycast a secHand (no lo tapa el protector)",
+        "✓ secHand fuera con protector puesto",
+        "✓ sin mensaje «quita el protector» (✅ Fuera: el segundero.)",
+        "✓ raycast a minHand (no lo tapa el protector)",
+        "✓ minHand fuera con protector puesto",
+        "✓ sin mensaje «quita el protector» (✅ Fuera: la aguja de minutos.)",
+        "✓ raycast a hourHand (no lo tapa el protector)",
+        "✓ hourHand fuera con protector puesto",
+        "✓ sin mensaje «quita el protector» (✅ Fuera: la aguja de horas.)",
+        "✓ pista: retirar protector",
+        "✓ protector retirado tras las agujas",
+        "✓ montaje hasta clavar agujas",
+        "✓ protector puesto para clavar agujas",
+        "✓ hourHand clavada con la prensa",
+        "✓ minHand clavada con la prensa",
+        "✓ secHand clavada con la prensa",
+        "✓ protector retirado antes de encajar el movimiento",
+        "✓ reloj terminado"
+      ],
+      "score": 100
+    },
+    "cuba": {
+      "steps": [
+        "✓ llegar al desmontaje de agujas",
+        "✓ protector puesto",
+        "✓ raycast a secHand (no lo tapa el protector)",
+        "✓ secHand fuera con protector puesto",
+        "✓ sin mensaje «quita el protector» (✅ Fuera: el segundero.)",
+        "✓ raycast a minHand (no lo tapa el protector)",
+        "✓ minHand fuera con protector puesto",
+        "✓ sin mensaje «quita el protector» (✅ Fuera: la aguja de minutos.)",
+        "✓ raycast a hourHand (no lo tapa el protector)",
+        "✓ hourHand fuera con protector puesto",
+        "✓ sin mensaje «quita el protector» (✅ Fuera: la aguja de horas.)",
+        "✓ pista: retirar protector",
+        "✓ protector retirado tras las agujas",
+        "✓ montaje hasta clavar agujas",
+        "✓ protector puesto para clavar agujas",
+        "✓ hourHand clavada con la prensa",
+        "✓ minHand clavada con la prensa",
+        "✓ secHand clavada con la prensa",
+        "✓ protector retirado antes de encajar el movimiento",
+        "✓ reloj terminado"
+      ],
+      "score": 100
+    },
+    "rose": {
+      "steps": [
+        "✓ llegar al desmontaje de agujas",
+        "✓ protector puesto",
+        "✓ raycast a secHand (no lo tapa el protector)",
+        "✓ secHand fuera con protector puesto",
+        "✓ sin mensaje «quita el protector» (✅ Fuera: el segundero.)",
+        "✓ raycast a minHand (no lo tapa el protector)",
+        "✓ minHand fuera con protector puesto",
+        "✓ sin mensaje «quita el protector» (✅ Fuera: la aguja de minutos.)",
+        "✓ raycast a hourHand (no lo tapa el protector)",
+        "✓ hourHand fuera con protector puesto",
+        "✓ sin mensaje «quita el protector» (✅ Fuera: la aguja de horas.)",
+        "✓ pista: retirar protector",
+        "✓ protector retirado tras las agujas",
+        "✓ montaje hasta clavar agujas",
+        "✓ protector puesto para clavar agujas",
+        "✓ hourHand clavada con la prensa",
+        "✓ minHand clavada con la prensa",
+        "✓ secHand clavada con la prensa",
+        "✓ protector retirado antes de encajar el movimiento",
+        "✓ reloj terminado"
+      ],
+      "score": 100
+    }
+  },
+  "errs": [],
+  "fail": []
+}

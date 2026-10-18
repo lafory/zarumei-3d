@@ -87,6 +87,7 @@ Cada falla define sus pasos de reparación (herramienta, sobre qué pieza o subp
 npm install
 npm run build             # assets → src/assets-inline.js, fuentes → fonts.css, src/ → game.js
 node tests/engine-sim.mjs # juega sin interfaz todas las combinaciones reloj × falla y los 7 casos de historia
+node tests/protector.mjs  # regresión del protector de esfera con toques reales (Miami, Cuba, Rosé); ENGINE=webkit opcional
 node tests/devices.mjs    # iPhone 13, iPad Pro 11 vertical/horizontal, escritorio 1440×900 en Chromium y WebKit → shots/devices/
 npm test                  # E2E en iPhone 13 (Playwright + Chromium + WebGL SwiftShader) → shots/ y shots/results.json
 ```

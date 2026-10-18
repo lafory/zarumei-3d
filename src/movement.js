@@ -36,6 +36,13 @@ function stemGroup(M, R, metal, y, crownR = 3.1, crownL = 3.6) {
 }
 
 // ───────────────────────── ZR-28 ─────────────────────────
+// Protector de esfera: lámina plástica con ranura que se desliza SOBRE la esfera y BAJO las agujas
+// (las palancas apoyan en ella). Nunca intercepta los toques (noPick) para no tapar las agujas.
+function makeProtector(M, watch, ys) {
+  const g = new THREE.RingGeometry(1.1, watch.dial.r - 0.6, 64, 1, 0.12, Math.PI * 2 - 0.24).rotateX(-Math.PI / 2);
+  const m = new THREE.Mesh(g, M.protector); m.position.y = ys.dial + 0.06; m.visible = false; m.renderOrder = 2; m.userData.noPick = true; m.raycast = () => {};
+  return m;
+}
 export function buildZR28(M, images, watch, cal) {
   const R = 12.8;
   const mv = tag(new THREE.Group(), 'movement'); const parts = {}; const sub = {};
@@ -143,7 +150,7 @@ export function buildZR28(M, images, watch, cal) {
   const wp = tag(new THREE.Group(), 'windingPinion'); wp.add(at(new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.8, 1.0, 14).rotateZ(Math.PI / 2), M.steel), 11.4, 0.1, 0)); wp.add(at(boxHit(M, 1.4, 1.2, 1.8), 11.4, 0.1, 0)); ds.add(wp); parts.windingPinion = wp;
   parts.dial = buildDial(M, images, watch, ys); ds.add(parts.dial);
   const H = buildHands(M, watch, ys); ds.add(H.hour, H.min, H.sec); parts.hourHand = H.hour; parts.minHand = H.min; parts.secHand = H.sec;
-  const protector = new THREE.Mesh(new THREE.CylinderGeometry(watch.dial.r - 0.4, watch.dial.r - 0.4, 0.1, 64), M.protector); protector.position.y = ys.sec + 0.4; protector.visible = false; ds.add(protector);
+  const protector = makeProtector(M, watch, ys); ds.add(protector);
   const screws = screwsFor(M, cal, parts);
   shadowAll(mv);
   return { mv, parts, sub, screws, dialSide: ds, protector, R, ys, wheel, kind: 'auto' };
@@ -196,7 +203,7 @@ export function buildZQ11(M, images, watch, cal) {
   const sl = tag(new THREE.Group(), 'settingLever'); sl.add(at(new THREE.Mesh(extrudeShape(polyShape([[5.6, -2.2], [9.6, -1.4], [9.4, -0.5], [5.9, -1.2]]), 0.15, 0.01), M.steel), 0, 0.05, 0)); sl.add(at(boxHit(M, 4.4, 0.4, 2), 7.6, 0.12, -1.3)); ds.add(sl); parts.settingLever = sl;
   parts.dial = buildDial(M, images, watch, ys); ds.add(parts.dial);
   const H = buildHands(M, watch, ys); ds.add(H.hour, H.min, H.sec); parts.hourHand = H.hour; parts.minHand = H.min; parts.secHand = H.sec;
-  const protector = new THREE.Mesh(new THREE.CylinderGeometry(watch.dial.r - 0.4, watch.dial.r - 0.4, 0.1, 64), M.protector); protector.position.y = ys.sec + 0.35; protector.visible = false; ds.add(protector);
+  const protector = makeProtector(M, watch, ys); ds.add(protector);
   const screws = screwsFor(M, cal, parts);
   shadowAll(mv);
   return { mv, parts, sub, screws, dialSide: ds, protector, R, ys, kind: 'quartz' };

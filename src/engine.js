@@ -119,6 +119,7 @@ export function createEngine({ watchId, faultId, story = null }) {
     if (cov) return { err: `Orden incorrecto: ${name(id)} está tapado por ${name(cov)}.`, k: 'wrongOrder' };
     if ((p.requires || []).includes('letdown') && !flags.letdown) return { err: 'Antes se <b>descarga el muelle real</b> (libera el cliquet con pinzas). Con la fuerza puesta, el escape se puede romper.', k: 'wrongOrder' };
     if ((p.requires || []).includes('protector') && !flags.protector) return { err: 'Pon antes el <b>protector de esfera</b>: las palancas rayarían la esfera.', k: 'wrongOrder' };
+    if (id === 'dial' && flags.protector) return { err: 'Las agujas ya están fuera: retira el <b>protector de esfera</b> (herramienta Protector sobre la esfera) y luego levanta la esfera.', k: 'wrongOrder' };
     const n = screwsIn(id).length; if (n) return { err: `${cap(name(id))} aún tiene ${n} tornillo${n > 1 ? 's' : ''}: desatorníllalo${n > 1 ? 's' : ''} primero, uno a uno.`, k: 'wrongOrder' };
     return { ok: true };
   }
@@ -138,6 +139,7 @@ export function createEngine({ watchId, faultId, story = null }) {
       if (flags.protector) return { err: 'Quita el <b>protector de esfera</b> antes de encajar el movimiento.', k: 'wrongOrder' };
     }
     if ((p.placeRequires || []).includes('protector') && !flags.protector) return { err: 'Pon el <b>protector de esfera</b> antes de clavar las agujas.', k: 'wrongOrder' };
+    if (id === 'dial' && flags.protector) return { err: 'Primero coloca la esfera y luego el protector encima: retíralo ahora.', k: 'wrongOrder' };
     if (p.oil && p.oil.when === 'before' && !oiled.has(id)) { stats.oilMissed++; return { err: `Antes: ${p.oil.msg} (aceitera sobre la pieza en la bandeja).`, k: 'wrongOrder' }; }
     const s = curStep(); if (s && s.part === id && s.need === 'out') return { info: `Antes de volver a montar ${name(id)}: <b>${s.title}</b>.` };
     return { ok: true };
@@ -265,7 +267,7 @@ export function createEngine({ watchId, faultId, story = null }) {
   }
   function button(action) {
     if (action === 'flipWatch') { if (flags.mvLoc !== 'case' && false) return R('info', ''); flags.flipped = !flags.flipped; return R('info', flags.flipped ? 'Reloj boca abajo: trabajas por el fondo.' : 'Reloj boca arriba.', [{ fx: 'flipWatch', to: flags.flipped }]); }
-    if (action === 'flipHolder') { if (flags.mvLoc !== 'holder') return R('info', 'El movimiento está en la caja.'); if (flags.protector && flags.holderSide === 'dial') { flags.protector = false; } flags.holderSide = flags.holderSide === 'bridge' ? 'dial' : 'bridge'; return R('info', flags.holderSide === 'dial' ? 'Movimiento volteado: <b>lado esfera</b> arriba.' : 'Movimiento volteado: <b>lado puentes</b> arriba.', [{ fx: 'flipHolder', to: flags.holderSide }]); }
+    if (action === 'flipHolder') { if (flags.mvLoc !== 'holder') return R('info', 'El movimiento está en la caja.'); const pfx = []; if (flags.protector && flags.holderSide === 'dial') { flags.protector = false; pfx.push({ fx: 'protector', on: false }); } flags.holderSide = flags.holderSide === 'bridge' ? 'dial' : 'bridge'; return R('info', flags.holderSide === 'dial' ? 'Movimiento volteado: <b>lado esfera</b> arriba.' : 'Movimiento volteado: <b>lado puentes</b> arriba.', [...pfx, { fx: 'flipHolder', to: flags.holderSide }]); }
     if (action === 'wind') {
       if (quartz) return R('info', 'Es de cuarzo: no lleva cuerda.');
       if (!flags.letdown) return R('info', 'Ya tiene cuerda.');
@@ -313,6 +315,7 @@ export function createEngine({ watchId, faultId, story = null }) {
     const loc = planLocation(id, 'remove'); if (loc) return loc;
     if ((p.requires || []).includes('letdown') && !flags.letdown) return planLetdown();
     if ((p.requires || []).includes('protector') && !flags.protector) return { tool: 'dialProtector', target: { part: 'dial' } };
+    if (id === 'dial' && flags.protector) return { tool: 'dialProtector', target: { part: 'dial' } };
     const sc = screwsIn(id)[0]; if (sc) return { tool: 'screwdriver', size: sc.s, target: { screw: sc.id } };
     return { tool: p.tool, size: p.anySize ? 0.8 : undefined, target: { part: id } };
   }
@@ -323,6 +326,7 @@ export function createEngine({ watchId, faultId, story = null }) {
     const loc = planLocation(id, 'install'); if (loc) return loc;
     if (p.placeNeedsDial && flags.protector) return { tool: 'dialProtector', target: { part: 'dial' } };
     if ((p.placeRequires || []).includes('protector') && !flags.protector) return { tool: 'dialProtector', target: { part: 'dial' } };
+    if (id === 'dial' && flags.protector) return { tool: 'dialProtector', target: { part: 'dial' } };
     return { tool: placeTool(id), target: { chip: id } };
   }
   function planAssembly() {
