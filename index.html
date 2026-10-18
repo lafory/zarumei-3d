@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#1a120b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>ZARUMEI 3D · Taller de Relojería · LA FURY Tools &amp; Jewelry</title>
+<style>
+:root{--gold:#e9c46a;--gold2:#b8862b;--ink:#f6efe3;--muted:#b9a98f;--bad:#ff6b5b;--good:#57d68d;--panel:rgba(20,14,9,.86)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:#120c07;color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;overflow:hidden;overscroll-behavior:none}
+#app{display:flex;flex-direction:column;height:100%;max-width:560px;margin:0 auto;padding:env(safe-area-inset-top) 8px env(safe-area-inset-bottom)}
+header{display:flex;align-items:center;justify-content:space-between;padding:8px 2px 2px;gap:6px}
+.brand{display:flex;align-items:center;gap:8px}
+.brand img{height:32px}
+.brand b{display:block;font-weight:800;letter-spacing:.18em;font-size:15px;color:var(--gold)}
+.brand small{display:block;color:var(--muted);font-size:10.5px}
+.stats{display:flex;gap:6px;font-size:12px}
+.pill{background:rgba(255,255,255,.07);border:1px solid rgba(233,196,106,.25);border-radius:999px;padding:4px 9px;white-space:nowrap}
+#stepbar{font-size:12px;color:var(--muted);padding:2px 2px 0;display:flex;justify-content:space-between;gap:8px}
+#progress{height:4px;background:rgba(255,255,255,.08);border-radius:4px;margin:4px 2px 0;overflow:hidden}
+#progress i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--gold2),var(--gold));transition:width .4s}
+#stage{position:relative;flex:1 1 auto;min-height:200px;border-radius:14px;overflow:hidden;margin-top:6px;touch-action:none}
+#stage canvas{display:block;touch-action:none}
+.viewtag{position:absolute;top:6px;left:6px;font-size:11px;color:var(--muted);background:rgba(0,0,0,.45);padding:3px 8px;border-radius:8px;z-index:2;pointer-events:none}
+#flipBtn{position:absolute;top:4px;right:4px;z-index:2;font-size:12px}
+#label3d{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.6);color:#ffb35b;padding:5px 10px;border-radius:10px;font-size:13px;z-index:2;white-space:nowrap}
+.gesture{position:absolute;bottom:6px;right:8px;font-size:10px;color:rgba(255,255,255,.4);z-index:2;pointer-events:none}
+.shake{animation:shake .35s}@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+#msg{background:var(--panel);border:1px solid rgba(233,196,106,.22);border-radius:14px;padding:8px 11px;font-size:13.5px;line-height:1.35;min-height:56px;margin-top:6px}
+#msg.bad{border-color:var(--bad);background:rgba(60,14,10,.88)}#msg.good{border-color:var(--good)}#msg b{color:var(--gold)}
+#toolhead{display:flex;align-items:center;gap:8px;margin-top:6px;padding:3px 8px;border-radius:10px;background:linear-gradient(90deg,rgba(233,196,106,.16),rgba(233,196,106,0));font-size:11px;letter-spacing:.12em;color:var(--gold);font-weight:800}
+#toolhead img{height:28px}#toolhead span{color:var(--muted);font-weight:500;letter-spacing:.04em}
+#tools{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:5px;margin:5px 0 4px}
+.tool{position:relative;background:linear-gradient(180deg,#2c2016,#1d150e);border:1px solid rgba(233,196,106,.2);border-radius:11px;padding:4px 1px 3px;color:var(--ink);font-size:9.5px;line-height:1.05;display:flex;flex-direction:column;align-items:center;gap:1px;cursor:pointer;min-height:50px}
+.tool svg{width:24px;height:24px;flex:none}
+.tool span{max-width:100%;overflow:hidden;text-overflow:ellipsis;word-break:break-word}
+.tool .stamp{position:absolute;right:2px;top:2px;width:11px;opacity:.85;filter:sepia(1) saturate(2)}
+.tool.sel{border-color:var(--gold);box-shadow:0 0 0 2px rgba(233,196,106,.35) inset,0 0 14px rgba(233,196,106,.35);background:linear-gradient(180deg,#4a3519,#2a1d10)}
+.tool.hint{animation:pulse 1s infinite}@keyframes pulse{50%{box-shadow:0 0 0 3px var(--gold),0 0 18px var(--gold)}}
+#bottom{display:flex;gap:6px;align-items:center;padding-bottom:6px}
+#tray{flex:1;display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;font-size:10px}
+#tray span{background:rgba(255,255,255,.08);border-radius:8px;padding:3px 7px;white-space:nowrap;color:var(--muted)}
+button.btn{background:linear-gradient(180deg,#f3d27e,#c99a3c);color:#2a1a07;border:0;border-radius:10px;padding:8px 12px;font-weight:700;font-size:13px;cursor:pointer}
+button.ghost{background:rgba(0,0,0,.45);color:var(--ink);border:1px solid rgba(233,196,106,.35)}
+button:disabled{opacity:.5}
+.overlay{position:fixed;inset:0;background:rgba(5,3,2,.8);display:flex;align-items:center;justify-content:center;z-index:20;padding:14px}
+.overlay[hidden],[hidden]{display:none!important}
+.card{background:linear-gradient(180deg,#2b1e12,#170f09);border:1px solid rgba(233,196,106,.4);border-radius:18px;padding:14px;max-width:440px;width:100%;max-height:94vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.card h2{margin:0 0 6px;color:var(--gold);font-size:18px}.card p,.card li{font-size:13.5px;line-height:1.4}
+.brandhero{display:flex;flex-direction:column;align-items:center}
+.brandhero img{width:130px;filter:drop-shadow(0 6px 14px rgba(0,0,0,.6))}
+.brandhero div{font-size:12px;letter-spacing:.22em;color:var(--gold);font-weight:800;margin-top:2px}
+.casecard{display:block;width:100%;text-align:left;background:rgba(255,255,255,.05);border:1px solid rgba(233,196,106,.35);border-radius:14px;padding:10px;margin-top:8px;color:var(--ink);cursor:pointer}
+.casecard>b{color:var(--gold);font-size:15px;display:block}.casecard>span{font-size:12px;color:var(--muted)}
+.ticket{background:#f4ead6;color:#2a1d10;border-radius:10px;padding:8px 10px;font-family:"Courier New",monospace;font-size:11.5px;margin-top:6px;border-left:6px solid #c99a3c}
+#tgPanel{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 8px);width:min(540px,calc(100% - 16px));z-index:15;background:linear-gradient(180deg,#14231c,#0b1410);border:1px solid #2f5a45;border-radius:16px;padding:10px}
+#tgPanel h3{margin:0 0 6px;color:#8fd8b0;font-size:14px}
+.tgvals{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;font-family:"Courier New",monospace}
+.tgvals div{background:#0f1f18;border-radius:6px;padding:5px;text-align:center;font-size:11px;color:#8fd8b0}
+.tgvals b{display:block;font-size:16px;color:#d9ffe9}.tgvals .warn b{color:#ffb35b}
+#tgNote{font-size:13px;line-height:1.35;margin:8px 0}
+.small{font-size:12px;color:var(--muted)}.gold{color:var(--gold)}
+.shop{display:flex;gap:10px;align-items:center;background:rgba(233,196,106,.08);border:1px solid rgba(233,196,106,.3);border-radius:12px;padding:8px;margin-top:10px}.shop img{width:64px}
+.row{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+#loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#120c07;color:var(--gold);z-index:30;font-weight:700;letter-spacing:.2em}
+</style>
+</head>
+<body>
+<div id="loading">CARGANDO TALLER…</div>
+<div id="app">
+  <header>
+    <div class="brand"><img id="headLogo" alt="LA FURY"><div><b>ZARUMEI 3D</b><small>Taller de relojería · LA FURY</small></div></div>
+    <div class="stats"><span class="pill" id="score">⭐ 100</span><span class="pill" id="timer">⏱ 0:00</span></div>
+  </header>
+  <div id="stepbar"><span id="steptxt">Elige un caso</span><span id="phase"></span></div>
+  <div id="progress"><i></i></div>
+  <div id="stage">
+    <span class="viewtag" id="viewtag">Vista: esfera</span>
+    <button class="btn ghost" id="flipBtn">↻ Voltear</button>
+    <div id="label3d" hidden></div>
+    <span class="gesture">1 dedo: girar · 2 dedos: zoom · toque: usar herramienta</span>
+  </div>
+  <div id="msg">Cargando…</div>
+  <div id="toolhead"><img id="toolheadLogo" alt="LA FURY">LA FURY TOOLS <span>· caja de herramientas</span></div>
+  <div id="tools"></div>
+  <div id="bottom">
+    <div id="tray"></div>
+    <button class="btn ghost" id="hintBtn">💡 Pista</button>
+    <button class="btn" id="actionBtn" hidden>Reensamblar</button>
+  </div>
+</div>
+
+<div class="overlay" id="intro">
+  <div class="card">
+    <div class="brandhero"><img id="introLogo" alt="LA FURY Tools &amp; Jewelry"><div>LA FURY TOOLS &amp; JEWELRY</div><span class="small">presenta</span></div>
+    <h2 style="text-align:center;margin-top:6px">ZARUMEI · Taller de Relojería 3D</h2>
+    <p class="small" style="text-align:center">Elige una herramienta y toca la pieza. Gira la vista con un dedo y haz zoom con dos.</p>
+    <div id="caseList"></div>
+  </div>
+</div>
+
+<div id="tgPanel" hidden>
+  <h3 id="tgTitle">Timegrapher</h3>
+  <div class="tgvals" id="tgVals"></div>
+  <div id="tgNote"></div>
+  <div class="row" style="margin-top:4px"><button class="btn" id="tgClose">Entendido</button></div>
+</div>
+
+<div class="overlay" id="endOverlay" hidden><div class="card" id="endCard"></div></div>
+
+<script src="game.js"></script>
+<script>
+// temporizador
+setInterval(function(){var g=window.__game;if(!g||!g.started)return;var el=document.getElementById('timer');if(!el._t0)el._t0=Date.now();if(document.getElementById('endOverlay').hidden){var e=Math.floor((Date.now()-el._t0)/1000);el.textContent='⏱ '+Math.floor(e/60)+':'+String(e%60).padStart(2,'0');}},500);
+</script>
+</body>
+</html>
