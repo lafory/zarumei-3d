@@ -1,0 +1,6 @@
+WebGL OK: true
+  acciones: 123
+Libre miami: completo=true piezas fuera máx=35 {"calls":39,"triangles":4966,"geometries":308,"textures":20}
+  acciones: 123
+Libre cuba: completo=true piezas fuera máx=35 {"calls":39,"triangles":4966,"geometries":311,"textures":27}
+  · paso 40: Monta: 0/28 piezas y tornillos

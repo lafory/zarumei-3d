@@ -1,0 +1,19 @@
+WebGL OK: true
+orden incorrecto → Voltea el reloj (↻) para trabajar por el fondo.
+punta incorrecta → ⚠️ Punta de 1,2 mm demasiado pequeña: resbala y marca la cabeza del tornillo (dañado 1/2). Usa 1,6 m
+Caso 1 completo: true {"errors":2,"wrongTool":1,"wrongOrder":0,"slips":1,"lost":0,"wrongScrews":0,"spares":0,"hints":0,"oilMissed":0} score 92
+orden incorrecto (barrilete con puentes puestos) → ❌ Orden incorrecto: el barrilete (180/1) está tapado por el puente de barrilete (105).
+Caso 5 completo: true {"errors":1,"wrongTool":0,"wrongOrder":1,"slips":0,"lost":0,"wrongScrews":0,"spares":0,"hints":0,"oilMissed":0} score 95
+Interacción real: {"taps":55,"holds":18,"chip":17,"fallback":9,"actions":79}
+node:internal/modules/run_main:123
+    triggerUncaughtException(
+    ^
+
+page.evaluate: Target page, context or browser has been closed
+    at play (/workspace/zarumei-game/web3d/tests/playthrough.mjs:74:30)
+    at async file:///workspace/zarumei-game/web3d/tests/playthrough.mjs:153:14 {
+  log: []
+}
+
+Node.js v20.19.2
+EXIT 1
