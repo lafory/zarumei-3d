@@ -35,7 +35,7 @@ La interfaz tiene estética de boutique de alta joyería: ónix, terciopelo verd
 ### Controles
 - **Vista:** un dedo gira, dos dedos hacen zoom. Los botones ⌚ / 🛠 / 🗃 / 🔍 cambian entre reloj, soporte, bandeja y alfombrilla.
 - **Herramientas:** eliges la herramienta y toca la pieza. Las piezas de la bandeja también salen como fichas abajo. Con **SITIO** (botón del visor, activo de entrada) tocas la ficha y luego el anillo dorado donde esa pieza vive. **AUTO** la encaja al tocarla, como antes. Aceite, lupa y tornillos no cambian.
-- **Vista 8K:** el botón **8K** quita la niebla, sube la sombra y usa hasta 3× los píxeles de la pantalla. No es un lienzo de 7680 px (eso tumba el teléfono); es la vista más nítida que la pantalla aguanta.
+- **Calidad foto (8K):** más nítido, sombra más fina y un desenfoque suave solo en la lupa. La vista normal es una sola pasada, para el iPhone. No es un lienzo de 7680 px.
 - **Tornillos, uno a uno:** con el **destornillador**, elige la **punta** (0,8 a 1,6 mm) y **mantén pulsado** el tornillo para girarlo, o tócalo varias veces.
   - Si la punta es demasiado grande, no entra. Si es demasiado pequeña, resbala y marca la cabeza; al segundo resbalón el tornillo **salta y se pierde**, y hay que usar uno de repuesto.
   - Los tornillos van a la bandeja, al compartimento de su pieza. Para volver a ponerlos, toca la ficha 🔩 de su grupo (con eso se cargan en la punta) y luego cada agujero fantasma. Si usas los tornillos de otra pieza, cuenta como **tornillo equivocado**.

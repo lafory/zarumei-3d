@@ -18,7 +18,7 @@ export function buildCase(M, watch, movR) {
     const bz = new THREE.Mesh(new THREE.LatheGeometry(V2([[16.0, 2.2], [19.6, 2.2], [19.9, 2.8], [19.4, 3.6], [16.0, 3.7]], k), 128), metal); bz.material = metal.clone(); bz.material.side = THREE.DoubleSide; body.add(bz);
     const topMat = C.bezel === 'ceramicBlue'
       ? new THREE.MeshPhysicalMaterial({ map: TX.ceramicBezelTexture(), roughness: 0.12, metalness: 0.05, clearcoat: 1, clearcoatRoughness: 0.05 })
-      : new THREE.MeshStandardMaterial({ color: metal.color, metalness: 1, roughness: 0.25, map: TX.bezelTexture() });
+      : new THREE.MeshStandardMaterial({ color: metal.color, metalness: 1, roughness: 0.36, map: TX.bezelTexture(), envMapIntensity: 0.6 });
     const R1 = 19.3 * k, top = new THREE.Mesh(new THREE.RingGeometry(16.1 * k, R1, 128, 1).rotateX(-Math.PI / 2), topMat); top.position.y = 3.72; body.add(top);
     { const uv = top.geometry.attributes.uv, pos = top.geometry.attributes.position; for (let i = 0; i < uv.count; i++) uv.setXY(i, pos.getX(i) / (2 * R1) + 0.5, -pos.getZ(i) / (2 * R1) + 0.5); }
     const nG = new THREE.BoxGeometry(0.3, 0.6, 0.5); for (let i = 0; i < 120; i++) { const n = new THREE.Mesh(nG, brushed); const a = i / 120 * Math.PI * 2; n.position.set(Math.cos(a) * 19.85 * k, 2.9, Math.sin(a) * 19.85 * k); n.rotation.y = -a; body.add(n); }
@@ -50,7 +50,7 @@ export function buildCase(M, watch, movR) {
   }
   // fondo
   const cb = tag(new THREE.Group(), 'caseback');
-  const cbMat = new THREE.MeshStandardMaterial({ color: metal.color, metalness: 1, roughness: 0.28, map: TX.casebackTexture(C.backText, C.backMono) });
+  const cbMat = new THREE.MeshStandardMaterial({ color: metal.color, metalness: 1, roughness: 0.38, map: TX.casebackTexture(C.backText, C.backMono), envMapIntensity: 0.55 });
   if (C.style === 'astral') {
     const kk = C.r / 20;
     cb.add(new THREE.Mesh(new THREE.TorusGeometry(14.2 * kk, 1.15, 12, 80).rotateX(Math.PI / 2), metal));

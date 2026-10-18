@@ -246,6 +246,53 @@ export function onyxTexture() {
   for (let i = 0; i < 14; i++) { x.beginPath(); let px = Math.random() * 512, py = Math.random() * 512; x.moveTo(px, py); for (let k = 0; k < 8; k++) { px += (Math.random() - 0.5) * 120; py += Math.random() * 70; x.lineTo(px, py); } x.stroke(); }
   return tex(c, { repeat: 6 });
 }
+// Grano de metal cepillado: rayas finas + arañazos. roughness y normal, sin color.
+export function metalGrain() {
+  const S = 256;
+  const roughC = canvas(S), rx = roughC.getContext('2d');
+  const normC = canvas(S), nx = normC.getContext('2d');
+  const roughPx = rx.createImageData(S, S), normPx = nx.createImageData(S, S);
+  const lines = new Float32Array(S);
+  for (let y = 0; y < S; y++) lines[y] = 0.78 + Math.sin(y * 1.35) * 0.05 + (Math.random() - 0.5) * 0.07;
+  for (let y = 0; y < S; y++) {
+    const dy = lines[y] - lines[(y - 1 + S) % S];
+    for (let x = 0; x < S; x++) {
+      const nick = Math.random() < 0.003 ? 0.18 : 0;
+      const r = Math.min(1, Math.max(0.35, lines[y] + (Math.random() - 0.5) * 0.04 - nick));
+      const i = (y * S + x) * 4;
+      const g = (r * 255) | 0;
+      roughPx.data[i] = roughPx.data[i + 1] = roughPx.data[i + 2] = g; roughPx.data[i + 3] = 255;
+      normPx.data[i] = Math.max(0, Math.min(255, 128 + (Math.random() - 0.5) * 14));
+      normPx.data[i + 1] = Math.max(0, Math.min(255, 128 + dy * 380));
+      normPx.data[i + 2] = 226; normPx.data[i + 3] = 255;
+    }
+  }
+  rx.putImageData(roughPx, 0, 0); nx.putImageData(normPx, 0, 0);
+  const wrap = (t) => { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(14, 14); return t; };
+  return { rough: wrap(tex(roughC, { srgb: false })), normal: wrap(tex(normC, { srgb: false })) };
+}
+// Paño de relojero: lino gris verdoso, trama visible.
+export function clothTexture() {
+  const S = 512, c = canvas(S), x = c.getContext('2d');
+  x.fillStyle = '#2a3330'; x.fillRect(0, 0, S, S);
+  for (let y = 0; y < S; y++) {
+    x.strokeStyle = y % 2 ? 'rgba(0,0,0,.16)' : 'rgba(255,255,255,.035)';
+    x.beginPath(); x.moveTo(0, y + 0.5); x.lineTo(S, y + 0.5); x.stroke();
+  }
+  for (let i = 0; i < S; i += 2) {
+    x.strokeStyle = i % 4 === 0 ? 'rgba(255,255,255,.04)' : 'rgba(0,0,0,.07)';
+    x.beginPath(); x.moveTo(i + 0.5, 0); x.lineTo(i + 0.5, S); x.stroke();
+  }
+  for (let i = 0; i < 500; i++) { x.fillStyle = 'rgba(0,0,0,.2)'; x.fillRect(Math.random() * S, Math.random() * S, 1, 3); }
+  const t = tex(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(5, 4); return t;
+}
+export function contactShadowTexture() {
+  const S = 256, c = canvas(S), x = c.getContext('2d');
+  const g = x.createRadialGradient(S / 2, S / 2, S * 0.18, S / 2, S / 2, S * 0.48);
+  g.addColorStop(0, 'rgba(0,0,0,.55)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+  x.fillStyle = g; x.fillRect(0, 0, S, S);
+  return tex(c);
+}
 export function galaxyTexture(tone) {
   const S = 1024, c = canvas(S), x = c.getContext('2d');
   const g = x.createRadialGradient(S * 0.48, S * 0.42, 30, S / 2, S / 2, S * 0.62);

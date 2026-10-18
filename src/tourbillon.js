@@ -118,7 +118,7 @@ export function buildZT18(M, images, watch, cal) {
   const ds = new THREE.Group(); ds.name = 'dialSide'; ds.rotation.z = Math.PI; mv.add(ds);
   const ys = { dial: 0.42, hour: 1.55, min: 1.72, sec: 1.88 };
   const dial = tag(new THREE.Group(), 'dial');
-  const skyMat = new THREE.MeshStandardMaterial({ map: TX.galaxyTexture(watch.astral.sky), roughness: 0.85, metalness: 0.05, emissive: new THREE.Color(watch.astral.sky === 'blue' ? 0x061433 : 0x1a0830), emissiveIntensity: 0.35 });
+  const skyMat = new THREE.MeshStandardMaterial({ map: TX.galaxyTexture(watch.astral.sky), roughness: 0.92, metalness: 0.02, emissive: new THREE.Color(watch.astral.sky === 'blue' ? 0x061433 : 0x1a0830), emissiveIntensity: 0.12 });
   const sky = new THREE.Mesh(new THREE.CircleGeometry(13.5, 96).rotateX(-Math.PI / 2), skyMat); sky.position.y = 0.22; dial.add(sky);
   dial.add(new THREE.Mesh(new THREE.TorusGeometry(13.5, 0.2, 8, 80).rotateX(Math.PI / 2), gold));
   dial.add(hitProxy(M, 13.5, 0.4, 0.25)); ds.add(dial); parts.dial = dial;
@@ -126,7 +126,7 @@ export function buildZT18(M, images, watch, cal) {
   const place = (obj, key) => { at(obj, L[key][0], 1.15, L[key][1]); ds.add(obj); parts[obj.name] = obj; return obj; };
 
   const timeDial = tag(new THREE.Group(), 'timeDial');
-  const face = new THREE.Mesh(new THREE.CircleGeometry(2.55, 48).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ map: TX.subdialTexture(), roughness: 0.35, metalness: 0.65 }));
+  const face = new THREE.Mesh(new THREE.CircleGeometry(2.55, 48).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ map: TX.subdialTexture(), roughness: 0.48, metalness: 0.18 }));
   face.position.y = 0.08; timeDial.add(face);
   timeDial.add(new THREE.Mesh(new THREE.TorusGeometry(2.55, 0.16, 8, 40).rotateX(Math.PI / 2), gold));
   timeDial.add(hitProxy(M, 2.6, 0.4, 0.15));

@@ -1,7 +1,9 @@
 // ZARUMEI · Taller de Relojería 3D — LA FORY Tools & Jewelry
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { BokehPass } from 'three/examples/jsm/postprocessing/BokehPass.js';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { TOOLS, SCREWDRIVER_SIZES } from './data/tools.js';
 import { WATCHES } from './data/watches.js';
@@ -9,7 +11,7 @@ import { CALIBERS } from './data/calibers.js';
 import { FAULTS } from './data/faults.js';
 import { STORY } from './data/story.js';
 import { createEngine } from './engine.js';
-import { loadAllImages, leatherTexture, velvetTexture, onyxTexture } from './textures.js';
+import { loadAllImages, leatherTexture, velvetTexture, onyxTexture, clothTexture, contactShadowTexture } from './textures.js';
 import { openBoutique, initBoutique, wallet } from './boutique.js';
 import { fmtPrice } from './data/boutique.js';
 import { makeMaterials } from './materials.js';
@@ -45,24 +47,54 @@ function applyDPR(w, h) {
   renderer.setPixelRatio(Math.min(dpr, cap));
 }
 applyDPR(window.innerWidth, window.innerHeight);
-renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 0.88;
+renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 0.92;
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 stage.prepend(renderer.domElement);
-const scene = new THREE.Scene(); scene.background = new THREE.Color(0x050403);
-const baseFog = new THREE.Fog(0x050403, 340, 760);
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0x070605);
+const baseFog = new THREE.Fog(0x070605, 520, 1100);
 scene.fog = baseFog;
-scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
-scene.environmentIntensity = 0.38;
-const camera = new THREE.PerspectiveCamera(32, 1, 1, 1500);
+scene.environment = studioEnvMap();
+scene.environmentIntensity = 0.62;
+const camera = new THREE.PerspectiveCamera(27, 1, 1, 1500);
 const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true; controls.enablePan = true; controls.screenSpacePanning = true; controls.panSpeed = 0.6; // ratón: botón derecho = desplazar; táctil: dos dedos controls.maxPolarAngle = 1.3; controls.minPolarAngle = 0.02; controls.rotateSpeed = 0.7; controls.zoomSpeed = 0.9;
-scene.add(new THREE.HemisphereLight(0xfff6ea, 0x070605, 0.11));
-// Un foco cae sobre el banco y se apaga con la distancia. Antes el relleno no caía: el interior quedaba tan claro como la esfera.
-const spot = new THREE.SpotLight(0xffe2c0, 28000, 0, 0.36, 0.92, 2); spot.position.set(30, 240, 90); spot.target.position.set(0, 0, 8); scene.add(spot, spot.target);
-const sun = new THREE.DirectionalLight(0xfff1dc, 2.15); sun.position.set(70, 160, 90); sun.castShadow = true; sun.shadow.mapSize.set(1024, 1024);
-Object.assign(sun.shadow.camera, { left: -150, right: 150, top: 150, bottom: -150, near: 10, far: 420 }); sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.02; scene.add(sun);
-const lamp = new THREE.PointLight(0xffc98a, 2400, 320, 2); lamp.position.set(-50, 70, 50); scene.add(lamp);
-const rim = new THREE.DirectionalLight(0x9eb4d6, 0.28); rim.position.set(-90, 40, -80); scene.add(rim);
+controls.enableDamping = true; controls.dampingFactor = 0.08; controls.enablePan = true; controls.screenSpacePanning = true; controls.panSpeed = 0.55;
+controls.maxPolarAngle = 1.25; controls.minPolarAngle = 0.08; controls.rotateSpeed = 0.55; controls.zoomSpeed = 0.65;
+scene.add(new THREE.HemisphereLight(0xf3efe6, 0x0a0908, 0.14));
+// Un softbox cae sobre el banco y se apaga con la distancia. El interior no queda plano.
+const spot = new THREE.SpotLight(0xfff0dc, 22000, 640, 0.48, 1, 2); spot.position.set(36, 220, 80); spot.target.position.set(0, 4, 6); scene.add(spot, spot.target);
+const sun = new THREE.DirectionalLight(0xfff3e4, 1.65); sun.position.set(80, 180, 70); sun.castShadow = true; sun.shadow.mapSize.set(1024, 1024); sun.shadow.radius = 2.6;
+Object.assign(sun.shadow.camera, { left: -140, right: 140, top: 140, bottom: -140, near: 20, far: 420 }); sun.shadow.bias = -0.00035; sun.shadow.normalBias = 0.035; scene.add(sun);
+const lamp = new THREE.PointLight(0xffd8b0, 1600, 260, 2); lamp.position.set(-36, 64, 42); scene.add(lamp);
+const rim = new THREE.DirectionalLight(0xb7c4d6, 0.22); rim.position.set(-100, 36, -70); scene.add(rim);
+
+function studioEnvMap() {
+  const env = new THREE.Scene();
+  const geo = new THREE.BoxGeometry(); geo.deleteAttribute('uv');
+  const room = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: 0x2c2824, roughness: 1, metalness: 0, side: THREE.BackSide }));
+  room.scale.set(30, 18, 30); room.position.y = 2; env.add(room);
+  const area = (intensity, x, y, z, sx, sy, sz) => {
+    const m = new THREE.MeshBasicMaterial(); m.color.setScalar(intensity);
+    const mesh = new THREE.Mesh(geo, m); mesh.position.set(x, y, z); mesh.scale.set(sx, sy, sz); env.add(mesh);
+  };
+  area(12, 0, 13, 2, 14, 0.18, 5); // tira cenital
+  area(8, 11, 6, 7, 0.22, 5, 8); // softbox cálido
+  area(3.5, -10, 5, 5, 0.22, 6, 4); // relleno
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  const map = pmrem.fromScene(env, 0.02).texture;
+  pmrem.dispose();
+  return map;
+}
+
+let composer = null, bokehPass = null;
+function ensureDof() {
+  if (composer) return;
+  composer = new EffectComposer(renderer);
+  composer.addPass(new RenderPass(scene, camera));
+  bokehPass = new BokehPass(scene, camera, { focus: 50, aperture: 0.00012, maxblur: 0.004 });
+  composer.addPass(bokehPass);
+  const r = stage.getBoundingClientRect();
+  composer.setSize(r.width, r.height);
+}
 
 const HOLDER_POS = new THREE.Vector3(-64, 0, 14), INSPECT_POS = new THREE.Vector3(-36, 0.6, 60), TG_POS = new THREE.Vector3(100, 0, -72), TRAY_POS = new THREE.Vector3(34, 0, -12);
 let images, M, T, G = null; // G = partida actual
@@ -101,7 +133,9 @@ function workView() { if (!G) return 'front'; return G.E.flags.mvLoc === 'holder
 function resize() {
   const r = stage.getBoundingClientRect(); applyDPR(r.width, r.height); renderer.setSize(r.width, r.height, false);
   renderer.domElement.style.width = r.width + 'px'; renderer.domElement.style.height = r.height + 'px';
-  camera.aspect = r.width / Math.max(1, r.height); camera.updateProjectionMatrix(); if (G) renderer.render(scene, camera);
+  camera.aspect = r.width / Math.max(1, r.height); camera.updateProjectionMatrix();
+  if (composer) composer.setSize(r.width, r.height);
+  if (G) renderer.render(scene, camera);
 }
 let rzQ = 0; new ResizeObserver(() => { cancelAnimationFrame(rzQ); rzQ = requestAnimationFrame(resize); }).observe(stage);
 for (const ev of ['orientationchange', 'resize', 'fullscreenchange', 'webkitfullscreenchange']) window.addEventListener(ev, () => { setTimeout(() => { resize(); if (G) setView(view === 'loupe' && !loupeTarget ? workView() : view, true); }, 120); });
@@ -255,22 +289,23 @@ function faceSeat() {
   seatRing.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
 }
 function applyQuality() {
-  renderer.toneMappingExposure = hq ? 0.96 : 0.88;
-  scene.environmentIntensity = hq ? 0.48 : 0.38;
+  renderer.toneMappingExposure = hq ? 0.98 : 0.92;
+  scene.environmentIntensity = hq ? 0.74 : 0.62;
   scene.fog = hq ? null : baseFog;
-  spot.intensity = hq ? 34000 : 28000; rim.intensity = hq ? 0.36 : 0.28;
+  spot.intensity = hq ? 26000 : 22000; rim.intensity = hq ? 0.28 : 0.22;
+  sun.shadow.radius = hq ? 1.4 : 2.6;
   const sz = hq ? 2048 : 1024;
   if (sun.shadow.mapSize.x !== sz) {
     sun.shadow.mapSize.set(sz, sz);
     if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; }
   }
-  const aniso = hq ? renderer.capabilities.getMaxAnisotropy() : 8;
+  const an = hq ? renderer.capabilities.getMaxAnisotropy() : 8;
   scene.traverse(o => {
     if (!o.isMesh) return;
     const mats = Array.isArray(o.material) ? o.material : [o.material];
     for (const m of mats) {
-      if (!m || !m.map || m.map.anisotropy === aniso) continue;
-      m.map.anisotropy = aniso;
+      if (!m) continue;
+      for (const key of ['map', 'normalMap', 'roughnessMap']) if (m[key] && m[key].anisotropy !== an) m[key].anisotropy = an;
     }
   });
   const b = $('#hqBtn'); if (b) b.classList.toggle('on', hq);
@@ -280,7 +315,7 @@ function setHQ(on, talk) {
   hq = !!on;
   try { localStorage.setItem('zarumei.hq', hq ? '1' : '0'); } catch (e) { /* privado */ }
   applyQuality();
-  if (talk) say(hq ? 'Vista <b>8K</b>: más píxeles, sombra fina y el metal sin niebla. En el teléfono usa la resolución real de la pantalla (hasta 3×), no un lienzo de 7680.' : 'Vista normal: más ligera, para que el taller no se trabe.');
+  if (talk) say(hq ? 'Calidad <b>foto</b>: más nítido, sombra más fina y un desenfoque suave cuando usas la lupa. Sigue siendo la pantalla del teléfono, no un lienzo de 7680.' : 'Calidad normal: una sola pasada, para que el taller no se trabe.');
 }
 function setSeatMode(on, talk) {
   seatMode = !!on;
@@ -636,6 +671,10 @@ async function init() {
   const mat = new THREE.Mesh(new THREE.BoxGeometry(220, 1.2, 170), [0, 0, 1, 0, 0, 0].map(i => i ? new THREE.MeshStandardMaterial({ map: leatherTexture(images.logo), roughness: 0.62, metalness: 0.05 }) : new THREE.MeshStandardMaterial({ color: 0x120c08, roughness: 0.7 }))); mat.position.set(-6, -0.6, 6); mat.receiveShadow = true; scene.add(mat);
   const rim = new THREE.Mesh(new THREE.BoxGeometry(222, 0.6, 172), new THREE.MeshStandardMaterial({ color: 0xc9a24b, metalness: 1, roughness: 0.28 })); rim.position.set(-6, -0.9, 6); scene.add(rim);
   const insp = new THREE.Mesh(new THREE.CylinderGeometry(9, 9, 0.5, 40), new THREE.MeshStandardMaterial({ map: velvetTexture('#0e2a21'), roughness: 1 })); insp.position.copy(INSPECT_POS).add(new THREE.Vector3(0, -0.3, 0)); insp.receiveShadow = true; scene.add(insp);
+  const cloth = new THREE.Mesh(new THREE.PlaneGeometry(168, 122), new THREE.MeshStandardMaterial({ map: clothTexture(), roughness: 0.92, metalness: 0 }));
+  cloth.rotation.x = -Math.PI / 2; cloth.position.set(-6, 0.06, 6); cloth.receiveShadow = true; scene.add(cloth);
+  const contact = new THREE.Mesh(new THREE.PlaneGeometry(70, 70), new THREE.MeshBasicMaterial({ map: contactShadowTexture(), transparent: true, depthWrite: false }));
+  contact.rotation.x = -Math.PI / 2; contact.position.set(0, 0.08, 4); scene.add(contact);
   $('#introLogo').src = images.logo.src; $('#bqLogo').src = images.logo.src; $('#headLogo').src = images.badge.src; $('#toolheadLogo').src = images.logo.src;
   document.querySelectorAll('.tool .stamp').forEach(i => (i.src = images.badge.src));
   buildWorld('miami', 'aceiteSeco', null); setSize(1.0); setSeatMode(seatMode, false); setHQ(hq, false);
@@ -666,7 +705,15 @@ function loop(now) {
   }
   if (floatingTool && floatingTool.userData.base && !tweens.length && !hold) { floatingTool.rotation.y = t * 0.6; floatingTool.position.y = floatingTool.userData.base.y + Math.sin(t * 2) * 0.4; }
   if (seatRing) { faceSeat(); seatRing.scale.setScalar(1 + Math.sin(t * 5) * 0.05); }
-  controls.update(); renderer.render(scene, camera);
+  controls.update();
+  if (hq && view === 'loupe' && loupeTarget) {
+    ensureDof();
+    const dist = camera.position.distanceTo(controls.target);
+    bokehPass.uniforms.focus.value = dist;
+    bokehPass.uniforms.aperture.value = 0.00015;
+    bokehPass.uniforms.maxblur.value = 0.0045;
+    composer.render();
+  } else renderer.render(scene, camera);
   frames++; if (now - fpsT > 1000) { fps = frames * 1000 / (now - fpsT); frames = 0; fpsT = now; }
   requestAnimationFrame(loop);
 }
