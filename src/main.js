@@ -490,7 +490,11 @@ function renderMenu() {
     b.onclick = () => { if (locked) { b.classList.add('shake'); setTimeout(() => b.classList.remove('shake'), 400); return; } startStory(c.id); }; list.appendChild(b);
   });
   const wl = $('#watchList'); wl.innerHTML = '';
-  Object.values(WATCHES).forEach(w => { const b = document.createElement('button'); b.className = 'wcard' + (playWatch === w.id ? ' on' : ''); b.dataset.watch = w.id; b.innerHTML = `<b>${w.name}</b><span>${w.blurb}</span><small>${CALIBERS[w.caliber].name} · ${CALIBERS[w.caliber].desc}</small>`; b.onclick = () => { playWatch = w.id; renderMenu(); }; wl.appendChild(b); });
+  document.querySelectorAll('#astralList [data-go]').forEach(b => {
+    b.classList.toggle('on', b.dataset.go === playWatch);
+    b.onclick = () => { playWatch = b.dataset.go; renderMenu(); };
+  });
+  Object.values(WATCHES).filter(w => w.caliber !== 'ZT18').forEach(w => { const b = document.createElement('button'); b.className = 'wcard' + (playWatch === w.id ? ' on' : ''); b.dataset.watch = w.id; b.innerHTML = `<b>${w.name}</b><span>${w.blurb}</span><small>${CALIBERS[w.caliber].name} · ${CALIBERS[w.caliber].desc}</small>`; b.onclick = () => { playWatch = w.id; renderMenu(); }; wl.appendChild(b); });
   const fl = $('#faultList'); fl.innerHTML = ''; const type = CALIBERS[WATCHES[playWatch].caliber].type;
   if (!FAULTS[playFault].calibers.includes(type)) playFault = 'sinFalla';
   Object.values(FAULTS).filter(f => f.calibers.includes(type)).forEach(f => { const b = document.createElement('button'); b.className = 'fchip' + (playFault === f.id ? ' on' : ''); b.dataset.fault = f.id; b.textContent = f.name; b.onclick = () => { playFault = f.id; renderMenu(); }; fl.appendChild(b); });

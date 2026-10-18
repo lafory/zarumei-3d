@@ -6,7 +6,7 @@
   "description": "ZARUMEI · Taller de Relojería 3D (Three.js) — LA FORY Tools & Jewelry",
   "scripts": {
     "build": "node scripts/build.mjs",
-    "dev": "python3 -m http.server 8080 --bind 0.0.0.0",
+    "dev": "node scripts/serve.mjs",
     "test": "node tests/playthrough.mjs"
   },
   "devDependencies": {

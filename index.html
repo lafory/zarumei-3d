@@ -103,8 +103,9 @@ button:disabled{opacity:.45}
 .casecard>b{font-family:var(--serif);font-size:19px;font-weight:600;display:block;color:var(--gold-hi)}.casecard>span{font-size:12px;color:var(--muted)}
 .casecard.locked{opacity:.42}.casecard .ticket{display:none}.casecard:not(.locked):first-child .ticket{display:block}
 .ticket{background:var(--grain),linear-gradient(180deg,#f6eedd,#ebe0c7);color:#2a1d10;border-radius:1px;padding:9px 11px;font-family:var(--serif);font-size:13.5px;margin-top:8px;border-left:3px solid var(--gold);box-shadow:0 6px 16px rgba(0,0,0,.4)}
-.wcard{display:block;width:100%;text-align:left;background:transparent;border:1px solid rgba(217,180,94,.22);border-radius:2px;padding:9px 11px;margin-top:6px;color:var(--ink);cursor:pointer;transition:all .3s}.wcard.on{border-color:var(--gold);background:linear-gradient(90deg,rgba(217,180,94,.12),transparent);box-shadow:inset 3px 0 0 var(--gold)}
-.wcard b{font-family:var(--serif);font-size:17px;color:var(--gold-hi);display:block}.wcard span{font-size:12px;display:block}.wcard small{font-size:10.5px;color:var(--muted)}
+.wcard{display:block;width:100%;text-align:left;background:transparent;border:1px solid rgba(217,180,94,.22);border-radius:2px;padding:8px 10px;margin-top:5px;color:var(--ink);cursor:pointer;transition:all .3s}.wcard.on{border-color:var(--gold);background:linear-gradient(90deg,rgba(217,180,94,.12),transparent);box-shadow:inset 3px 0 0 var(--gold)}
+.wcard b{font-family:var(--serif);font-size:16px;color:var(--gold-hi);display:block;line-height:1.2}.wcard span{font-size:12px;display:block}.wcard small{font-size:10.5px;color:var(--muted)}
+.wcard .nuevo{font-family:var(--caps);font-style:normal;font-size:9px;letter-spacing:.14em;text-transform:uppercase;background:var(--foil);color:#1c1406;padding:1px 5px;margin-right:6px;vertical-align:2px}
 #faultList{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}.fchip{background:transparent;border:1px solid rgba(217,180,94,.3);color:var(--ink);border-radius:999px;padding:6px 11px;font-size:12px;cursor:pointer;font-family:var(--sans)}.fchip.on{background:var(--foil);color:#1c1406;border-color:var(--gold)}
 #tgPanel{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 8px);width:min(540px,calc(100% - 16px));z-index:15;background:linear-gradient(180deg,#0f1c16,#08100c);border:1px solid var(--hair);outline:1px solid rgba(217,180,94,.15);outline-offset:-5px;border-radius:3px;padding:12px;animation:rise .45s}
 #tgPanel h3{margin:0 0 8px;font-family:var(--caps);font-weight:500;letter-spacing:.16em;color:var(--gold);font-size:11px;text-transform:uppercase}
@@ -238,7 +239,18 @@ button:disabled{opacity:.45}
     <p class="small" style="text-align:center">Elige la herramienta y toca la pieza. Los tornillos salen uno a uno: elige la punta correcta y mantén pulsado el tornillo.</p>
     <div class="tabs"><button class="tab on" data-tab="story">Historia</button><button class="tab" data-tab="play">Modo libre</button></div>
     <div id="storyPane"><div id="caseList"></div></div>
-    <div id="playPane" hidden><p class="cinzel" style="margin-top:12px">I · El reloj</p><div id="watchList"></div><p class="cinzel" style="margin-top:14px">II · La falla <span class="small" style="text-transform:none;letter-spacing:0">(o «sin falla» para desarmar libremente)</span></p><div id="faultList"></div><div class="row"><button class="lux primary" id="playBtn">Empezar</button></div></div>
+    <div id="playPane" hidden>
+      <p class="cinzel" style="margin-top:12px">I · Turbillones nuevos</p>
+      <div id="astralList">
+        <button type="button" class="wcard" data-go="astralMiami"><b><em class="nuevo">Nuevo</em>ZARUMEI Astral «Miami»</b><span>Turbillón de oro 18 k, nebulosa violeta, diamante y el oso Miami.</span><small>ZT-18 · cuerda manual</small></button>
+        <button type="button" class="wcard" data-go="astralCuba"><b><em class="nuevo">Nuevo</em>ZARUMEI Astral «Cuba»</b><span>Turbillón de oro, cielo azul, jaula de volante, diamante y el oso Cuba.</span><small>ZT-18 · cuerda manual</small></button>
+      </div>
+      <p class="cinzel" style="margin-top:12px">II · Los de siempre</p>
+      <div id="watchList"></div>
+      <p class="cinzel" style="margin-top:14px">III · La falla <span class="small" style="text-transform:none;letter-spacing:0">(o «sin falla» para desarmar libremente)</span></p>
+      <div id="faultList"></div>
+      <div class="row"><button class="lux primary" id="playBtn">Empezar</button></div>
+    </div>
     <button class="menuShop" data-open="boutique" id="shopBtn"><span style="font-size:22px;color:var(--gold)">◆</span><span><small class="cinzel">Maison LA FORY</small><b>Visitar la boutique</b><small>Relojes · Herramientas · Joyería</small></span></button>
   </div>
 </div>
@@ -264,7 +276,7 @@ button:disabled{opacity:.45}
   <div id="bqDetail" hidden><button class="lux" id="bqBack">← Volver</button><div id="bqStage"></div><div id="bqInfo"></div></div>
 </div>
 
-<script src="game.js"></script>
+<script src="game.js?v=astral2"></script>
 <script>
 setInterval(function(){var g=window.__game;if(!g||!g.started)return;var el=document.getElementById('timer');if(!el._t0)el._t0=Date.now();if(document.getElementById('endOverlay').hidden){var e=Math.floor((Date.now()-el._t0)/1000);el.textContent=Math.floor(e/60)+':'+String(e%60).padStart(2,'0');}},500);
 document.getElementById('menuTop').onclick=function(){document.getElementById('intro').hidden=false;};
