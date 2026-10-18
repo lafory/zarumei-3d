@@ -44,7 +44,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:8px
 #progress i{display:block;height:100%;width:0;background:var(--foil);background-size:200% auto;animation:shimmer 3s linear infinite;transition:width .6s cubic-bezier(.2,.8,.2,1)}
 #stage{position:relative;flex:1 1 auto;min-height:200px;border-radius:6px;overflow:hidden;margin-top:6px;touch-action:none;box-shadow:0 0 0 1px var(--hair),0 0 0 4px var(--onyx),0 0 0 5px rgba(217,180,94,.18),0 18px 40px rgba(0,0,0,.6)}
 #stage canvas{display:block;touch-action:none}
-#stage::before{content:'';position:absolute;inset:0;pointer-events:none;z-index:1;background:radial-gradient(120% 90% at 50% 40%,transparent 62%,rgba(0,0,0,.32))}
+#stage::before{content:'';position:absolute;inset:0;pointer-events:none;z-index:1;background:radial-gradient(80% 70% at 50% 42%,transparent 36%,rgba(0,0,0,.62)),linear-gradient(180deg,rgba(6,10,18,.22),transparent 28%,rgba(12,6,4,.18))}
 .viewtag{position:absolute;top:7px;left:8px;font-family:var(--caps);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);background:rgba(10,9,8,.6);padding:4px 9px;border:1px solid var(--hair);border-radius:2px;z-index:2;pointer-events:none}
 #flipBtn{position:absolute;top:5px;right:5px;z-index:2;font-size:9.5px;padding:7px 9px;letter-spacing:.14em}
 #label3d{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);background:rgba(10,9,8,.78);color:var(--gold-hi);padding:6px 12px;border:1px solid var(--hair);border-radius:2px;font-family:var(--serif);font-size:15px;z-index:2;white-space:nowrap;animation:rise .45s cubic-bezier(.2,.8,.2,1)}
@@ -215,7 +215,7 @@ button:disabled{opacity:.45}
   <div id="stage">
     <span class="viewtag" id="viewtag">Vista: esfera</span>
     <button class="lux" id="flipBtn">↻ Voltear</button>
-    <div id="views"><button class="vbtn" data-view="watch" title="Reloj">⌚</button><button class="vbtn" data-view="holder" title="Soporte">🛠</button><button class="vbtn" data-view="tray" title="Bandeja">🗃</button><button class="vbtn" data-view="mat" title="Alfombrilla">🔍</button><button class="vbtn mode on" id="seatBtn" title="Montaje: buscar el sitio">SITIO</button><button class="vbtn mode" id="hqBtn" title="Vista nítida">8K</button></div>
+    <div id="views"><button class="vbtn" data-view="watch" title="Reloj">⌚</button><button class="vbtn" data-view="holder" title="Soporte">🛠</button><button class="vbtn" data-view="tray" title="Bandeja">🗃</button><button class="vbtn" data-view="mat" title="Alfombrilla">🔍</button><button class="vbtn mode on" id="seatBtn" title="Montaje: buscar el sitio">SITIO</button><button class="vbtn mode" id="hqBtn" title="Vista nítida">8K</button><button class="vbtn mode on" id="muteBtn" title="Sonido del taller">SON</button></div>
     <div id="sizes" hidden></div>
     <div id="label3d" hidden></div>
     <span class="gesture">girar: 1 dedo · zoom: 2 · tornillo: mantener</span>
@@ -277,7 +277,7 @@ button:disabled{opacity:.45}
   <div id="bqDetail" hidden><button class="lux" id="bqBack">← Volver</button><div id="bqStage"></div><div id="bqInfo"></div></div>
 </div>
 
-<script src="game.js?v=seat8k"></script>
+<script src="game.js?v=cine1"></script>
 <script>
 setInterval(function(){var g=window.__game;if(!g||!g.started)return;var el=document.getElementById('timer');if(!el._t0)el._t0=Date.now();if(document.getElementById('endOverlay').hidden){var e=Math.floor((Date.now()-el._t0)/1000);el.textContent=Math.floor(e/60)+':'+String(e%60).padStart(2,'0');}},500);
 document.getElementById('menuTop').onclick=function(){document.getElementById('intro').hidden=false;};

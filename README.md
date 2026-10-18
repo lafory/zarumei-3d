@@ -42,7 +42,7 @@ La interfaz tiene estética de boutique de alta joyería: ónix, terciopelo verd
   - La rueda de corona tiene **rosca a izquierdas**.
 - **↻ Voltear:** da la vuelta al reloj, o al movimiento cuando está en el soporte.
 - **Dar cuerda:** antes de la prueba final en el timegrapher.
-- **✦ Pista:** ilumina la herramienta, la punta y el objetivo, y cuesta 2 puntos.
+- **SON / MUTE:** el reloj en marcha hace tic-tac (4 Hz mecánico, 1 Hz cuarzo). Tornillos, montaje y errores también suenan. El iPhone no suena hasta el primer toque.
 
 ### Montaje manual
 El montaje sigue el orden inverso al desarme y lo controlan los datos. Una pieza solo se puede colocar si ya están montadas todas las que van debajo de ella (`coveredBy`), y cada tornillo hay que apretarlo a mano.

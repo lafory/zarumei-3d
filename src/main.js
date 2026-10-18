@@ -18,6 +18,7 @@ import { buildZT18 } from './tourbillon.js';
 import { buildCase } from './case3d.js';
 import { makeTools } from './tools3d.js';
 import { ICONS } from './icons.js';
+import { unlock as unlockAudio, play as playSfx, pulse as pulseSfx, setMuted, isMuted } from './audio.js';
 
 const $ = (s) => document.querySelector(s);
 const stage = $('#stage');
@@ -44,23 +45,24 @@ function applyDPR(w, h) {
   renderer.setPixelRatio(Math.min(dpr, cap));
 }
 applyDPR(window.innerWidth, window.innerHeight);
-renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.08;
+renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 0.88;
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 stage.prepend(renderer.domElement);
-const scene = new THREE.Scene(); scene.background = new THREE.Color(0x080706);
-const baseFog = new THREE.Fog(0x080706, 380, 820);
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0x050403);
+const baseFog = new THREE.Fog(0x050403, 340, 760);
 scene.fog = baseFog;
 scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
+scene.environmentIntensity = 0.38;
 const camera = new THREE.PerspectiveCamera(32, 1, 1, 1500);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true; controls.enablePan = true; controls.screenSpacePanning = true; controls.panSpeed = 0.6; // ratón: botón derecho = desplazar; táctil: dos dedos controls.maxPolarAngle = 1.3; controls.minPolarAngle = 0.02; controls.rotateSpeed = 0.7; controls.zoomSpeed = 0.9;
-scene.add(new THREE.HemisphereLight(0xfff1dc, 0x140d08, 0.42));
-// foco de vitrina: cono cálido y suave sobre el banco (sin sombras: barato en móvil)
-const spot = new THREE.SpotLight(0xffe2b0, 1.45, 0, 0.55, 0.8, 0); spot.position.set(0, 230, 70); spot.target.position.set(0, 0, 10); scene.add(spot, spot.target);
-const sun = new THREE.DirectionalLight(0xfff4e6, 1.35); sun.position.set(60, 140, 80); sun.castShadow = true; sun.shadow.mapSize.set(1024, 1024);
+scene.add(new THREE.HemisphereLight(0xfff6ea, 0x070605, 0.11));
+// Un foco cae sobre el banco y se apaga con la distancia. Antes el relleno no caía: el interior quedaba tan claro como la esfera.
+const spot = new THREE.SpotLight(0xffe2c0, 28000, 0, 0.36, 0.92, 2); spot.position.set(30, 240, 90); spot.target.position.set(0, 0, 8); scene.add(spot, spot.target);
+const sun = new THREE.DirectionalLight(0xfff1dc, 2.15); sun.position.set(70, 160, 90); sun.castShadow = true; sun.shadow.mapSize.set(1024, 1024);
 Object.assign(sun.shadow.camera, { left: -150, right: 150, top: 150, bottom: -150, near: 10, far: 420 }); sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.02; scene.add(sun);
-const lamp = new THREE.PointLight(0xffd59a, 1.35, 0, 0); lamp.position.set(-40, 90, 40); scene.add(lamp);
-const rim = new THREE.DirectionalLight(0xc9d7ff, 0.55); rim.position.set(-90, 50, -70); scene.add(rim);
+const lamp = new THREE.PointLight(0xffc98a, 2400, 320, 2); lamp.position.set(-50, 70, 50); scene.add(lamp);
+const rim = new THREE.DirectionalLight(0x9eb4d6, 0.28); rim.position.set(-90, 40, -80); scene.add(rim);
 
 const HOLDER_POS = new THREE.Vector3(-64, 0, 14), INSPECT_POS = new THREE.Vector3(-36, 0.6, 60), TG_POS = new THREE.Vector3(100, 0, -72), TRAY_POS = new THREE.Vector3(34, 0, -12);
 let images, M, T, G = null; // G = partida actual
@@ -253,9 +255,10 @@ function faceSeat() {
   seatRing.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
 }
 function applyQuality() {
-  renderer.toneMappingExposure = hq ? 1.16 : 1.08;
+  renderer.toneMappingExposure = hq ? 0.96 : 0.88;
+  scene.environmentIntensity = hq ? 0.48 : 0.38;
   scene.fog = hq ? null : baseFog;
-  spot.intensity = hq ? 1.7 : 1.45; rim.intensity = hq ? 0.75 : 0.55;
+  spot.intensity = hq ? 34000 : 28000; rim.intensity = hq ? 0.36 : 0.28;
   const sz = hq ? 2048 : 1024;
   if (sun.shadow.mapSize.x !== sz) {
     sun.shadow.mapSize.set(sz, sz);
@@ -266,9 +269,8 @@ function applyQuality() {
     if (!o.isMesh) return;
     const mats = Array.isArray(o.material) ? o.material : [o.material];
     for (const m of mats) {
-      if (!m) continue;
-      if (m.metalness > 0.35) m.envMapIntensity = hq ? 1.45 : Math.max(m.envMapIntensity || 1, 1.12);
-      if (m.map && m.map.anisotropy !== aniso) m.map.anisotropy = aniso;
+      if (!m || !m.map || m.map.anisotropy === aniso) continue;
+      m.map.anisotropy = aniso;
     }
   });
   const b = $('#hqBtn'); if (b) b.classList.toggle('on', hq);
@@ -317,14 +319,15 @@ async function faultFx(effect, on) {
   if (effect === 'regulate' && S.regulator) { const r0 = S.regulator.rotation.y; await tween(D(500), (k) => (S.regulator.rotation.y = r0 + (0.4 - r0) * k)); flashLabel('Raqueta → «−»'); }
   if (effect === 'demag') flashLabel('🧲 Desmagnetizado');
 }
+function sfx(kind) { if (SPEED >= 0.2) playSfx(kind); }
 async function runFx(list) {
   for (const f of list) {
-    if (f.fx === 'remove') { await fxRemove(f.part, f.inspect); if (f.inspect) await setView('mat'); }
-    else if (f.fx === 'install') { await fxInstall(f.part); if (f.part === 'battery' && G.E.replaced.has('battery')) flashLabel('🔋 Pila nueva SR626SW'); if (f.part === 'coil' && G.E.replaced.has('coil')) G.MV.sub.coilMat.color.set(0xd88a4a); }
-    else if (f.fx === 'turn') await fxTurn(f.screw, f.dir, f.prog);
-    else if (f.fx === 'unscrew') await fxUnscrew(f.screw);
-    else if (f.fx === 'screw') await fxScrew(f.screw);
-    else if (f.fx === 'lost') await fxLost(f.screw);
+    if (f.fx === 'remove') { sfx('remove'); await fxRemove(f.part, f.inspect); if (f.inspect) await setView('mat'); }
+    else if (f.fx === 'install') { sfx('install'); await fxInstall(f.part); if (f.part === 'battery' && G.E.replaced.has('battery')) flashLabel('🔋 Pila nueva SR626SW'); if (f.part === 'coil' && G.E.replaced.has('coil')) G.MV.sub.coilMat.color.set(0xd88a4a); }
+    else if (f.fx === 'turn') { sfx('screw'); await fxTurn(f.screw, f.dir, f.prog); }
+    else if (f.fx === 'unscrew') { sfx('screw'); await fxUnscrew(f.screw); }
+    else if (f.fx === 'screw') { sfx('seat'); await fxScrew(f.screw); }
+    else if (f.fx === 'lost') { sfx('bad'); await fxLost(f.screw); }
     else if (f.fx === 'slip') { stage.classList.remove('shake'); void stage.offsetWidth; stage.classList.add('shake'); }
     else if (f.fx === 'flipWatch') await flipWatch(f.to);
     else if (f.fx === 'flipHolder') await flipHolder(f.to);
@@ -335,8 +338,8 @@ async function runFx(list) {
     else if (f.fx === 'zoom') { if (f.part && G.parts[f.part]) { loupeTarget = partWorldCenter(G.parts[f.part]); await setView('loupe'); } }
     else if (f.fx === 'compass') { if (floatingTool) { const n = floatingTool.getObjectByName('needle'); if (n) { const r0 = n.rotation.y; await tween(D(900), (k) => (n.rotation.y = r0 + (f.mag ? Math.sin(k * 12) * 2.5 : Math.sin(k * 6) * 0.05))); } } }
     else if (f.fx === 'tg') await showTG(f.reading);
-    else if (f.fx === 'wind') { const r = G.parts.ratchet; if (r && SPEED >= 0.2) { const r0 = r.rotation.y; await tween(D(700), (k) => (r.rotation.y = r0 - k * 4)); } }
-    else if (f.fx === 'finish') finish();
+    else if (f.fx === 'wind') { sfx('wind'); const r = G.parts.ratchet; if (r && SPEED >= 0.2) { const r0 = r.rotation.y; await tween(D(700), (k) => (r.rotation.y = r0 - k * 4)); } }
+    else if (f.fx === 'finish') { sfx('finish'); finish(); }
   }
 }
 
@@ -354,6 +357,7 @@ function selectTool(id, talk = false) {
   if (!started || busy) return; sel = id;
   document.querySelectorAll('.tool').forEach(b => { b.classList.toggle('sel', b.dataset.tool === sel); b.classList.remove('hint'); });
   sizesEl.hidden = sel !== 'screwdriver'; showFloatingTool();
+  if (id && talk && SPEED >= 0.2) playSfx('tool');
   if (heldId && G) { const p = G.E.P[heldId]; const need = (p && (p.placeTool || p.tool)); if (sel !== need) hideSeat(); }
   if (sel && talk) { const t = TOOLS.find(x => x.id === sel); say(`<b>${t.name}:</b> ${t.desc}<br><span class="small">Ahora toca la pieza${sel === 'screwdriver' ? ' o el tornillo' : ''} donde la quieres usar.</span>`); }
   renderTray();
@@ -407,7 +411,7 @@ function refresh() { refreshGhosts(); renderTray(); updateBar(); }
 async function act(r, opts = {}) {
   if (!r) return;
   if (r.msg) say(r.msg, r.kind === 'bad' ? 'bad' : r.kind === 'good' ? 'good' : '');
-  if (r.kind === 'bad' && !r.fx.length) { stage.classList.remove('shake'); void stage.offsetWidth; stage.classList.add('shake'); }
+  if (r.kind === 'bad' && !r.fx.length) { sfx('bad'); stage.classList.remove('shake'); void stage.offsetWidth; stage.classList.add('shake'); }
   busy = true;
   try { await runFx(r.fx); } finally { busy = false; }
   refresh();
@@ -445,7 +449,7 @@ async function chipTap(id, force) {
   if (!force && seatMode) {
     const pre = G.E.placeCheck(id, sel, size);
     if (pre && pre.seek) {
-      showSeat(id); renderTray();
+      showSeat(id); renderTray(); sfx('seat');
       say(`Tienes <b>${G.E.name(id)}</b>. Busca el <b>anillo dorado</b> y tócalo: ahí se monta.`);
       const v = workView(); if (view === 'tray' || view === 'mat' || view === 'tg' || view === 'loupe') setView(v);
       return;
@@ -488,6 +492,10 @@ $('#flipBtn').onclick = async () => { if (busy || !G) return; await act(G.E.butt
 document.querySelectorAll('.vbtn[data-view]').forEach(b => b.onclick = () => { if (busy || !G) return; const v = b.dataset.view; setView(v === 'watch' ? (G.E.flags.flipped ? 'back' : 'front') : v); });
 $('#seatBtn').onclick = () => { if (busy) return; setSeatMode(!seatMode, true); };
 $('#hqBtn').onclick = () => { if (busy) return; setHQ(!hq, true); };
+function syncMute() { const b = $('#muteBtn'); if (!b) return; b.classList.toggle('on', !isMuted()); b.textContent = isMuted() ? 'MUTE' : 'SON'; }
+$('#muteBtn').onclick = () => { setMuted(!isMuted()); syncMute(); if (!isMuted() && SPEED >= 0.2) playSfx('tool'); };
+syncMute();
+document.addEventListener('pointerdown', () => unlockAudio(), { passive: true });
 $('#hintBtn').onclick = () => {
   if (!started || busy || !G) return; const h = G.E.hint(); say(h.msg); updateBar(); const a = h.action; if (!a) return;
   if (a.tool) { document.querySelectorAll('.tool').forEach(b => b.classList.toggle('hint', b.dataset.tool === a.tool)); if (a.size) document.querySelectorAll('.size').forEach(b => b.classList.toggle('hint', +b.dataset.size === a.size)); }
@@ -654,6 +662,7 @@ function loop(now) {
       }
     }
     if (run && quartz && P.stepRotor) P.stepRotor.rotation.y = d.getSeconds() * Math.PI;
+    if (started && SPEED >= 0.2 && run) pulseSfx(t, quartz);
   }
   if (floatingTool && floatingTool.userData.base && !tweens.length && !hold) { floatingTool.rotation.y = t * 0.6; floatingTool.position.y = floatingTool.userData.base.y + Math.sin(t * 2) * 0.4; }
   if (seatRing) { faceSeat(); seatRing.scale.setScalar(1 + Math.sin(t * 5) * 0.05); }
