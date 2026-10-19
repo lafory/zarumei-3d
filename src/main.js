@@ -148,15 +148,15 @@ const LAND_CAM = (() => {
   GALLERY_SPEC.forEach((_, i) => {
     const x = i * GALLERY_GAP, t = i * 0.22;
     keys.push(
-      { t: t + 0.000, cam: [x, 72, 118], look: [x, 14, 0] },
-      { t: t + 0.055, cam: [x + 52, 60, 104], look: [x, 13, 0] },
-      { t: t + 0.115, cam: [x + 24, 50, 88], look: [x, 13, 0] },
-      { t: t + 0.175, cam: [x - 50, 54, 100], look: [x, 13, 0] }
+      { t: t + 0.000, cam: [x, 42, 64], look: [x, 12, 0] },
+      { t: t + 0.055, cam: [x + 22, 28, 42], look: [x, 11, 0] },
+      { t: t + 0.115, cam: [x + 6, 18, 30], look: [x, 11, 0] },
+      { t: t + 0.175, cam: [x - 20, 24, 38], look: [x, 12, 0] }
     );
   });
   const end = (GALLERY_SPEC.length - 1) * GALLERY_GAP;
-  keys.push({ t: 0.9, cam: [end, 78, 128], look: [end, 14, 0] });
-  keys.push({ t: 1, cam: [end, 78, 128], look: [end, 14, 0] });
+  keys.push({ t: 0.9, cam: [end, 36, 52], look: [end, 12, 0] });
+  keys.push({ t: 1, cam: [end, 36, 52], look: [end, 12, 0] });
   return keys.map(p => ({ t: p.t, cam: new THREE.Vector3(...p.cam), look: new THREE.Vector3(...p.look) }));
 })();
 const LAND_BEATS = [
@@ -185,7 +185,7 @@ function frameLanding(cam, look, lift = true) {
   const aspect = camera.aspect || 1;
   const ref = 0.72;
   if (aspect >= ref) return { cam, look };
-  const pull = Math.min(1.9, ref / aspect);
+  const pull = Math.min(lift ? 1.12 : 1.55, ref / aspect);
   const aimed = look.clone();
   if (lift) aimed.y += 11 * (pull - 1);
   const out = aimed.clone().add(cam.clone().sub(look).multiplyScalar(pull));
@@ -263,8 +263,8 @@ function openLanding() {
   if (benchDress) benchDress.visible = false;
   controls.enabled = false;
   camera.near = 0.4; camera.fov = 36; camera.updateProjectionMatrix();
-  renderer.toneMappingExposure = 1.18;
-  scene.environmentIntensity = 0.95;
+  renderer.toneMappingExposure = 1.62;
+  scene.environmentIntensity = 1.35;
   scene.fog = new THREE.Fog(0x07060a, 1400, 2400);
   paintLandingAuth();
   resize();
@@ -275,6 +275,9 @@ function closeLanding() {
   $('#landing').hidden = true;
   restoreLandingPose();
   controls.enabled = true;
+  renderer.toneMappingExposure = hq ? 0.98 : 0.92;
+  scene.environmentIntensity = 0.62;
+  scene.fog = baseFog;
   resize();
   setView('front', true);
   enterApp();
@@ -399,11 +402,11 @@ function ensureGallery() {
       slot.userData.wheel = MV.wheel || null;
       slot.userData.baseY = 0;
       slot.userData.i = i;
-      const key = new THREE.SpotLight(0xfff0d2, 14000, 240, 0.62, 0.55, 1.6);
-      key.position.set(i * GALLERY_GAP + 10, 62, 28);
-      key.target.position.set(i * GALLERY_GAP, 14, 0);
-      const fill = new THREE.PointLight(0xd7e2f2, 380, 90, 2);
-      fill.position.set(i * GALLERY_GAP - 22, 18, -18);
+      const key = new THREE.SpotLight(0xfff6e4, 42000, 180, 0.72, 0.4, 1.2);
+      key.position.set(i * GALLERY_GAP + 8, 48, 22);
+      key.target.position.set(i * GALLERY_GAP, 12, 0);
+      const fill = new THREE.PointLight(0xfff1d8, 2200, 70, 2);
+      fill.position.set(i * GALLERY_GAP - 16, 16, 16);
       gallery.add(slot, key, key.target, fill);
       gallery.userData.items.push(slot);
     } catch (err) { console.warn('bóveda', spec.id, err); }
@@ -1048,17 +1051,37 @@ function enterApp() {
   $('#profile').hidden = true; $('#intro').hidden = false; renderMenu();
 }
 function dressCard(b, watchId) {
-  if (!b.querySelector('.portrait')) {
+  if (!b.querySelector('.pair')) {
     const p = document.createElement('div');
-    p.className = 'portrait';
+    p.className = 'pair';
     p.dataset.watch = watchId;
-    p.innerHTML = '<img alt="">';
+    p.innerHTML = '<div class="face"><img alt=""></div><div class="boxshot"><img alt=""></div>';
     b.prepend(p);
   }
-  b.classList.add('reveal');
+  b.classList.add('arrive');
 }
-function paintPortrait(id, src) {
-  document.querySelectorAll(`.portrait[data-watch="${id}"] img`).forEach(img => { img.src = src; img.classList.add('in'); });
+function paintPortrait(id, shot) {
+  document.querySelectorAll(`.pair[data-watch="${id}"]`).forEach(p => {
+    const face = p.querySelector('.face img');
+    const box = p.querySelector('.boxshot img');
+    if (shot.face && face) { face.src = shot.face; face.classList.add('in'); }
+    if (shot.box && box) { box.src = shot.box; box.classList.add('in'); }
+  });
+}
+function placeArrivals() {
+  const root = document.querySelector('#intro .card');
+  if (!root) return;
+  const view = root.getBoundingClientRect();
+  if (view.height < 40) return;
+  const start = view.bottom + view.height * 0.28;
+  const done = view.top + view.height * 0.74;
+  const span = Math.max(1, start - done);
+  root.querySelectorAll('.arrive').forEach(el => {
+    if (el.closest('[hidden]')) return;
+    const top = el.getBoundingClientRect().top;
+    const t = Math.min(1, Math.max(0, (start - top) / span));
+    el.style.setProperty('--in', t.toFixed(3));
+  });
 }
 let revealIO = null;
 function bindReveals() {
@@ -1095,9 +1118,10 @@ function renderMenu() {
     const ids = [...new Set([...STORY.map(c => c.watch), ...Object.keys(WATCHES)])];
     queuePortraits(ids, paintPortrait);
   }
+  requestAnimationFrame(placeArrivals);
 }
 let playWatch = 'miami', playFault = 'sinFalla', portraitsWanted = false;
-document.querySelectorAll('.tab').forEach(t => t.onclick = () => { document.querySelectorAll('.tab').forEach(x => x.classList.toggle('on', x === t)); $('#storyPane').hidden = t.dataset.tab !== 'story'; $('#playPane').hidden = t.dataset.tab !== 'play'; });
+document.querySelectorAll('.tab').forEach(t => t.onclick = () => { document.querySelectorAll('.tab').forEach(x => x.classList.toggle('on', x === t)); $('#storyPane').hidden = t.dataset.tab !== 'story'; $('#playPane').hidden = t.dataset.tab !== 'play'; requestAnimationFrame(placeArrivals); });
 $('#playBtn').onclick = () => startPlay(playWatch, playFault);
 $('#saveBtn').onclick = () => saveGame();
 $('#whoProfile').onclick = () => openProfile();
@@ -1114,6 +1138,7 @@ $('#landing').addEventListener('scroll', () => {
 document.querySelector('#intro .card').addEventListener('scroll', () => {
   const el = document.querySelector('#intro .card'), max = el.scrollHeight - el.clientHeight;
   const bar = $('#menuBar'); if (bar) bar.style.height = (max > 0 ? el.scrollTop / max * 100 : 0).toFixed(1) + '%';
+  placeArrivals();
 }, { passive: true });
 $('#landing').addEventListener('pointermove', e => {
   landTilt.x = (e.clientX / window.innerWidth - 0.5) * 0.2;

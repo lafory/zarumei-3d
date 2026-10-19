@@ -126,7 +126,7 @@ async function makeThumbs(list) {
   holder.rotation.y = 0;
 }
 const portraits = {};
-let boxRig = null, portraitQ = [], portraitOn = null, portraitBusy = false;
+let boxRig = null, boxShot = null, portraitQ = [], portraitOn = null, portraitBusy = false;
 function ensureBox() {
   if (boxRig) return;
   boxRig = new THREE.Group();
@@ -144,23 +144,39 @@ function ensureBox() {
 }
 function shootPortrait(id) {
   setup(); ensureBox();
-  pedestal.visible = false; holder.clear(); boxRig.visible = true;
-  const prev = boxRig.getObjectByName('watch'); if (prev) boxRig.remove(prev);
+  const exposure = R.toneMappingExposure, envI = scene.environmentIntensity;
+  R.toneMappingExposure = 1.7; scene.environmentIntensity = 1.45;
+  R.setClearColor(0x120e0a, 1);
+  pedestal.visible = false; holder.clear();
+  if (!boxShot) {
+    boxRig.visible = true;
+    const prev = boxRig.getObjectByName('watch'); if (prev) boxRig.remove(prev);
+    R.setSize(480, 640, false); camera.aspect = 480 / 640; camera.fov = 32; camera.updateProjectionMatrix();
+    camera.position.set(86, 74, 108); camera.lookAt(0, 14, -8);
+    R.render(scene, camera);
+    boxShot = R.domElement.toDataURL('image/jpeg', 0.84);
+  }
+  boxRig.visible = false;
   const { g } = watchModel(id);
-  g.name = 'watch';
-  g.scale.setScalar(0.28);
-  g.rotation.y = -0.4;
+  const root = g.children[0];
+  root.rotation.x = Math.PI / 2;
+  root.position.y = 0;
+  holder.add(g);
   g.updateMatrixWorld(true);
   const wb = new THREE.Box3().setFromObject(g);
   const c = wb.getCenter(new THREE.Vector3());
+  const size = wb.getSize(new THREE.Vector3());
   g.position.sub(c);
-  g.position.y += 16;
-  boxRig.add(g);
-  R.setSize(520, 340, false); camera.aspect = 520 / 340; camera.fov = 28; camera.updateProjectionMatrix();
-  camera.position.set(46, 50, 74); camera.lookAt(0, 12, -4);
+  const dial = Math.max(size.x, size.z);
+  const fov = 22;
+  const dist = (dial / 2) / Math.tan(THREE.MathUtils.degToRad(fov / 2)) * 0.9;
+  R.setSize(640, 800, false); camera.aspect = 640 / 800; camera.fov = fov; camera.updateProjectionMatrix();
+  camera.position.set(dial * 0.02, dial * 0.04, dist);
+  camera.lookAt(0, 0, 0);
   R.render(scene, camera);
-  portraits[id] = R.domElement.toDataURL('image/jpeg', 0.82);
-  boxRig.remove(g);
+  portraits[id] = { face: R.domElement.toDataURL('image/jpeg', 0.86), box: boxShot };
+  holder.clear();
+  R.toneMappingExposure = exposure; scene.environmentIntensity = envI;
 }
 function pumpPortraits() {
   if (portraitBusy) return;
