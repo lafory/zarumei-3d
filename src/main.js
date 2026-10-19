@@ -148,25 +148,24 @@ const LAND_CAM = (() => {
   GALLERY_SPEC.forEach((_, i) => {
     const x = i * GALLERY_GAP, t = i * 0.22;
     keys.push(
-      { t: t + 0.000, cam: [x, 42, 64], look: [x, 12, 0] },
-      { t: t + 0.055, cam: [x + 22, 28, 42], look: [x, 11, 0] },
-      { t: t + 0.115, cam: [x + 6, 18, 30], look: [x, 11, 0] },
-      { t: t + 0.175, cam: [x - 20, 24, 38], look: [x, 12, 0] }
+      { t: t + 0.000, cam: [x + 8, 6, 108], look: [x, 0, 0] },
+      { t: t + 0.07, cam: [x - 18, 2, 102], look: [x, 0, 0] },
+      { t: t + 0.14, cam: [x + 6, 10, 112], look: [x, 2, 0] }
     );
   });
   const end = (GALLERY_SPEC.length - 1) * GALLERY_GAP;
-  keys.push({ t: 0.9, cam: [end, 36, 52], look: [end, 12, 0] });
-  keys.push({ t: 1, cam: [end, 36, 52], look: [end, 12, 0] });
+  keys.push({ t: 0.9, cam: [end + 4, 6, 108], look: [end, 0, 0] });
+  keys.push({ t: 1, cam: [end + 4, 6, 108], look: [end, 0, 0] });
   return keys.map(p => ({ t: p.t, cam: new THREE.Vector3(...p.cam), look: new THREE.Vector3(...p.look) }));
 })();
 const LAND_BEATS = [
   { k: 0, kicker: 'ZARUMEI 3D', title: 'La bóveda', text: 'Desliza. La cámara entra en el reloj.' },
   { k: 0.10, kicker: 'El fondo', title: 'Se abre', text: 'El fondo sale. Detrás está la máquina.' },
   { k: 0.24, kicker: 'Calibre ZR-28', title: 'Dentro', text: 'Ruedas, rubíes y el volante, en marcha.' },
-  { k: 0.42, kicker: 'La casa', title: 'Cuatro calibres', text: 'Ahora la bóveda. Uno detrás de otro.' },
-  { k: 0.54, kicker: 'ZR-28', title: 'El rodaje', text: 'Automático. El rotor da la cuerda.' },
-  { k: 0.66, kicker: 'ZT-18', title: 'El turbillón', text: 'La jaula gira. El volante no se detiene.' },
-  { k: 0.76, kicker: 'ZC-40', title: 'La complicación', text: 'Día, mes, cronógrafo. El escape sigue.' },
+  { k: 0.42, kicker: 'La bóveda', title: 'Flota', text: 'Sin caja y sin peana. El reloj queda en el aire.' },
+  { k: 0.54, kicker: 'Miami', title: 'Oro', text: 'La esfera entra sola. El brazalete cuelga.' },
+  { k: 0.66, kicker: 'Astral', title: 'Turbillón', text: 'Gira entero, como recortado del fondo.' },
+  { k: 0.76, kicker: 'Diablo', title: 'Rojo', text: 'Laca, máscara y cronógrafo. Nada lo sostiene.' },
   { k: 0.86, kicker: 'El libro', title: 'Entra', text: 'Tu nombre guarda el tiempo y el reloj a medias.' }
 ];
 const INSIDE_END = 0.42, VAULT_AT = 0.50;
@@ -221,6 +220,7 @@ function restoreLandingPose() {
   G.root.visible = true;
   if (gallery) gallery.visible = false;
   if (benchDress) benchDress.visible = true;
+  if (benchPlane) benchPlane.visible = true;
   camera.near = 1; camera.fov = 27; camera.updateProjectionMatrix();
   renderer.toneMappingExposure = 0.92;
   scene.environmentIntensity = 0.62;
@@ -261,6 +261,7 @@ function openLanding() {
   if (G) G.root.visible = true;
   if (gallery) gallery.visible = false;
   if (benchDress) benchDress.visible = false;
+  if (benchPlane) benchPlane.visible = false;
   controls.enabled = false;
   camera.near = 0.4; camera.fov = 36; camera.updateProjectionMatrix();
   renderer.toneMappingExposure = 1.62;
@@ -317,19 +318,25 @@ function poseInside(u, t) {
 function spinGallery(t) {
   if (!gallery) return;
   for (const slot of gallery.userData.items) {
-    spinParts(slot.userData.parts, slot.userData.wheel, t);
-    slot.traverse(o => { if (o.name === 'cageSpin') o.rotation.y = t * (o.parent && o.parent.name === 'balance' ? 0.9 : 0.45); });
-    slot.position.y = slot.userData.baseY + Math.sin(t * 0.8 + slot.userData.i) * 0.7;
+    slot.rotation.y = Math.sin(t * 0.55 + slot.userData.i) * 0.42;
+    slot.position.y = slot.userData.baseY + Math.sin(t * 0.85 + slot.userData.i) * 1.8;
+    const parts = slot.userData.parts;
+    const turn = (id, v) => { const r = parts[id] && parts[id].getObjectByName('rot'); if (r) r.rotation.y = -v * Math.PI * 2; };
+    turn('secHand', (t * 0.2) % 1);
+    turn('minHand', 0.22);
+    turn('hourHand', 0.78);
+    if (parts.moonDisc) parts.moonDisc.rotation.y = t * 0.12;
+    slot.traverse(o => { if (o.name === 'cageSpin') o.rotation.y = t * 0.7; });
   }
 }
 function driveLanding(t) {
   if (!G) return;
-  landKs += (landK - landKs) * 0.09;
+  landKs += (landK - landKs) * 0.16;
   const k = landKs;
   const insideU = clamp01(k / INSIDE_END);
   const vaultU = clamp01((k - VAULT_AT) / (0.9 - VAULT_AT));
   const bridge = clamp01((k - INSIDE_END) / (VAULT_AT - INSIDE_END));
-  const inWatch = bridge < 0.55;
+  const inWatch = k <= INSIDE_END;
   if (G.root) G.root.visible = inWatch;
   if (gallery) gallery.visible = !inWatch;
   if (inWatch) poseInside(insideU, t);
@@ -354,61 +361,41 @@ function driveLanding(t) {
   camera.lookAt(framed.look);
   paintBeat(landK);
 }
-let gallery = null, benchDress = null;
-function galleryPedestal() {
+let gallery = null, benchDress = null, benchPlane = null;
+function floatingWatch(id) {
+  const W = WATCHES[id], cal = CALIBERS[W.caliber];
+  const MV = buildMovement(M, images, W, cal);
+  const CS = buildCase(M, W, MV.R);
+  const root = new THREE.Group();
+  root.add(CS.body);
+  const mount = new THREE.Group();
+  mount.rotation.z = Math.PI;
+  mount.add(MV.mv);
+  root.add(mount, CS.caseback);
+  for (const s of Object.values(MV.screws)) if (s.ghost) s.ghost.visible = false;
+  root.traverse(o => { if (o.isMesh) { o.castShadow = false; o.receiveShadow = false; } });
+  root.rotation.x = Math.PI / 2;
   const g = new THREE.Group();
-  const stone = new THREE.MeshStandardMaterial({ color: 0x070708, roughness: 0.42, metalness: 0.22 });
-  const gold = new THREE.MeshStandardMaterial({ color: 0xe0c36a, metalness: 1, roughness: 0.28 });
-  const base = new THREE.Mesh(new THREE.BoxGeometry(46, 8, 34), stone); base.position.y = 4; g.add(base);
-  const edge = new THREE.Mesh(new THREE.BoxGeometry(46.6, 0.45, 34.6), gold); edge.position.y = 8.05; g.add(edge);
-  const plinth = new THREE.Mesh(new THREE.CylinderGeometry(16, 17.2, 1.1, 40), stone); plinth.position.y = 8.7; g.add(plinth);
-  const ring = new THREE.Mesh(new THREE.TorusGeometry(15.2, 0.18, 8, 48), gold); ring.rotation.x = Math.PI / 2; ring.position.y = 9.2; g.add(ring);
+  g.add(root);
+  g.userData.parts = MV.parts;
   return g;
 }
 function ensureGallery() {
   if (gallery || !M || !images) return;
   gallery = new THREE.Group(); gallery.userData.items = []; scene.add(gallery);
-  const wallC = document.createElement('canvas'); wallC.width = 512; wallC.height = 512;
-  const wx = wallC.getContext('2d');
-  const vg = wx.createLinearGradient(0, 0, 0, 512);
-  vg.addColorStop(0, '#09090b'); vg.addColorStop(1, '#16130e');
-  wx.fillStyle = vg; wx.fillRect(0, 0, 512, 512);
-  const glow = wx.createRadialGradient(256, 150, 10, 256, 210, 280);
-  glow.addColorStop(0, 'rgba(224,195,106,.34)'); glow.addColorStop(1, 'rgba(0,0,0,0)');
-  wx.fillStyle = glow; wx.fillRect(0, 0, 512, 512);
-  wx.strokeStyle = 'rgba(224,195,106,.16)'; wx.lineWidth = 2;
-  for (let n = 0; n < 7; n++) {
-    wx.beginPath(); wx.moveTo((n * 70) % 512, 0);
-    wx.bezierCurveTo(40 + n * 60, 160, 200 - n * 30, 300, (n * 90) % 512, 512); wx.stroke();
-  }
-  const wallTex = new THREE.CanvasTexture(wallC); wallTex.colorSpace = THREE.SRGBColorSpace;
-  const wall = new THREE.Mesh(new THREE.PlaneGeometry(1100, 460), new THREE.MeshBasicMaterial({ map: wallTex }));
-  wall.position.set(200, 100, -90); gallery.add(wall);
   GALLERY_SPEC.forEach((spec, i) => {
     try {
-      const W = WATCHES[spec.id], cal = CALIBERS[W.caliber];
-      const MV = buildMovement(M, images, W, cal);
-      for (const id of ['dial', 'hourHand', 'minHand', 'secHand', 'milHand']) if (MV.parts[id]) MV.parts[id].visible = false;
-      if (MV.protector) MV.protector.visible = false;
-      MV.mv.traverse(o => { if (o.isMesh) { o.castShadow = false; o.receiveShadow = false; } });
-      const inner = new THREE.Group();
-      inner.add(MV.mv);
-      if (spec.face === 'dial') { inner.rotation.x = Math.PI; inner.position.y = 16; }
-      else inner.position.y = 11;
-      const slot = new THREE.Group();
-      slot.add(galleryPedestal(), inner);
-      slot.position.set(i * GALLERY_GAP, 0, 0);
-      slot.userData.parts = MV.parts;
-      slot.userData.wheel = MV.wheel || null;
-      slot.userData.baseY = 0;
-      slot.userData.i = i;
-      const key = new THREE.SpotLight(0xfff6e4, 42000, 180, 0.72, 0.4, 1.2);
-      key.position.set(i * GALLERY_GAP + 8, 48, 22);
-      key.target.position.set(i * GALLERY_GAP, 12, 0);
-      const fill = new THREE.PointLight(0xfff1d8, 2200, 70, 2);
-      fill.position.set(i * GALLERY_GAP - 16, 16, 16);
-      gallery.add(slot, key, key.target, fill);
-      gallery.userData.items.push(slot);
+      const watch = floatingWatch(spec.id);
+      watch.position.set(i * GALLERY_GAP, 0, 0);
+      watch.userData.baseY = 0;
+      watch.userData.i = i;
+      const key = new THREE.SpotLight(0xfff6e4, 16000, 260, 0.6, 0.45, 1.2);
+      key.position.set(i * GALLERY_GAP + 18, 54, 40);
+      key.target.position.set(i * GALLERY_GAP, 10, 0);
+      const fill = new THREE.PointLight(0xfff3dc, 700, 120, 2);
+      fill.position.set(i * GALLERY_GAP - 20, 16, 28);
+      gallery.add(watch, key, key.target, fill);
+      gallery.userData.items.push(watch);
     } catch (err) { console.warn('bóveda', spec.id, err); }
   });
   gallery.visible = false;
@@ -1164,7 +1151,7 @@ async function init() {
   document.querySelectorAll('[data-open="boutique"]').forEach(b => b.onclick = () => openBoutique());
   try { await Promise.all(['600 20px Cinzel', '500 20px "Cormorant Garamond"', '400 14px Jost'].map(f => document.fonts.load(f))); } catch (e) { /* fuentes de reserva */ }
   // banco de ónix, tapete de cuero con pespunte dorado y alfombrilla de terciopelo verde
-  const bench = new THREE.Mesh(new THREE.PlaneGeometry(900, 900), new THREE.MeshStandardMaterial({ map: onyxTexture(), roughness: 0.32, metalness: 0.1 })); bench.rotation.x = -Math.PI / 2; bench.position.y = -0.2; bench.receiveShadow = true; scene.add(bench);
+  benchPlane = new THREE.Mesh(new THREE.PlaneGeometry(900, 900), new THREE.MeshStandardMaterial({ map: onyxTexture(), roughness: 0.32, metalness: 0.1 })); benchPlane.rotation.x = -Math.PI / 2; benchPlane.position.y = -0.2; benchPlane.receiveShadow = true; scene.add(benchPlane);
   benchDress = new THREE.Group(); scene.add(benchDress);
   const mat = new THREE.Mesh(new THREE.BoxGeometry(220, 1.2, 170), [0, 0, 1, 0, 0, 0].map(i => i ? new THREE.MeshStandardMaterial({ map: leatherTexture(images.logo), roughness: 0.62, metalness: 0.05 }) : new THREE.MeshStandardMaterial({ color: 0x120c08, roughness: 0.7 }))); mat.position.set(-6, -0.6, 6); mat.receiveShadow = true; benchDress.add(mat);
   const rim = new THREE.Mesh(new THREE.BoxGeometry(222, 0.6, 172), new THREE.MeshStandardMaterial({ color: 0xc9a24b, metalness: 1, roughness: 0.28 })); rim.position.set(-6, -0.9, 6); benchDress.add(rim);
