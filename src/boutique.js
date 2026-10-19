@@ -143,12 +143,20 @@ function ensureBox() {
   scene.add(boxRig); boxRig.visible = false;
 }
 function shootPortrait(id) {
-  setup();
+  setup(); ensureBox();
   const exposure = R.toneMappingExposure, envI = scene.environmentIntensity;
-  R.toneMappingExposure = 1.45; scene.environmentIntensity = 1.2;
+  R.toneMappingExposure = 1.35; scene.environmentIntensity = 1.15;
   R.setClearColor(0x070605, 1);
   pedestal.visible = false; holder.clear();
-  if (boxRig) boxRig.visible = false;
+  if (!boxShot) {
+    boxRig.visible = true;
+    const prev = boxRig.getObjectByName('watch'); if (prev) boxRig.remove(prev);
+    R.setSize(480, 640, false); camera.aspect = 480 / 640; camera.fov = 32; camera.updateProjectionMatrix();
+    camera.position.set(86, 74, 108); camera.lookAt(0, 14, -8);
+    R.render(scene, camera);
+    boxShot = R.domElement.toDataURL('image/jpeg', 0.82);
+  }
+  boxRig.visible = false;
   const { g } = watchModel(id);
   const root = g.children[0];
   root.rotation.x = Math.PI / 2;
@@ -166,7 +174,7 @@ function shootPortrait(id) {
   camera.position.set(0, dial * 0.02, dist);
   camera.lookAt(0, 0, 0);
   R.render(scene, camera);
-  portraits[id] = { face: R.domElement.toDataURL('image/jpeg', 0.84) };
+  portraits[id] = { face: R.domElement.toDataURL('image/jpeg', 0.84), box: boxShot };
   holder.clear();
   R.toneMappingExposure = exposure; scene.environmentIntensity = envI;
 }

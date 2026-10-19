@@ -251,7 +251,6 @@ function paintLandingAuth() {
 function openLanding() {
   if (!G) return;
   captureSpin();
-  ensureGallery();
   landingOn = true; landBeat = -1;
   document.body.classList.add('land');
   $('#landing').hidden = false;
@@ -274,13 +273,13 @@ function closeLanding() {
   landingOn = false; landK = landKs = 0;
   document.body.classList.remove('land');
   $('#landing').hidden = true;
-  restoreLandingPose();
+  try { restoreLandingPose(); } catch (err) { console.warn(err); }
   controls.enabled = true;
   renderer.toneMappingExposure = hq ? 0.98 : 0.92;
   scene.environmentIntensity = 0.62;
   scene.fog = baseFog;
   resize();
-  setView('front', true);
+  try { setView('front', true); } catch (err) { console.warn(err); }
   enterApp();
 }
 function spinParts(parts, wheel, t) {
@@ -315,46 +314,34 @@ function poseInside(u, t) {
   if (u > 0.4) spinParts(G.parts, G.MV.wheel, t);
   G.root.traverse(o => { if (o.name === 'cageSpin') o.rotation.y = t * 0.7; });
 }
-function spinGallery(t, vaultU) {
-  if (!gallery) return;
-  const items = gallery.userData.items;
-  if (gallery.userData.left && gallery.userData.left.length) addFloating(gallery.userData.left.shift());
-  const idx = items.length ? Math.min(items.length - 1, Math.floor(vaultU * GALLERY_SPEC.length)) : -1;
-  for (let i = 0; i < items.length; i++) {
-    const slot = items[i];
-    slot.visible = i === idx;
-    slot.rotation.y = Math.sin(t * 0.55 + i) * 0.42;
-    slot.position.y = Math.sin(t * 0.85 + i) * 1.8;
-    const parts = slot.userData.parts || {};
-    const turn = (id, v) => { const r = parts[id] && parts[id].getObjectByName('rot'); if (r) r.rotation.y = -v * Math.PI * 2; };
-    turn('secHand', (t * 0.2) % 1);
-    turn('minHand', 0.22);
-    turn('hourHand', 0.78);
-    if (parts.moonDisc) parts.moonDisc.rotation.y = t * 0.12;
-    slot.traverse(o => { if (o.name === 'cageSpin') o.rotation.y = t * 0.7; });
-  }
+function poseFloat(t) {
+  const cb = G.parts.caseback, h = G.home.caseback;
+  if (cb && h) { cb.position.copy(h.pos); cb.quaternion.copy(h.quat); cb.scale.copy(h.scale); }
+  G.root.rotation.set(Math.PI / 2, Math.sin(t * 0.55) * 0.38, 0);
+  G.root.position.set(0, Math.sin(t * 0.8) * 1.4, 0);
+  const sec = G.parts.secHand && G.parts.secHand.getObjectByName('rot');
+  if (sec) sec.rotation.y = -((t * 0.12) % 1) * Math.PI * 2;
 }
 function driveLanding(t) {
   if (!G) return;
-  landKs += (landK - landKs) * 0.16;
+  landKs += (landK - landKs) * 0.18;
   const k = landKs;
   const insideU = clamp01(k / INSIDE_END);
   const vaultU = clamp01((k - VAULT_AT) / (0.9 - VAULT_AT));
-  const showVault = k >= VAULT_AT && gallery && gallery.userData.items.length;
-  if (G.root) G.root.visible = !showVault;
-  if (gallery) gallery.visible = !!showVault;
+  const showVault = k >= VAULT_AT;
+  if (G.root) G.root.visible = true;
+  if (gallery) gallery.visible = false;
   if (!showVault) poseInside(insideU, t);
-  else spinGallery(t, vaultU);
+  else poseFloat(t);
   let cam, look;
   if (!showVault) {
     cam = samplePath(INSIDE_CAM, insideU, 'cam');
     look = samplePath(INSIDE_CAM, insideU, 'look');
   } else {
-    cam = new THREE.Vector3(8, 4, 102);
+    cam = new THREE.Vector3(Math.sin(vaultU * Math.PI) * 16, 4, 116);
     look = new THREE.Vector3(0, 0, 0);
-    cam.x += Math.sin(vaultU * Math.PI) * 14;
   }
-  const framed = frameLanding(cam, look, false);
+  const framed = showVault ? { cam, look } : frameLanding(cam, look, false);
   framed.cam.x += landTilt.x * 10;
   framed.cam.y += landTilt.y * 6;
   camera.position.copy(framed.cam);
@@ -1050,7 +1037,7 @@ function dressCard(b, watchId) {
     const p = document.createElement('div');
     p.className = 'pair';
     p.dataset.watch = watchId;
-    p.innerHTML = '<div class="face"><img alt=""></div>';
+    p.innerHTML = '<div class="face"><img alt=""></div><div class="boxshot"><img alt=""></div>';
     b.prepend(p);
   }
   b.classList.add('arrive');
@@ -1058,7 +1045,9 @@ function dressCard(b, watchId) {
 function paintPortrait(id, shot) {
   document.querySelectorAll(`.pair[data-watch="${id}"]`).forEach(p => {
     const face = p.querySelector('.face img');
+    const box = p.querySelector('.boxshot img');
     if (shot.face && face) { face.src = shot.face; face.classList.add('in'); }
+    if (shot.box && box) { box.src = shot.box; box.classList.add('in'); }
   });
 }
 function placeArrivals() {
@@ -1137,11 +1126,7 @@ $('#landing').addEventListener('pointermove', e => {
   landTilt.x = (e.clientX / window.innerWidth - 0.5) * 0.2;
   landTilt.y = (e.clientY / window.innerHeight - 0.5) * 0.1;
 });
-$('#landSkip').onclick = () => {
-  const el = $('#landing'), max = el.scrollHeight - el.clientHeight;
-  if (landK > 0.72) { closeLanding(); return; }
-  el.scrollTop = max * 0.5;
-};
+$('#landSkip').onclick = () => closeLanding();
 $('#landContinue').onclick = () => closeLanding();
 $('#landSwitch').onclick = () => { book.logout(); paintLandingAuth(); const el = $('#landing'); el.scrollTop = el.scrollHeight; };
 async function begin(watchId, faultId, story) {

@@ -105,10 +105,13 @@ button:disabled{opacity:.45}
 .casecard > div:not(.pair){padding:0 8px}
 .casecard b{font-family:var(--serif);font-size:19px;font-weight:600;display:block;color:var(--gold-hi)}.casecard span{font-size:12px;color:var(--muted)}
 .casecard.locked{opacity:.72}.casecard .ticket{display:none}.casecard:not(.locked):first-of-type .ticket{display:block}
-.pair{position:relative;height:clamp(280px,78vw,420px);overflow:hidden;background:#070605}
-.face{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
-.face img{width:100%;height:100%;object-fit:contain;opacity:0}
-.face img.in{opacity:1;transform:translate3d(calc((1 - var(--in, 1)) * -70%),0,0)}
+.pair{position:relative;height:clamp(240px,68vw,340px);overflow:hidden;background:#070605}
+.face,.boxshot{position:absolute;top:0;bottom:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.face{left:0;right:30%}
+.boxshot{right:0;width:34%}
+.face img,.boxshot img{width:100%;height:100%;object-fit:contain;opacity:0}
+.face img.in{opacity:1;transform:translate3d(calc((1 - var(--in, 1)) * -80%),0,0)}
+.boxshot img.in{opacity:var(--in, 1);transform:translate3d(calc((1 - var(--in, 1)) * 120%),0,0)}
 .menuMeter{position:absolute;left:3px;top:10px;bottom:10px;width:2px;background:rgba(217,180,94,.16);pointer-events:none}
 .menuMeter i{display:block;width:100%;height:0;background:var(--gold)}
 .ticket{background:var(--grain),linear-gradient(180deg,#f6eedd,#ebe0c7);color:#2a1d10;border-radius:1px;padding:9px 11px;font-family:var(--serif);font-size:13.5px;margin-top:8px;border-left:3px solid var(--gold);box-shadow:0 6px 16px rgba(0,0,0,.4)}
@@ -382,7 +385,7 @@ body.land #stage::before{background:linear-gradient(180deg,rgba(0,0,0,.42),trans
   <div id="bqDetail" hidden><button class="lux" id="bqBack">← Volver</button><div id="bqStage"></div><div id="bqInfo"></div></div>
 </div>
 
-<script src="game.js?v=flota2"></script>
+<script src="game.js?v=flota3"></script>
 <script>
 setInterval(function(){var g=window.__game;if(!g||!g.started)return;var el=document.getElementById('timer');if(!el._t0)el._t0=Date.now();if(document.getElementById('endOverlay').hidden){var e=Math.floor((Date.now()-el._t0)/1000);el.textContent=Math.floor(e/60)+':'+String(e%60).padStart(2,'0');}},500);
 document.getElementById('menuTop').onclick=function(){ if (window.__game && __game.openMenu) __game.openMenu(); else document.getElementById('intro').hidden=false; };
