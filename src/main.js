@@ -1140,6 +1140,23 @@ $('#gateIn').onclick = () => { const r = book.login($('#gateName').value, $('#ga
 $('#gateNew').onclick = () => { const r = book.register($('#gateName').value, $('#gatePass').value); if (r.err) { $('#gateErr').textContent = r.err; return; } closeLanding(); };
 $('#gateGuest').onclick = () => { book.enterGuest(); closeLanding(); };
 $('#gatePass').addEventListener('keydown', e => { if (e.key === 'Enter') $('#gateIn').click(); });
+function liftGate(el) {
+  const run = () => {
+    const vv = window.visualViewport;
+    const top = vv ? vv.offsetTop : 0;
+    const h = vv ? vv.height : window.innerHeight;
+    const r = el.getBoundingClientRect();
+    window.scrollBy(0, r.top - (top + h * 0.28));
+  };
+  setTimeout(run, 60);
+  setTimeout(run, 340);
+  setTimeout(run, 700);
+}
+for (const id of ['gateName', 'gatePass']) $('#' + id).addEventListener('focus', () => liftGate($('#' + id)));
+if (window.visualViewport) window.visualViewport.addEventListener('resize', () => {
+  const el = document.activeElement;
+  if (el && (el.id === 'gateName' || el.id === 'gatePass')) liftGate(el);
+});
 $('#gateName').addEventListener('keydown', e => { if (e.key === 'Enter') $('#gatePass').focus(); });
 $('#landing').addEventListener('scroll', () => {
   const el = $('#landing'), max = el.scrollHeight - el.clientHeight;

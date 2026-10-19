@@ -154,8 +154,8 @@ html.land,html.land body{height:auto!important;overflow:auto!important;overflow-
 #landScroll{position:relative;z-index:24;height:auto}
 body:not(.land) #landScroll{display:none!important}
 .landSpacer{height:420vh}
-.landDock{min-height:100vh;display:flex;align-items:flex-end;justify-content:center;padding:12px 14px calc(env(safe-area-inset-bottom) + 16px);position:relative;z-index:27}
-.landDock .card{width:min(440px,100%);pointer-events:auto}
+.landDock{min-height:auto;display:flex;align-items:flex-start;justify-content:center;padding:8vh 14px 58vh;position:relative;z-index:27}
+.landDock .card{width:min(440px,100%);max-height:none;overflow:visible;pointer-events:auto}
 #landing{position:fixed;inset:0;z-index:26;overflow:visible;pointer-events:none;background:transparent}
 #landing[hidden]{display:none!important}
 .landTop{position:fixed;top:0;left:0;right:0;z-index:28;display:flex;justify-content:flex-end;align-items:flex-start;padding:calc(env(safe-area-inset-top) + 10px) 14px 0;pointer-events:none}
@@ -394,7 +394,7 @@ body:not(.land) #landScroll{display:none!important}
   <div id="bqDetail" hidden><button class="lux" id="bqBack">← Volver</button><div id="bqStage"></div><div id="bqInfo"></div></div>
 </div>
 
-<script src="game.js?v=flota8"></script>
+<script src="game.js?v=flota9"></script>
 <script>
 setInterval(function(){var g=window.__game;if(!g||!g.started)return;var el=document.getElementById('timer');if(!el._t0)el._t0=Date.now();if(document.getElementById('endOverlay').hidden){var e=Math.floor((Date.now()-el._t0)/1000);el.textContent=Math.floor(e/60)+':'+String(e%60).padStart(2,'0');}},500);
 document.getElementById('menuTop').onclick=function(){ if (window.__game && __game.openMenu) __game.openMenu(); else document.getElementById('intro').hidden=false; };
