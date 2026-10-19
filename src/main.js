@@ -12,7 +12,7 @@ import { FAULTS } from './data/faults.js';
 import { STORY } from './data/story.js';
 import { createEngine } from './engine.js';
 import { loadAllImages, leatherTexture, velvetTexture, onyxTexture, clothTexture, contactShadowTexture } from './textures.js';
-import { openBoutique, initBoutique, wallet } from './boutique.js';
+import { openBoutique, initBoutique, wallet, queuePortraits } from './boutique.js';
 import { fmtPrice } from './data/boutique.js';
 import { makeMaterials } from './materials.js';
 import { buildZR28, buildZQ11 } from './movement.js';
@@ -160,12 +160,24 @@ const LAND_CAM = (() => {
   return keys.map(p => ({ t: p.t, cam: new THREE.Vector3(...p.cam), look: new THREE.Vector3(...p.look) }));
 })();
 const LAND_BEATS = [
-  { k: 0, kicker: 'ZARUMEI 3D', title: 'La bóveda', text: 'Desliza. La cámara entra en la máquina.' },
-  { k: 0.18, kicker: 'Calibre ZR-28', title: 'El rodaje', text: 'Ruedas, rubíes y el rotor, a la vista.' },
-  { k: 0.40, kicker: 'Calibre ZT-18', title: 'El turbillón', text: 'La jaula gira. El volante no se detiene.' },
-  { k: 0.62, kicker: 'Calibre ZC-40', title: 'La complicación', text: 'Otro calibre. El escape sigue empujando.' },
-  { k: 0.84, kicker: 'El libro', title: 'Entra', text: 'Tu nombre guarda el tiempo y el reloj a medias.' }
+  { k: 0, kicker: 'ZARUMEI 3D', title: 'La bóveda', text: 'Desliza. La cámara entra en el reloj.' },
+  { k: 0.10, kicker: 'El fondo', title: 'Se abre', text: 'El fondo sale. Detrás está la máquina.' },
+  { k: 0.24, kicker: 'Calibre ZR-28', title: 'Dentro', text: 'Ruedas, rubíes y el volante, en marcha.' },
+  { k: 0.42, kicker: 'La casa', title: 'Cuatro calibres', text: 'Ahora la bóveda. Uno detrás de otro.' },
+  { k: 0.54, kicker: 'ZR-28', title: 'El rodaje', text: 'Automático. El rotor da la cuerda.' },
+  { k: 0.66, kicker: 'ZT-18', title: 'El turbillón', text: 'La jaula gira. El volante no se detiene.' },
+  { k: 0.76, kicker: 'ZC-40', title: 'La complicación', text: 'Día, mes, cronógrafo. El escape sigue.' },
+  { k: 0.86, kicker: 'El libro', title: 'Entra', text: 'Tu nombre guarda el tiempo y el reloj a medias.' }
 ];
+const INSIDE_END = 0.42, VAULT_AT = 0.50;
+const INSIDE_CAM = [
+  { t: 0.00, cam: [0, 74, 52], look: [0, 6, 2] },
+  { t: 0.18, cam: [32, 46, 30], look: [0, 5, 0] },
+  { t: 0.36, cam: [22, 34, 20], look: [0, 6, 0] },
+  { t: 0.55, cam: [42, 34, 38], look: [0, 6, 0] },
+  { t: 0.78, cam: [34, 26, 30], look: [0, 4, 0] },
+  { t: 1.00, cam: [18, 32, 36], look: [0, 6, 0] }
+].map(p => ({ t: p.t, cam: new THREE.Vector3(...p.cam), look: new THREE.Vector3(...p.look) }));
 const SPIN_IDS = ['rotor', 'escapeWheel', 'secondWheel', 'thirdWheel', 'fourthWheel', 'interWheel', 'centerWheel', 'fifthWheel', 'ratchet', 'dateDisc', 'dayDisc', 'monthDisc', 'moonDisc', 'hourWheel', 'minuteWheel', 'dateDriver', 'stepRotor'];
 function clamp01(x) { return Math.min(1, Math.max(0, x)); }
 function ramp(a, b, k) { const t = clamp01((k - a) / Math.max(0.0001, b - a)); return t * t * (3 - 2 * t); }
@@ -179,14 +191,15 @@ function frameLanding(cam, look) {
   const out = aimed.clone().add(cam.clone().sub(look).multiplyScalar(pull));
   return { cam: out, look: aimed };
 }
-function along(k, key) {
+function samplePath(keys, k, key) {
   let i = 0;
-  while (i < LAND_CAM.length - 2 && k > LAND_CAM[i + 1].t) i++;
-  const a = LAND_CAM[i], b = LAND_CAM[Math.min(i + 1, LAND_CAM.length - 1)];
+  while (i < keys.length - 2 && k > keys[i + 1].t) i++;
+  const a = keys[i], b = keys[Math.min(i + 1, keys.length - 1)];
   const u = a.t === b.t ? 1 : clamp01((k - a.t) / (b.t - a.t));
   const s = u * u * (3 - 2 * u);
   return a[key].clone().lerp(b[key], s);
 }
+function along(k, key) { return samplePath(LAND_CAM, k, key); }
 function captureSpin() {
   if (!G || spinHome) return;
   spinHome = {};
@@ -245,8 +258,8 @@ function openLanding() {
   $('#intro').hidden = true;
   $('#profile').hidden = true;
   if (T) { T.tg.visible = T.holder.visible = T.tray.visible = false; }
-  if (G) G.root.visible = false;
-  if (gallery) gallery.visible = true;
+  if (G) G.root.visible = true;
+  if (gallery) gallery.visible = false;
   if (benchDress) benchDress.visible = false;
   controls.enabled = false;
   camera.near = 0.4; camera.fov = 36; camera.updateProjectionMatrix();
@@ -266,29 +279,42 @@ function closeLanding() {
   setView('front', true);
   enterApp();
 }
+function spinParts(parts, wheel, t) {
+  if (!parts) return;
+  const turn = (id, spd, phase = 0) => { if (parts[id]) parts[id].rotation.y = t * spd + phase; };
+  turn('rotor', 0.55, 0.4);
+  turn('centerWheel', 0.22);
+  turn('thirdWheel', 0.7);
+  turn('fourthWheel', -0.5);
+  turn('secondWheel', -1.15);
+  turn('interWheel', 0.42);
+  turn('fifthWheel', 0.9);
+  turn('escapeWheel', 2.6);
+  turn('ratchet', 0.18);
+  turn('dateDisc', 0.12);
+  turn('dayDisc', 0.2);
+  turn('monthDisc', -0.08);
+  turn('moonDisc', 0.15);
+  turn('hourWheel', 0.16);
+  turn('minuteWheel', -0.28);
+  turn('dateDriver', 0.33);
+  turn('stepRotor', 1.4);
+  if (wheel) wheel.rotation.y = Math.sin(t * Math.PI * 7) * 1.05;
+}
+function poseInside(u, t) {
+  const flip = ramp(0.10, 0.34, u);
+  G.root.rotation.z = flip * Math.PI;
+  G.root.position.y = THREE.MathUtils.lerp(G.CS.dims.yFront, G.CS.dims.yBack, flip);
+  const open = ramp(0.36, 0.62, u);
+  const cb = G.parts.caseback, h = G.home.caseback;
+  if (cb && h) { cb.position.copy(h.pos); cb.position.y = h.pos.y - open * 16; }
+  if (u > 0.4) spinParts(G.parts, G.MV.wheel, t);
+  G.root.traverse(o => { if (o.name === 'cageSpin') o.rotation.y = t * 0.7; });
+}
 function spinGallery(t) {
   if (!gallery) return;
   for (const slot of gallery.userData.items) {
-    const parts = slot.userData.parts;
-    const turn = (id, spd, phase = 0) => { if (parts[id]) parts[id].rotation.y = t * spd + phase; };
-    turn('rotor', 0.55, 0.4);
-    turn('centerWheel', 0.22);
-    turn('thirdWheel', 0.7);
-    turn('fourthWheel', -0.5);
-    turn('secondWheel', -1.15);
-    turn('interWheel', 0.42);
-    turn('fifthWheel', 0.9);
-    turn('escapeWheel', 2.6);
-    turn('ratchet', 0.18);
-    turn('dateDisc', 0.12);
-    turn('dayDisc', 0.2);
-    turn('monthDisc', -0.08);
-    turn('moonDisc', 0.15);
-    turn('hourWheel', 0.16);
-    turn('minuteWheel', -0.28);
-    turn('dateDriver', 0.33);
-    turn('stepRotor', 1.4);
-    if (slot.userData.wheel) slot.userData.wheel.rotation.y = Math.sin(t * Math.PI * 7) * 1.05;
+    spinParts(slot.userData.parts, slot.userData.wheel, t);
     slot.traverse(o => { if (o.name === 'cageSpin') o.rotation.y = t * (o.parent && o.parent.name === 'balance' ? 0.9 : 0.45); });
     slot.position.y = slot.userData.baseY + Math.sin(t * 0.8 + slot.userData.i) * 0.7;
   }
@@ -297,16 +323,32 @@ function driveLanding(t) {
   if (!G) return;
   landKs += (landK - landKs) * 0.045;
   const k = landKs;
-  if (gallery) gallery.visible = true;
-  if (G.root) G.root.visible = false;
-  spinGallery(t);
-  const framed = frameLanding(along(k, 'cam'), along(k, 'look'));
-  const cam = framed.cam, look = framed.look;
-  cam.x += landTilt.x * 10;
-  cam.y += landTilt.y * 6;
-  camera.position.copy(cam);
-  controls.target.copy(look);
-  camera.lookAt(look);
+  const insideU = clamp01(k / INSIDE_END);
+  const vaultU = clamp01((k - VAULT_AT) / (0.9 - VAULT_AT));
+  const bridge = clamp01((k - INSIDE_END) / (VAULT_AT - INSIDE_END));
+  const inWatch = bridge < 0.55;
+  if (G.root) G.root.visible = inWatch;
+  if (gallery) gallery.visible = !inWatch;
+  if (inWatch) poseInside(insideU, t);
+  else spinGallery(t);
+  let cam, look;
+  if (k <= INSIDE_END) {
+    cam = samplePath(INSIDE_CAM, insideU, 'cam');
+    look = samplePath(INSIDE_CAM, insideU, 'look');
+  } else if (k >= VAULT_AT) {
+    cam = samplePath(LAND_CAM, vaultU, 'cam');
+    look = samplePath(LAND_CAM, vaultU, 'look');
+  } else {
+    const s = bridge * bridge * (3 - 2 * bridge);
+    cam = samplePath(INSIDE_CAM, 1, 'cam').lerp(samplePath(LAND_CAM, 0, 'cam'), s);
+    look = samplePath(INSIDE_CAM, 1, 'look').lerp(samplePath(LAND_CAM, 0, 'look'), s);
+  }
+  const framed = frameLanding(cam, look);
+  framed.cam.x += landTilt.x * 10;
+  framed.cam.y += landTilt.y * 6;
+  camera.position.copy(framed.cam);
+  controls.target.copy(framed.look);
+  camera.lookAt(framed.look);
   paintBeat(landK);
 }
 let gallery = null, benchDress = null;
@@ -1002,7 +1044,28 @@ function showGate() {
   requestAnimationFrame(() => { el.scrollTop = el.scrollHeight; landK = 1; });
 }
 function enterApp() {
+  portraitsWanted = true;
   $('#profile').hidden = true; $('#intro').hidden = false; renderMenu();
+}
+function dressCard(b, watchId) {
+  if (!b.querySelector('.portrait')) {
+    const p = document.createElement('div');
+    p.className = 'portrait';
+    p.dataset.watch = watchId;
+    p.innerHTML = '<img alt="">';
+    b.prepend(p);
+  }
+  b.classList.add('reveal');
+}
+function paintPortrait(id, src) {
+  document.querySelectorAll(`.portrait[data-watch="${id}"] img`).forEach(img => { img.src = src; img.classList.add('in'); });
+}
+let revealIO = null;
+function bindReveals() {
+  const root = document.querySelector('#intro .card');
+  if (!root) return;
+  if (!revealIO) revealIO = new IntersectionObserver((ents) => { for (const e of ents) if (e.isIntersecting) e.target.classList.add('show'); }, { root, threshold: 0.15 });
+  root.querySelectorAll('.reveal').forEach(el => { if (!el.dataset.seen) { el.dataset.seen = '1'; revealIO.observe(el); } });
 }
 function renderMenu() {
   paintWho(); renderSaves(); renderLive();
@@ -1013,20 +1076,27 @@ function renderMenu() {
     const b = document.createElement('button'); b.className = 'casecard' + (locked ? ' locked' : ''); b.dataset.case = c.id;
     const kind = CALIBERS[W.caliber].type;
     const kindLabel = kind === 'auto' ? 'automático' : kind === 'tourbillon' ? 'turbillón' : 'cuarzo';
-    b.innerHTML = `<b>${locked ? '🔒 ' : ''}${c.title}</b><span>${W.name} · ${CALIBERS[W.caliber].name}</span><div class="ticket">CLIENTE: ${c.cliente}<br>RELOJ: ${W.name}<br>CALIBRE: ${CALIBERS[W.caliber].name} (${kindLabel})<br>QUEJA: <b>${F.symptom}</b></div>`;
+    b.innerHTML = `<div><b>${locked ? '🔒 ' : ''}${c.title}</b><span>${W.name} · ${CALIBERS[W.caliber].name}</span></div><div class="ticket">CLIENTE: ${c.cliente}<br>RELOJ: ${W.name}<br>CALIBRE: ${CALIBERS[W.caliber].name} (${kindLabel})<br>QUEJA: <b>${F.symptom}</b></div>`;
+    dressCard(b, c.watch);
     b.onclick = () => { if (locked) { b.classList.add('shake'); setTimeout(() => b.classList.remove('shake'), 400); return; } startStory(c.id); }; list.appendChild(b);
   });
   const wl = $('#watchList'); wl.innerHTML = '';
   document.querySelectorAll('#astralList [data-go], #grandList [data-go], #maisonList [data-go]').forEach(b => {
+    dressCard(b, b.dataset.go);
     b.classList.toggle('on', b.dataset.go === playWatch);
     b.onclick = () => { playWatch = b.dataset.go; renderMenu(); };
   });
-  Object.values(WATCHES).filter(w => w.caliber !== 'ZT18' && !w.grand && !w.maison).forEach(w => { const b = document.createElement('button'); b.className = 'wcard' + (playWatch === w.id ? ' on' : ''); b.dataset.watch = w.id; b.innerHTML = `<b>${w.name}</b><span>${w.blurb}</span><small>${CALIBERS[w.caliber].name} · ${CALIBERS[w.caliber].desc}</small>`; b.onclick = () => { playWatch = w.id; renderMenu(); }; wl.appendChild(b); });
+  Object.values(WATCHES).filter(w => w.caliber !== 'ZT18' && !w.grand && !w.maison).forEach(w => { const b = document.createElement('button'); b.className = 'wcard' + (playWatch === w.id ? ' on' : ''); b.dataset.watch = w.id; b.innerHTML = `<div><b>${w.name}</b><span>${w.blurb}</span><small>${CALIBERS[w.caliber].name} · ${CALIBERS[w.caliber].desc}</small></div>`; dressCard(b, w.id); b.onclick = () => { playWatch = w.id; renderMenu(); }; wl.appendChild(b); });
   const fl = $('#faultList'); fl.innerHTML = ''; const type = CALIBERS[WATCHES[playWatch].caliber].type;
   if (!FAULTS[playFault].calibers.includes(type)) playFault = 'sinFalla';
   Object.values(FAULTS).filter(f => f.calibers.includes(type)).forEach(f => { const b = document.createElement('button'); b.className = 'fchip' + (playFault === f.id ? ' on' : ''); b.dataset.fault = f.id; b.textContent = f.name; b.onclick = () => { playFault = f.id; renderMenu(); }; fl.appendChild(b); });
+  bindReveals();
+  if (portraitsWanted) {
+    const ids = [...new Set([...STORY.map(c => c.watch), ...Object.keys(WATCHES)])];
+    queuePortraits(ids, paintPortrait);
+  }
 }
-let playWatch = 'miami', playFault = 'sinFalla';
+let playWatch = 'miami', playFault = 'sinFalla', portraitsWanted = false;
 document.querySelectorAll('.tab').forEach(t => t.onclick = () => { document.querySelectorAll('.tab').forEach(x => x.classList.toggle('on', x === t)); $('#storyPane').hidden = t.dataset.tab !== 'story'; $('#playPane').hidden = t.dataset.tab !== 'play'; });
 $('#playBtn').onclick = () => startPlay(playWatch, playFault);
 $('#saveBtn').onclick = () => saveGame();
@@ -1040,6 +1110,10 @@ $('#gateName').addEventListener('keydown', e => { if (e.key === 'Enter') $('#gat
 $('#landing').addEventListener('scroll', () => {
   const el = $('#landing'), max = el.scrollHeight - el.clientHeight;
   landK = max > 0 ? el.scrollTop / max : 0;
+}, { passive: true });
+document.querySelector('#intro .card').addEventListener('scroll', () => {
+  const el = document.querySelector('#intro .card'), max = el.scrollHeight - el.clientHeight;
+  const bar = $('#menuBar'); if (bar) bar.style.height = (max > 0 ? el.scrollTop / max * 100 : 0).toFixed(1) + '%';
 }, { passive: true });
 $('#landing').addEventListener('pointermove', e => {
   landTilt.x = (e.clientX / window.innerWidth - 0.5) * 0.2;
@@ -1078,6 +1152,7 @@ async function init() {
   document.querySelectorAll('.tool .stamp').forEach(i => (i.src = images.badge.src));
   buildWorld('miami', 'aceiteSeco', null); setSize(1.0); setSeatMode(seatMode, false); setHQ(hq, false);
   if (navigator.webdriver && !book.current()) book.enterGuest();
+  portraitsWanted = !!navigator.webdriver;
   renderMenu(); resize(); await setView('front', true);
   if (navigator.webdriver) { landingOn = false; $('#landing').hidden = true; document.body.classList.remove('land'); }
   else openLanding();

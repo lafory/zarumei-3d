@@ -106,6 +106,8 @@ function toolModel(id) {
   return { g, size: id === 'screwdriver' ? 56 : 44 };
 }
 function show(p) {
+  if (boxRig) boxRig.visible = false;
+  pedestal.visible = true;
   holder.clear();
   const { g, size } = p.model.type === 'watch' ? watchModel(p.model.watch) : p.model.type === 'tool' ? toolModel(p.model.tool) : jewel(p.model.kind);
   pedestal.scale.setScalar(p.model.type === 'jewel' ? Math.max(0.55, size / 62) : 1);
@@ -122,6 +124,67 @@ async function makeThumbs(list) {
     await new Promise(r => requestAnimationFrame(r));
   }
   holder.rotation.y = 0;
+}
+const portraits = {};
+let boxRig = null, portraitQ = [], portraitOn = null, portraitBusy = false;
+function ensureBox() {
+  if (boxRig) return;
+  boxRig = new THREE.Group();
+  const leather = new THREE.MeshStandardMaterial({ color: 0x140e0a, roughness: 0.62, metalness: 0.12 });
+  const goldM = new THREE.MeshStandardMaterial({ color: 0xd9b45e, metalness: 1, roughness: 0.26 });
+  const cushion = new THREE.MeshStandardMaterial({ color: 0x4a1522, roughness: 0.92 });
+  const base = new THREE.Mesh(new THREE.BoxGeometry(54, 10, 40), leather); base.position.y = 5; boxRig.add(base);
+  const rim = new THREE.Mesh(new THREE.BoxGeometry(54.8, 0.45, 40.8), goldM); rim.position.y = 10.15; boxRig.add(rim);
+  const cush = new THREE.Mesh(new THREE.CylinderGeometry(15, 16.2, 2.4, 40), cushion); cush.position.y = 11.3; boxRig.add(cush);
+  const lid = new THREE.Mesh(new THREE.BoxGeometry(54, 1.4, 40), leather);
+  lid.position.set(0, 22, -28); lid.rotation.x = -1.05; boxRig.add(lid);
+  const lidRim = new THREE.Mesh(new THREE.BoxGeometry(54.6, 0.28, 40.5), goldM);
+  lidRim.position.set(0, 22.9, -28); lidRim.rotation.x = -1.05; boxRig.add(lidRim);
+  scene.add(boxRig); boxRig.visible = false;
+}
+function shootPortrait(id) {
+  setup(); ensureBox();
+  pedestal.visible = false; holder.clear(); boxRig.visible = true;
+  const prev = boxRig.getObjectByName('watch'); if (prev) boxRig.remove(prev);
+  const { g } = watchModel(id);
+  g.name = 'watch';
+  g.scale.setScalar(0.28);
+  g.rotation.y = -0.4;
+  g.updateMatrixWorld(true);
+  const wb = new THREE.Box3().setFromObject(g);
+  const c = wb.getCenter(new THREE.Vector3());
+  g.position.sub(c);
+  g.position.y += 16;
+  boxRig.add(g);
+  R.setSize(520, 340, false); camera.aspect = 520 / 340; camera.fov = 28; camera.updateProjectionMatrix();
+  camera.position.set(46, 50, 74); camera.lookAt(0, 12, -4);
+  R.render(scene, camera);
+  portraits[id] = R.domElement.toDataURL('image/jpeg', 0.82);
+  boxRig.remove(g);
+}
+function pumpPortraits() {
+  if (portraitBusy) return;
+  portraitBusy = true;
+  const step = () => {
+    const id = portraitQ.shift();
+    if (!id) {
+      portraitBusy = false; pedestal.visible = true;
+      if (boxRig) boxRig.visible = false;
+      return;
+    }
+    try { if (!portraits[id]) shootPortrait(id); if (portraitOn) portraitOn(id, portraits[id]); }
+    catch (err) { console.warn('retrato', id, err); }
+    requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+export function queuePortraits(ids, onOne) {
+  portraitOn = onOne;
+  for (const id of ids) {
+    if (portraits[id]) { if (onOne) onOne(id, portraits[id]); continue; }
+    if (!portraitQ.includes(id)) portraitQ.push(id);
+  }
+  pumpPortraits();
 }
 function renderShop() {
   $('#bqWallet').textContent = fmtPrice(wallet.balance); const owned = wallet.owned();
