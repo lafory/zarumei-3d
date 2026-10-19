@@ -115,6 +115,19 @@ button:disabled{opacity:.45}
 .tgvals b{display:block;font-size:16px;color:#d9ffe9}.tgvals .warn b{color:#ffb35b}
 #tgNote{font-size:13px;line-height:1.4;margin:8px 0}
 .small{font-size:12px;color:var(--muted)}.gold{color:var(--gold)}
+.lux.slim{padding:8px 10px;letter-spacing:.08em}
+.field{display:block;margin:10px 0 4px;font-family:var(--caps);font-size:10px;letter-spacing:.16em;color:var(--gold)}
+.gate input{width:100%;background:#100e0c;color:var(--ink);border:1px solid var(--hair);border-radius:2px;padding:11px 12px;font:16px var(--sans);margin-bottom:4px}
+#gateErr{color:var(--bad);min-height:1.2em;text-align:center;margin:6px 0 0}
+.who{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:4px 0 8px;padding:8px 10px;border:1px solid var(--hair);background:rgba(14,42,33,.35)}
+.who b{font-family:var(--serif);font-size:20px;font-weight:500;display:block;line-height:1.1}
+.saveitem{display:flex;gap:8px;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(217,180,94,.16);padding:8px 0}
+.saveitem b{font-family:var(--serif);color:var(--gold-hi);font-weight:500}
+.saveitem > div{min-width:0}
+#saveList,#liveBox{margin-top:8px}
+.admin{overflow-x:auto}.admin table{width:100%;border-collapse:collapse;font-size:12.5px}
+.admin th,.admin td{text-align:left;padding:5px 4px;border-bottom:1px solid rgba(217,180,94,.16);vertical-align:top}
+#gate,#profile{z-index:24}
 .row{display:flex;gap:8px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap}
 .price{font-family:var(--serif);font-weight:600;color:var(--gold-hi);letter-spacing:.03em}.price.big{font-size:24px;display:block}
 .cert{text-align:center}.cert ul{text-align:left}.cert .stars{font-size:26px;letter-spacing:.2em;color:var(--gold);text-shadow:0 0 12px rgba(217,180,94,.6)}.cert .stars i{font-style:normal;opacity:.2}
@@ -227,6 +240,7 @@ button:disabled{opacity:.45}
   <div id="bottom">
     <div id="tray"></div>
     <button class="lux" id="hintBtn">✦ Pista</button>
+    <button class="lux slim" id="saveBtn" hidden>Guardar</button>
     <button class="lux primary" id="actionBtn" hidden>Dar cuerda</button>
   </div>
 </div>
@@ -237,6 +251,12 @@ button:disabled{opacity:.45}
     <h1 class="title foil">ZARUMEI</h1>
     <div class="subtitle">Atelier de relojería 3D</div>
     <hr class="goldrule">
+    <div id="whoBar" hidden>
+      <div><span class="cinzel" id="whoRole">Relojero</span><b id="whoName"></b><div class="small" id="whoStat"></div></div>
+      <div class="row" style="margin:0"><button class="lux slim" id="whoProfile" type="button">Perfil</button><button class="lux slim" id="whoOut" type="button">Salir</button></div>
+    </div>
+    <div id="liveBox" hidden></div>
+    <div id="saveList" hidden></div>
     <p class="small" style="text-align:center">Elige la herramienta y toca la pieza. Para volver a montar, toca la pieza y luego el anillo dorado en su sitio (o pasa a AUTO). Los tornillos salen uno a uno.</p>
     <div class="tabs"><button class="tab on" data-tab="story">Historia</button><button class="tab" data-tab="play">Modo libre</button></div>
     <div id="storyPane"><div id="caseList"></div></div>
@@ -273,6 +293,22 @@ button:disabled{opacity:.45}
 <div id="a2hs" hidden><button id="a2hsClose" aria-label="Cerrar">✕</button><span class="cinzel">Pantalla completa en iPad</span>Safari no permite pantalla completa dentro de la página. Toca <b>Compartir</b> → <b>Agregar a pantalla de inicio</b> y abre ZARUMEI 3D desde el icono: se abrirá a pantalla completa.</div>
 <div class="overlay" id="endOverlay" hidden><div class="card" id="endCard"></div></div>
 
+<div class="overlay" id="gate" hidden>
+  <div class="card gate">
+    <div class="cinzel">Libro del taller</div>
+    <h1 class="title foil">ZARUMEI</h1>
+    <div class="subtitle">Entra para guardar tu tiempo, tus relojes y el punto donde lo dejaste.</div>
+    <label class="field" for="gateName">Nombre</label>
+    <input id="gateName" autocomplete="username" maxlength="18" enterkeyhint="next">
+    <label class="field" for="gatePass">Clave</label>
+    <input id="gatePass" type="password" autocomplete="current-password" enterkeyhint="go">
+    <p id="gateErr" class="small"></p>
+    <div class="row"><button class="lux primary" id="gateIn" type="button">Entrar</button><button class="lux" id="gateNew" type="button">Crear cuenta</button></div>
+    <button class="lux" id="gateGuest" type="button" style="width:100%;margin-top:8px">Entrar como invitado</button>
+  </div>
+</div>
+<div class="overlay" id="profile" hidden><div class="card" id="profileCard"></div></div>
+
 <div class="overlay boutique" id="boutique" hidden>
   <div class="bq">
     <div class="bqtop"><img id="bqLogo" alt="LA FORY"><span class="pill" id="bqWallet">$ 0</span><span><button class="lux fsBtn" title="Pantalla completa">⛶</button> <button class="lux" id="bqClose">✕</button></span></div>
@@ -284,10 +320,10 @@ button:disabled{opacity:.45}
   <div id="bqDetail" hidden><button class="lux" id="bqBack">← Volver</button><div id="bqStage"></div><div id="bqInfo"></div></div>
 </div>
 
-<script src="game.js?v=screws1"></script>
+<script src="game.js?v=libro1"></script>
 <script>
 setInterval(function(){var g=window.__game;if(!g||!g.started)return;var el=document.getElementById('timer');if(!el._t0)el._t0=Date.now();if(document.getElementById('endOverlay').hidden){var e=Math.floor((Date.now()-el._t0)/1000);el.textContent=Math.floor(e/60)+':'+String(e%60).padStart(2,'0');}},500);
-document.getElementById('menuTop').onclick=function(){document.getElementById('intro').hidden=false;};
+document.getElementById('menuTop').onclick=function(){ if (window.__game && __game.openMenu) __game.openMenu(); else document.getElementById('intro').hidden=false; };
 </script>
 </body>
 </html>

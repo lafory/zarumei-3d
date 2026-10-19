@@ -403,10 +403,44 @@ export function createEngine({ watchId, faultId, story = null }) {
     const dis = removedOnce.size ? 1 : 0;
     return Math.min(1, 0.15 * (diagList.length ? diagList.filter(t => diagDone.has(t)).length / diagList.length : 1) + 0.35 * fs * (F.free ? dis : 1) + 0.4 * (removedOnce.size ? inN / total : 0) + (finished ? 0.1 : 0));
   }
+  function exportState() {
+    const screwOut = {};
+    for (const [id, s] of Object.entries(screws)) screwOut[id] = { state: s.state, dmg: s.dmg, spare: !!s.spare };
+    return {
+      st: { ...st }, screws: screwOut, flags: { ...flags },
+      oiled: [...oiled], removedOnce: [...removedOnce], diagDone: [...diagDone],
+      history: history.slice(), replaced: [...replaced], stats: { ...stats },
+      fstep, score, armed, finished, revealed, freeDone
+    };
+  }
+  function importState(snap) {
+    if (!snap || !snap.st) return false;
+    for (const id of Object.keys(st)) if (snap.st[id] === 'in' || snap.st[id] === 'out') st[id] = snap.st[id];
+    for (const [id, s] of Object.entries(snap.screws || {})) {
+      if (!screws[id] || !s) continue;
+      if (s.state === 'in' || s.state === 'out' || s.state === 'lost') screws[id].state = s.state;
+      screws[id].dmg = s.dmg || 0; screws[id].prog = 0; screws[id].spare = !!s.spare;
+    }
+    const fl = snap.flags || {};
+    flags.letdown = !!fl.letdown; flags.protector = !!fl.protector; flags.flipped = !!fl.flipped;
+    flags.mvLoc = fl.mvLoc === 'holder' ? 'holder' : 'case';
+    flags.holderSide = fl.holderSide === 'dial' ? 'dial' : 'bridge';
+    oiled.clear(); (snap.oiled || []).forEach(id => { if (P[id]) oiled.add(id); });
+    removedOnce.clear(); (snap.removedOnce || []).forEach(id => { if (P[id]) removedOnce.add(id); });
+    diagDone.clear(); (snap.diagDone || []).forEach(t => diagDone.add(t));
+    history.length = 0; (snap.history || []).forEach(id => { if (P[id]) history.push(id); });
+    replaced.clear(); (snap.replaced || []).forEach(id => replaced.add(id));
+    if (snap.stats) for (const k of Object.keys(stats)) if (typeof snap.stats[k] === 'number') stats[k] = snap.stats[k];
+    fstep = Math.max(0, Math.min(F.steps.length, snap.fstep | 0));
+    score = Math.max(0, Math.min(100, snap.score | 0));
+    armed = snap.armed && P[snap.armed] ? snap.armed : null;
+    finished = !!snap.finished; revealed = !!snap.revealed; freeDone = !!snap.freeDone;
+    return true;
+  }
   return {
     W, C, F, P, st, screws, flags, stats, story, quartz,
     get score() { return score; }, get finished() { return finished; }, get armed() { return armed; }, get fstep() { return fstep; },
     name, toolName, tapPart, tapChip, placeCheck, missSeat, screwTurn, button, suggest, describe, hint, goal, progress, tgRead, running, amplitude, missingList, allIn, oilPending, replaced, removedOnce,
-    screwsOf, access, oiled, history
+    screwsOf, access, oiled, history, exportState, importState
   };
 }

@@ -22,6 +22,7 @@ import { buildCase } from './case3d.js';
 import { makeTools } from './tools3d.js';
 import { ICONS } from './icons.js';
 import { unlock as unlockAudio, play as playSfx, pulse as pulseSfx, setMuted, isMuted } from './audio.js';
+import * as book from './accounts.js';
 
 const $ = (s) => document.querySelector(s);
 const stage = $('#stage');
@@ -100,7 +101,7 @@ function ensureDof() {
 const HOLDER_POS = new THREE.Vector3(-64, 0, 14), INSPECT_POS = new THREE.Vector3(-36, 0.6, 60), TG_POS = new THREE.Vector3(100, 0, -72), TRAY_POS = new THREE.Vector3(34, 0, -12);
 let images, M, T, G = null; // G = partida actual
 const toolGroup = new THREE.Group(); scene.add(toolGroup);
-let floatingTool = null, sel = null, size = 1.0, view = 'front', busy = false, started = false, t0 = 0, mode = 'story', storyCase = null;
+let floatingTool = null, sel = null, size = 1.0, view = 'front', busy = false, started = false, t0 = 0, mode = 'story', storyCase = null, sessionLive = false;
 let seatMode = true, heldId = null, seatRing = null;
 try { if (localStorage.getItem('zarumei.seat') === '0') seatMode = false; } catch (e) { /* privado */ }
 
@@ -263,6 +264,73 @@ function refreshGhosts() {
     else s.obj.visible = true;
     s.ghost.visible = sc.state !== 'in' && sc.state !== 'lost' && G.E.st[sc.part] === 'in' && !covered;
   }
+}
+function placeRemoved(id) {
+  const obj = G.parts[id]; if (!obj) return;
+  if (id === 'movement') {
+    scene.attach(obj);
+    obj.position.copy(HOLDER_POS).add(new THREE.Vector3(0, 8.4, 0));
+    obj.quaternion.identity(); obj.scale.set(1, 1, 1); return;
+  }
+  const b = localBox(obj), c = b.getCenter(new THREE.Vector3()), sz = b.getSize(new THREE.Vector3());
+  const q = new THREE.Quaternion(); if (id === 'caseback') q.setFromEuler(new THREE.Euler(Math.PI, 0, 0));
+  const s = Math.min(0.62, 14.5 / Math.max(sz.x, sz.z, 1));
+  const dest = trayWorld(slotOf(id));
+  const off = c.clone().multiplyScalar(s); if (id === 'caseback') off.set(off.x, -b.max.y * s, -off.z); else off.y = b.min.y * s;
+  scene.attach(obj); obj.position.copy(dest).sub(new THREE.Vector3(off.x, off.y, off.z)); obj.quaternion.copy(q); obj.scale.set(s, s, s);
+}
+function placeScrewOut(sid) {
+  const sc = G.E.screws[sid], obj = G.MV.screws[sid].obj;
+  if (sc.state === 'lost') { obj.visible = false; return; }
+  const th = obj.getObjectByName('thread'); if (th) th.visible = true;
+  scene.attach(obj); obj.position.copy(screwSlotPos(sid)); obj.quaternion.identity(); obj.scale.set(1, 1, 1); obj.visible = true;
+}
+function layoutFromState() {
+  const E = G.E;
+  if (E.st.movement === 'out') placeRemoved('movement');
+  for (const id of E.history) if (id !== 'movement' && E.st[id] === 'out') placeRemoved(id);
+  for (const id of Object.keys(E.st)) if (E.st[id] === 'out' && id !== 'movement' && !E.history.includes(id)) placeRemoved(id);
+  for (const sid of Object.keys(E.screws)) if (E.screws[sid].state !== 'in') placeScrewOut(sid);
+  if (E.flags.flipped) { G.root.rotation.z = Math.PI; G.root.position.y = G.CS.dims.yBack; }
+  if (E.st.movement === 'out' && E.flags.holderSide === 'dial') {
+    const pl = E.quartz ? 0.9 : 1.2;
+    G.mvObj.quaternion.setFromEuler(new THREE.Euler(0, 0, Math.PI));
+    G.mvObj.position.y = HOLDER_POS.y + 8.4 + pl;
+  }
+  if (G.MV.protector) G.MV.protector.visible = !!E.flags.protector;
+  if (E.replaced.has('coil') && G.MV.sub && G.MV.sub.coilMat) G.MV.sub.coilMat.color.set(0xd88a4a);
+  refreshGhosts();
+}
+async function replayFaults() {
+  for (const s of G.E.F.steps.slice(0, G.E.fstep)) if (s.fx) await faultFx(s.fx);
+}
+function stampTimer(elapsed = 0) { t0 = Date.now() - elapsed; const el = $('#timer'); if (el) el._t0 = t0; }
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&', '<': '<', '>': '>', '"': '"', "'": '&#39;' }[c]));
+function saveGame() {
+  if (!G || !sessionLive || G.E.finished) { say('No hay un reloj a medias para guardar.'); return; }
+  if (busy) { say('Espera a que la pieza termine de moverse.'); return; }
+  if (!book.current()) { say('Entra con tu nombre para guardar el punto.'); return; }
+  const job = { watch: G.E.W.id, fault: G.E.F.id, story: storyCase ? storyCase.id : '', mode, label: G.E.W.name + ' · ' + G.E.F.short, elapsed: Date.now() - t0, score: G.E.score, snap: G.E.exportState() };
+  book.putSave(job);
+  renderSaves();
+  say(`<b>Punto guardado.</b> ${esc(job.label)}. La próxima vez, en el menú, toca Seguir.`, 'good');
+}
+async function resumeSave(key) {
+  const s = book.saves().find(x => x.key === key);
+  if (!s || !WATCHES[s.watch] || !FAULTS[s.fault]) { say('Ese punto ya no se puede abrir.'); return; }
+  mode = s.mode === 'story' ? 'story' : 'play';
+  storyCase = s.story ? (STORY.find(c => c.id === s.story) || null) : null;
+  if (mode === 'story' && !storyCase) mode = 'play';
+  buildWorld(s.watch, s.fault, storyCase);
+  if (!G.E.importState(s.snap)) { say('No se pudo abrir ese punto.'); return; }
+  layoutFromState();
+  const prev = SPEED; SPEED = 0;
+  try { await replayFaults(); } finally { SPEED = prev; }
+  G.active = true; sessionLive = true; sel = null; started = true; busy = false;
+  selectTool(null); stampTimer(s.elapsed || 0);
+  $('#saveBtn').hidden = false; $('#intro').hidden = true; $('#endOverlay').hidden = true; $('#profile').hidden = true;
+  hideSeat(); resize(); await setView(workView(), true); refresh();
+  say(`<b>Sigues donde lo dejaste.</b> ${G.E.W.name}. ${G.E.goal().text}`);
 }
 function hideSeat() {
   heldId = null;
@@ -619,7 +687,9 @@ renderer.domElement.addEventListener('pointerup', (e) => {
 function finish() {
   const E = G.E, e = Math.floor((Date.now() - t0) / 1000), s = E.stats, score = E.score;
   const nS = score >= 90 ? 3 : score >= 70 ? 2 : 1, stars = '★'.repeat(nS) + '<i>' + '★'.repeat(3 - nS) + '</i>';
-  if (mode === 'story' && storyCase) { const i = STORY.findIndex(c => c.id === storyCase.id); const done = +(localStorage.getItem('zarumei.story') || 0); if (i + 1 > done) localStorage.setItem('zarumei.story', String(i + 1)); }
+  if (mode === 'story' && storyCase) { const i = STORY.findIndex(c => c.id === storyCase.id); book.setStory(i + 1); }
+  book.recordRun({ watch: E.W.id, fault: E.F.id, mode, story: storyCase ? storyCase.id : '', ms: e * 1000, score });
+  sessionLive = false; $('#saveBtn').hidden = true;
   const next = mode === 'story' && storyCase ? STORY[STORY.findIndex(c => c.id === storyCase.id) + 1] : null;
   const pay = E.F.free ? 150 + score * 2 : 400 + score * 8; wallet.add(pay);
   $('#endCard').innerHTML = `<div class="cert"><small class="cinzel">Maison LA FORY · Certificado de servicio</small>
@@ -637,8 +707,68 @@ function finish() {
 
 // ───────── menú: Historia / Libre ─────────
 function openMenu() { started = false; $('#intro').hidden = false; renderMenu(); }
+function paintWho() {
+  const u = book.current(), bar = $('#whoBar'); if (!bar) return;
+  if (!u) { bar.hidden = true; return; }
+  bar.hidden = false;
+  $('#whoName').textContent = u.name;
+  $('#whoRole').textContent = u.role === 'admin' ? 'Administrador' : u.role === 'guest' ? 'Invitado' : 'Relojero';
+  $('#whoStat').textContent = `${u.stats.watches} relojes · más rápido ${book.fmtMs(u.stats.bestMs)} · ★ ${u.stats.bestScore}`;
+}
+function renderSaves() {
+  const box = $('#saveList'); if (!box) return;
+  const list = book.saves();
+  if (!list.length) { box.hidden = true; box.innerHTML = ''; return; }
+  box.hidden = false;
+  box.innerHTML = `<p class="cinzel">Continuar un reloj</p>` + list.map(s => {
+    const name = (WATCHES[s.watch] && WATCHES[s.watch].name) || s.label;
+    return `<div class="saveitem"><div><b>${esc(name)}</b><span class="small">${esc(s.label)} · ${book.fmtMs(s.elapsed)} · ★ ${s.score | 0}</span></div><span><button class="lux slim" type="button" data-resume="${esc(s.key)}">Seguir</button> <button class="lux slim" type="button" data-drop="${esc(s.key)}">Borrar</button></span></div>`;
+  }).join('');
+  box.querySelectorAll('[data-resume]').forEach(b => b.onclick = () => resumeSave(b.dataset.resume));
+  box.querySelectorAll('[data-drop]').forEach(b => b.onclick = () => { book.dropSave(b.dataset.drop); renderMenu(); });
+}
+function renderLive() {
+  const live = $('#liveBox'); if (!live) return;
+  if (!(sessionLive && G && !G.E.finished)) { live.hidden = true; live.innerHTML = ''; return; }
+  live.hidden = false;
+  live.innerHTML = `<p class="cinzel">En el banco ahora</p><p class="serif" style="margin:0;font-size:20px">${esc(G.E.W.name)}</p><div class="row" style="margin-top:8px"><button class="lux primary" id="liveBack" type="button">Seguir</button><button class="lux" id="liveSave" type="button">Guardar punto</button></div>`;
+  $('#liveBack').onclick = () => { $('#intro').hidden = true; started = true; };
+  $('#liveSave').onclick = () => saveGame();
+}
+function openProfile() {
+  const u = book.current(); if (!u) { showGate(); return; }
+  const st = u.stats;
+  const runs = (st.runs || []).slice(0, 8).map(r => `<div class="saveitem"><div>${esc((WATCHES[r.watch] && WATCHES[r.watch].name) || r.watch)} <span class="small">${esc((FAULTS[r.fault] && FAULTS[r.fault].short) || r.fault)}</span></div><b>${book.fmtMs(r.ms)} · ★ ${r.score}</b></div>`).join('') || '<p class="small">Todavía no terminas un reloj.</p>';
+  const bests = Object.entries(st.byWatch || {}).map(([id, b]) => `<div class="saveitem"><div>${esc((WATCHES[id] && WATCHES[id].name) || id)}</div><b>${book.fmtMs(b.ms)} · ★ ${b.score}</b></div>`).join('');
+  let admin = '';
+  if (u.role === 'admin') {
+    admin = `<hr class="goldrule"><p class="cinzel">Relojeros de este teléfono</p><div class="admin"><table><tr><th>Nombre</th><th></th><th>Rápido</th><th>★</th><th></th></tr>` +
+      book.roster().map(p => `<tr><td>${esc(p.name)}<div class="small">${esc(p.role)}</div></td><td>${p.stats.watches}</td><td>${book.fmtMs(p.stats.bestMs)}</td><td>${p.stats.bestScore}</td><td>${p.id !== u.id ? `<button class="lux slim" type="button" data-del="${esc(p.id)}">Borrar</button>` : ''}</td></tr>`).join('') +
+      `</table></div>`;
+  }
+  $('#profileCard').innerHTML = `<div class="cinzel">${u.role === 'admin' ? 'Administrador' : u.role === 'guest' ? 'Invitado' : 'Relojero'}</div>
+    <h2 class="foil" style="margin:4px 0 8px;font-family:var(--serif);font-weight:500">${esc(u.name)}</h2>
+    ${u.role === 'guest' ? '<p class="small">El invitado se queda en este teléfono. Crea una cuenta si quieres tu propio nombre y tu propia historia.</p>' : ''}
+    <div class="kv"><span>Relojes terminados</span><b>${st.watches}</b><span>El más rápido</span><b>${book.fmtMs(st.bestMs)}</b><span>Mejor puntuación</span><b>★ ${st.bestScore}</b><span>Puntos acumulados</span><b>${st.totalScore}</b><span>Tiempo en el banco</span><b>${book.fmtMs(st.totalMs)}</b></div>
+    ${bests ? `<hr class="goldrule"><p class="cinzel">Mejor tiempo por reloj</p>${bests}` : ''}
+    <hr class="goldrule"><p class="cinzel">Últimos trabajos</p>${runs}
+    ${admin}
+    <div class="row"><button class="lux" id="profClose" type="button">Cerrar</button><button class="lux" id="profOut" type="button">Salir</button></div>`;
+  $('#profile').hidden = false;
+  $('#profClose').onclick = () => { $('#profile').hidden = true; };
+  $('#profOut').onclick = () => { book.logout(); sessionLive = false; $('#saveBtn').hidden = true; $('#profile').hidden = true; showGate(); };
+  $('#profileCard').querySelectorAll('[data-del]').forEach(b => b.onclick = () => { const r = book.removeUser(b.dataset.del); if (r.err) say(r.err); else openProfile(); });
+}
+function showGate() {
+  $('#gateErr').textContent = '';
+  $('#gate').hidden = false; $('#intro').hidden = true; $('#profile').hidden = true;
+}
+function enterApp() {
+  $('#gate').hidden = true; $('#profile').hidden = true; $('#intro').hidden = false; renderMenu();
+}
 function renderMenu() {
-  const done = +(localStorage.getItem('zarumei.story') || 0);
+  paintWho(); renderSaves(); renderLive();
+  const done = book.storyDone();
   const list = $('#caseList'); list.innerHTML = '';
   STORY.forEach((c, i) => {
     const W = WATCHES[c.watch], F = FAULTS[c.fault], locked = i > done;
@@ -661,10 +791,18 @@ function renderMenu() {
 let playWatch = 'miami', playFault = 'sinFalla';
 document.querySelectorAll('.tab').forEach(t => t.onclick = () => { document.querySelectorAll('.tab').forEach(x => x.classList.toggle('on', x === t)); $('#storyPane').hidden = t.dataset.tab !== 'story'; $('#playPane').hidden = t.dataset.tab !== 'play'; });
 $('#playBtn').onclick = () => startPlay(playWatch, playFault);
+$('#saveBtn').onclick = () => saveGame();
+$('#whoProfile').onclick = () => openProfile();
+$('#whoOut').onclick = () => { book.logout(); sessionLive = false; $('#saveBtn').hidden = true; showGate(); };
+$('#gateIn').onclick = () => { const r = book.login($('#gateName').value, $('#gatePass').value); if (r.err) { $('#gateErr').textContent = r.err; return; } enterApp(); };
+$('#gateNew').onclick = () => { const r = book.register($('#gateName').value, $('#gatePass').value); if (r.err) { $('#gateErr').textContent = r.err; return; } enterApp(); };
+$('#gateGuest').onclick = () => { book.enterGuest(); enterApp(); };
+$('#gatePass').addEventListener('keydown', e => { if (e.key === 'Enter') $('#gateIn').click(); });
+$('#gateName').addEventListener('keydown', e => { if (e.key === 'Enter') $('#gatePass').focus(); });
 async function begin(watchId, faultId, story) {
-  buildWorld(watchId, faultId, story); G.active = true;
-  sel = null; selectTool(null); started = true; busy = false; t0 = Date.now(); $('#timer')._t0 = Date.now();
-  $('#intro').hidden = true; $('#endOverlay').hidden = true; resize(); await setView('front', true); refresh();
+  buildWorld(watchId, faultId, story); G.active = true; sessionLive = true;
+  sel = null; selectTool(null); started = true; busy = false; stampTimer(0);
+  $('#saveBtn').hidden = false; $('#intro').hidden = true; $('#endOverlay').hidden = true; resize(); await setView('front', true); refresh();
   const W = WATCHES[watchId], F = FAULTS[faultId];
   const seatNote = seatMode ? ' Al montar, toca la pieza y luego el anillo dorado.' : '';
   say(story ? `<b>${story.title}</b> — ${W.name}. ${story.intro}${seatNote}` : `<b>Modo libre</b> — ${W.name} · ${F.name}. ${F.free ? 'Desarma lo que quieras y vuelve a montarlo todo.' : 'Diagnostica, repara, monta y prueba.'}${seatNote}`);
@@ -673,6 +811,7 @@ function startStory(id) { mode = 'story'; storyCase = STORY.find(c => c.id === i
 function startPlay(w, f) { mode = 'play'; storyCase = null; return begin(w, f, null); }
 
 async function init() {
+  book.boot();
   images = await loadAllImages(); M = makeMaterials(); initBoutique({ M, images });
   document.querySelectorAll('[data-open="boutique"]').forEach(b => b.onclick = () => openBoutique());
   try { await Promise.all(['600 20px Cinzel', '500 20px "Cormorant Garamond"', '400 14px Jost'].map(f => document.fonts.load(f))); } catch (e) { /* fuentes de reserva */ }
@@ -688,8 +827,11 @@ async function init() {
   $('#introLogo').src = images.logo.src; $('#bqLogo').src = images.logo.src; $('#headLogo').src = images.badge.src; $('#toolheadLogo').src = images.logo.src;
   document.querySelectorAll('.tool .stamp').forEach(i => (i.src = images.badge.src));
   buildWorld('miami', 'aceiteSeco', null); setSize(1.0); setSeatMode(seatMode, false); setHQ(hq, false);
+  if (navigator.webdriver && !book.current()) book.enterGuest();
   renderMenu(); resize(); await setView('front', true);
-  $('#loading').hidden = true; requestAnimationFrame(loop);
+  $('#loading').hidden = true;
+  if (!book.current()) showGate();
+  requestAnimationFrame(loop);
 }
 
 // ───────── bucle ─────────
@@ -736,7 +878,7 @@ window.__game = {
   get started() { return started; }, get busy() { return busy || !!tweens.length; }, get view() { return view; }, get fps() { return fps; },
   get state() { if (!G) return null; const E = G.E; return { watch: E.W.id, fault: E.F.id, score: E.score, finished: E.finished, goal: E.goal(), flags: { ...E.flags }, stats: { ...E.stats }, out: Object.keys(E.st).filter(k => E.st[k] === 'out'), screwsOut: Object.values(E.screws).filter(s => s.state !== 'in').length, fstep: E.fstep }; },
   get info() { const i = renderer.info.render; return { calls: i.calls, triangles: i.triangles, geometries: renderer.info.memory.geometries, textures: renderer.info.memory.textures }; },
-  startStory, startPlay, setSpeed: (s) => (SPEED = s), setView: (v) => setView(v),
+  startStory, startPlay, openMenu, setSpeed: (s) => (SPEED = s), setView: (v) => setView(v),
   selectTool: (id) => selectTool(id), setSize,
   suggest: () => G.E.suggest(), describe: (a) => G.E.describe(a),
   // ejecuta una acción como la haría el jugador (misma ruta de código que los toques)
