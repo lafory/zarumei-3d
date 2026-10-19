@@ -1054,21 +1054,29 @@ function paintPortrait(id, shot) {
     const box = p.querySelector('.boxshot img');
     if (shot.face && face) { face.src = shot.face; face.classList.add('in'); }
     if (shot.box && box) { box.src = shot.box; box.classList.add('in'); }
+    const card = p.closest('.arrive');
+    if (!card) return;
+    const to = arrivalOf(card);
+    card.style.setProperty('--in', '0');
+    if (face) void face.offsetWidth;
+    requestAnimationFrame(() => card.style.setProperty('--in', to.toFixed(3)));
   });
+}
+function arrivalOf(el) {
+  const root = document.querySelector('#intro .card');
+  if (!root) return 1;
+  const view = root.getBoundingClientRect();
+  const start = view.bottom;
+  const done = view.top + view.height * 0.62;
+  const top = el.getBoundingClientRect().top;
+  return Math.min(1, Math.max(0, (start - top) / Math.max(1, start - done)));
 }
 function placeArrivals() {
   const root = document.querySelector('#intro .card');
   if (!root) return;
-  const view = root.getBoundingClientRect();
-  if (view.height < 40) return;
-  const start = view.bottom + view.height * 0.28;
-  const done = view.top + view.height * 0.74;
-  const span = Math.max(1, start - done);
   root.querySelectorAll('.arrive').forEach(el => {
     if (el.closest('[hidden]')) return;
-    const top = el.getBoundingClientRect().top;
-    const t = Math.min(1, Math.max(0, (start - top) / span));
-    el.style.setProperty('--in', t.toFixed(3));
+    el.style.setProperty('--in', arrivalOf(el).toFixed(3));
   });
 }
 let revealIO = null;
@@ -1101,7 +1109,6 @@ function renderMenu() {
   const fl = $('#faultList'); fl.innerHTML = ''; const type = CALIBERS[WATCHES[playWatch].caliber].type;
   if (!FAULTS[playFault].calibers.includes(type)) playFault = 'sinFalla';
   Object.values(FAULTS).filter(f => f.calibers.includes(type)).forEach(f => { const b = document.createElement('button'); b.className = 'fchip' + (playFault === f.id ? ' on' : ''); b.dataset.fault = f.id; b.textContent = f.name; b.onclick = () => { playFault = f.id; renderMenu(); }; fl.appendChild(b); });
-  bindReveals();
   if (portraitsWanted) {
     const ids = [...new Set([...STORY.map(c => c.watch), ...Object.keys(WATCHES)])];
     queuePortraits(ids, paintPortrait);
