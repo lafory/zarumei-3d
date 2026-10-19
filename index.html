@@ -148,6 +148,12 @@ body.land #stage::before{background:linear-gradient(180deg,rgba(0,0,0,.42),trans
 @keyframes landBob{50%{transform:translateY(7px) rotate(45deg)}}
 .landMeter{position:fixed;left:0;top:18%;bottom:18%;width:2px;z-index:26;background:rgba(217,180,94,.18);pointer-events:none}
 .landMeter i{display:block;width:100%;height:0;background:var(--foil);background-size:100% 200%}
+@media (max-width:700px) and (max-aspect-ratio:4/5){
+  .landCopy{top:calc(env(safe-area-inset-top) + 46px)}
+  .landCopy h1{font-size:30px}
+  .landCopy p{font-size:15px;max-width:280px}
+  .landMark b{font-size:13px;letter-spacing:.26em}
+}
 .landSpacer{height:1100vh}
 .landDock{min-height:100vh;display:flex;align-items:flex-end;justify-content:center;padding:12px 14px calc(env(safe-area-inset-bottom) + 16px)}
 .landDock .card{width:min(440px,100%)}
@@ -371,7 +377,7 @@ body.land #stage::before{background:linear-gradient(180deg,rgba(0,0,0,.42),trans
   <div id="bqDetail" hidden><button class="lux" id="bqBack">← Volver</button><div id="bqStage"></div><div id="bqInfo"></div></div>
 </div>
 
-<script src="game.js?v=boveda1"></script>
+<script src="game.js?v=boveda2"></script>
 <script>
 setInterval(function(){var g=window.__game;if(!g||!g.started)return;var el=document.getElementById('timer');if(!el._t0)el._t0=Date.now();if(document.getElementById('endOverlay').hidden){var e=Math.floor((Date.now()-el._t0)/1000);el.textContent=Math.floor(e/60)+':'+String(e%60).padStart(2,'0');}},500);
 document.getElementById('menuTop').onclick=function(){ if (window.__game && __game.openMenu) __game.openMenu(); else document.getElementById('intro').hidden=false; };

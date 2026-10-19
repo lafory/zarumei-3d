@@ -169,6 +169,16 @@ const LAND_BEATS = [
 const SPIN_IDS = ['rotor', 'escapeWheel', 'secondWheel', 'thirdWheel', 'fourthWheel', 'interWheel', 'centerWheel', 'fifthWheel', 'ratchet', 'dateDisc', 'dayDisc', 'monthDisc', 'moonDisc', 'hourWheel', 'minuteWheel', 'dateDriver', 'stepRotor'];
 function clamp01(x) { return Math.min(1, Math.max(0, x)); }
 function ramp(a, b, k) { const t = clamp01((k - a) / Math.max(0.0001, b - a)); return t * t * (3 - 2 * t); }
+function frameLanding(cam, look) {
+  const aspect = camera.aspect || 1;
+  const ref = 0.72;
+  if (aspect >= ref) return { cam, look };
+  const pull = Math.min(1.9, ref / aspect);
+  const aimed = look.clone();
+  aimed.y += 11 * (pull - 1);
+  const out = aimed.clone().add(cam.clone().sub(look).multiplyScalar(pull));
+  return { cam: out, look: aimed };
+}
 function along(k, key) {
   let i = 0;
   while (i < LAND_CAM.length - 2 && k > LAND_CAM[i + 1].t) i++;
@@ -290,7 +300,8 @@ function driveLanding(t) {
   if (gallery) gallery.visible = true;
   if (G.root) G.root.visible = false;
   spinGallery(t);
-  const cam = along(k, 'cam'), look = along(k, 'look');
+  const framed = frameLanding(along(k, 'cam'), along(k, 'look'));
+  const cam = framed.cam, look = framed.look;
   cam.x += landTilt.x * 10;
   cam.y += landTilt.y * 6;
   camera.position.copy(cam);
