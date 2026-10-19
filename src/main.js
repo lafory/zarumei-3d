@@ -136,23 +136,37 @@ function workView() { if (!G) return 'front'; return G.E.flags.mvLoc === 'holder
 
 let landingOn = false, landK = 0, landKs = 0, landBeat = -1, spinHome = null;
 const landTilt = { x: 0, y: 0 };
-const LAND_CAM = [
-  { t: 0, cam: [0, 46, 56], look: [0, 7, 0] },
-  { t: 0.1, cam: [10, 24, 30], look: [0, 8, 0] },
-  { t: 0.2, cam: [20, 12, -6], look: [0, 6, 0] },
-  { t: 0.32, cam: [2, 15, 3], look: [1, 5.5, -1] },
-  { t: 0.46, cam: [-5, 12, 7], look: [2, 5, -1] },
-  { t: 0.58, cam: [1, 14, 5], look: [0, 5.5, 0] }
-].map(p => ({ t: p.t, cam: new THREE.Vector3(...p.cam), look: new THREE.Vector3(...p.look) }));
-const LAND_BEATS = [
-  { k: 0, kicker: 'Maison LA FORY', title: 'ZARUMEI', text: 'Desliza despacio. El calibre se abre contigo.' },
-  { k: 0.12, kicker: 'La caja', title: 'Gira el fondo', text: 'El fondo se desenrosca. Sigue bajando.' },
-  { k: 0.28, kicker: 'Dentro', title: 'El rodaje', text: 'Ruedas, rubíes y el rotor. Quédate en este tramo.' },
-  { k: 0.46, kicker: 'El latido', title: 'El volante', text: 'Late. Cada diente del escape empuja el siguiente.' },
-  { k: 0.62, kicker: 'La colección', title: 'Entran las cajas', text: 'Cada reloj llega de un lado, con su caja abierta.' },
-  { k: 0.9, kicker: 'El libro', title: 'Firma y entra', text: 'Tu nombre guarda el tiempo y el reloj a medias.' }
+const GALLERY_SPEC = [
+  { id: 'miami', face: 'bridges', name: 'ZR-28' },
+  { id: 'astralMiami', face: 'dial', name: 'ZT-18' },
+  { id: 'diablo', face: 'bridges', name: 'ZC-40' },
+  { id: 'orbital', face: 'dial', name: 'ZC-43' }
 ];
-const SPIN_IDS = ['rotor', 'escapeWheel', 'secondWheel', 'thirdWheel', 'fourthWheel', 'interWheel', 'centerWheel'];
+const GALLERY_GAP = 130;
+const LAND_CAM = (() => {
+  const keys = [];
+  GALLERY_SPEC.forEach((_, i) => {
+    const x = i * GALLERY_GAP, t = i * 0.22;
+    keys.push(
+      { t: t + 0.000, cam: [x, 72, 118], look: [x, 14, 0] },
+      { t: t + 0.055, cam: [x + 52, 60, 104], look: [x, 13, 0] },
+      { t: t + 0.115, cam: [x + 24, 50, 88], look: [x, 13, 0] },
+      { t: t + 0.175, cam: [x - 50, 54, 100], look: [x, 13, 0] }
+    );
+  });
+  const end = (GALLERY_SPEC.length - 1) * GALLERY_GAP;
+  keys.push({ t: 0.9, cam: [end, 78, 128], look: [end, 14, 0] });
+  keys.push({ t: 1, cam: [end, 78, 128], look: [end, 14, 0] });
+  return keys.map(p => ({ t: p.t, cam: new THREE.Vector3(...p.cam), look: new THREE.Vector3(...p.look) }));
+})();
+const LAND_BEATS = [
+  { k: 0, kicker: 'ZARUMEI 3D', title: 'La bóveda', text: 'Desliza. La cámara entra en la máquina.' },
+  { k: 0.18, kicker: 'Calibre ZR-28', title: 'El rodaje', text: 'Ruedas, rubíes y el rotor, a la vista.' },
+  { k: 0.40, kicker: 'Calibre ZT-18', title: 'El turbillón', text: 'La jaula gira. El volante no se detiene.' },
+  { k: 0.62, kicker: 'Calibre ZC-40', title: 'La complicación', text: 'Otro calibre. El escape sigue empujando.' },
+  { k: 0.84, kicker: 'El libro', title: 'Entra', text: 'Tu nombre guarda el tiempo y el reloj a medias.' }
+];
+const SPIN_IDS = ['rotor', 'escapeWheel', 'secondWheel', 'thirdWheel', 'fourthWheel', 'interWheel', 'centerWheel', 'fifthWheel', 'ratchet', 'dateDisc', 'dayDisc', 'monthDisc', 'moonDisc', 'hourWheel', 'minuteWheel', 'dateDriver', 'stepRotor'];
 function clamp01(x) { return Math.min(1, Math.max(0, x)); }
 function ramp(a, b, k) { const t = clamp01((k - a) / Math.max(0.0001, b - a)); return t * t * (3 - 2 * t); }
 function along(k, key) {
@@ -181,9 +195,13 @@ function restoreLandingPose() {
   }
   spinHome = null;
   if (T) { T.tg.visible = T.holder.visible = T.tray.visible = true; }
-  if (G) G.root.visible = true;
-  if (parade) parade.visible = false;
-  camera.near = 1; camera.updateProjectionMatrix();
+  G.root.visible = true;
+  if (gallery) gallery.visible = false;
+  if (benchDress) benchDress.visible = true;
+  camera.near = 1; camera.fov = 27; camera.updateProjectionMatrix();
+  renderer.toneMappingExposure = 0.92;
+  scene.environmentIntensity = 0.62;
+  scene.fog = baseFog;
 }
 function paintBeat(k) {
   let i = 0;
@@ -195,8 +213,8 @@ function paintBeat(k) {
     $('#landTitle').textContent = b.title;
     $('#landText').textContent = b.text;
   }
-  $('#landCopy').classList.toggle('off', k > 0.92);
-  $('#landChevron').style.display = k > 0.05 ? 'none' : '';
+  $('#landCopy').classList.toggle('off', k > 0.9);
+  $('#landChevron').style.display = k > 0.04 ? 'none' : '';
   const bar = $('#landBar'); if (bar) bar.style.height = (k * 100).toFixed(1) + '%';
 }
 function paintLandingAuth() {
@@ -210,14 +228,21 @@ function paintLandingAuth() {
 function openLanding() {
   if (!G) return;
   captureSpin();
+  ensureGallery();
   landingOn = true; landBeat = -1;
   document.body.classList.add('land');
   $('#landing').hidden = false;
   $('#intro').hidden = true;
   $('#profile').hidden = true;
   if (T) { T.tg.visible = T.holder.visible = T.tray.visible = false; }
+  if (G) G.root.visible = false;
+  if (gallery) gallery.visible = true;
+  if (benchDress) benchDress.visible = false;
   controls.enabled = false;
-  camera.near = 0.35; camera.updateProjectionMatrix();
+  camera.near = 0.4; camera.fov = 36; camera.updateProjectionMatrix();
+  renderer.toneMappingExposure = 1.18;
+  scene.environmentIntensity = 0.95;
+  scene.fog = new THREE.Fog(0x07060a, 1400, 2400);
   paintLandingAuth();
   resize();
 }
@@ -231,92 +256,106 @@ function closeLanding() {
   setView('front', true);
   enterApp();
 }
+function spinGallery(t) {
+  if (!gallery) return;
+  for (const slot of gallery.userData.items) {
+    const parts = slot.userData.parts;
+    const turn = (id, spd, phase = 0) => { if (parts[id]) parts[id].rotation.y = t * spd + phase; };
+    turn('rotor', 0.55, 0.4);
+    turn('centerWheel', 0.22);
+    turn('thirdWheel', 0.7);
+    turn('fourthWheel', -0.5);
+    turn('secondWheel', -1.15);
+    turn('interWheel', 0.42);
+    turn('fifthWheel', 0.9);
+    turn('escapeWheel', 2.6);
+    turn('ratchet', 0.18);
+    turn('dateDisc', 0.12);
+    turn('dayDisc', 0.2);
+    turn('monthDisc', -0.08);
+    turn('moonDisc', 0.15);
+    turn('hourWheel', 0.16);
+    turn('minuteWheel', -0.28);
+    turn('dateDriver', 0.33);
+    turn('stepRotor', 1.4);
+    if (slot.userData.wheel) slot.userData.wheel.rotation.y = Math.sin(t * Math.PI * 7) * 1.05;
+    slot.traverse(o => { if (o.name === 'cageSpin') o.rotation.y = t * (o.parent && o.parent.name === 'balance' ? 0.9 : 0.45); });
+    slot.position.y = slot.userData.baseY + Math.sin(t * 0.8 + slot.userData.i) * 0.7;
+  }
+}
 function driveLanding(t) {
   if (!G) return;
-  landKs += (landK - landKs) * 0.055;
+  landKs += (landK - landKs) * 0.045;
   const k = landKs;
-  const flip = ramp(0.12, 0.24, k);
-  const open = ramp(0.22, 0.36, k);
-  G.root.visible = k < 0.6;
-  G.root.rotation.x = landTilt.y * (1 - flip);
-  G.root.rotation.y = landTilt.x + k * 0.35;
-  G.root.rotation.z = flip * Math.PI;
-  G.root.position.y = G.CS.dims.yFront + (G.CS.dims.yBack - G.CS.dims.yFront) * flip;
-  const cb = G.parts.caseback, h = G.home.caseback;
-  if (cb && h) {
-    cb.position.copy(h.pos);
-    cb.position.y = h.pos.y - open * 22;
-    cb.rotation.z = 0; cb.rotation.x = 0;
-    cb.rotation.y = open * Math.PI * 4;
-  }
-  const inside = ramp(0.3, 0.38, k) * (1 - ramp(0.54, 0.62, k));
-  const s = t * (0.7 + inside * 2.4);
-  const turn = (id, spd) => { if (G.parts[id]) G.parts[id].rotation.y = s * spd; };
-  turn('rotor', 0.35); turn('centerWheel', 0.2); turn('thirdWheel', 0.55); turn('secondWheel', -0.9); turn('fourthWheel', 0.7); turn('interWheel', -0.4); turn('escapeWheel', 2.1);
-  if (G.MV.wheel) G.MV.wheel.rotation.y = Math.sin(t * Math.PI * (4 + inside * 4)) * (0.2 + inside * 0.85);
-  if (k > 0.52) ensureParade();
-  let cam = along(Math.min(k, 0.58), 'cam'), look = along(Math.min(k, 0.58), 'look');
-  if (parade) {
-    parade.visible = k > 0.55;
-    const rows = parade.userData.rows, focus = ramp(0.58, 0.9, k) * Math.max(0, rows - 1);
-    for (const slot of parade.userData.items) {
-      const local = clamp01(focus - slot.userData.row + 1.2);
-      const e = local * local * (3 - 2 * local);
-      slot.position.set(slot.userData.side * (230 * (1 - e) + 34 * e), 0, slot.userData.z);
-      slot.rotation.y = slot.userData.side * (1 - e) * 0.55;
-    }
-    if (k > 0.56) {
-      const z = -focus * ROW_Z;
-      const blend = ramp(0.56, 0.66, k);
-      cam = cam.clone().lerp(new THREE.Vector3(0, 54, z + 52), blend);
-      look = look.clone().lerp(new THREE.Vector3(0, 10, z), blend);
-    }
-  }
+  if (gallery) gallery.visible = true;
+  if (G.root) G.root.visible = false;
+  spinGallery(t);
+  const cam = along(k, 'cam'), look = along(k, 'look');
+  cam.x += landTilt.x * 10;
+  cam.y += landTilt.y * 6;
   camera.position.copy(cam);
   controls.target.copy(look);
   camera.lookAt(look);
   paintBeat(landK);
 }
-const PARADE_IDS = ['miami', 'ancla', 'cuba', 'octava', 'rose', 'lira', 'recta', 'astralMiami', 'astralCuba', 'diablo', 'espina', 'ala', 'orbital'];
-const ROW_Z = 88;
-let parade = null;
-function makeParadeBox() {
+let gallery = null, benchDress = null;
+function galleryPedestal() {
   const g = new THREE.Group();
-  const wood = new THREE.MeshStandardMaterial({ color: 0x2a2118, roughness: 0.74, metalness: 0.06 });
-  const rim = new THREE.MeshStandardMaterial({ color: 0xc6a15a, metalness: 1, roughness: 0.3 });
-  const base = new THREE.Mesh(new THREE.BoxGeometry(54, 7, 42), wood); base.position.y = 3.5; g.add(base);
-  const edge = new THREE.Mesh(new THREE.BoxGeometry(54.8, 1.1, 42.8), rim); edge.position.y = 6.7; g.add(edge);
-  const lid = new THREE.Mesh(new THREE.BoxGeometry(54, 3.4, 42), wood); lid.position.set(0, 20, -24); lid.rotation.x = -0.85; g.add(lid);
-  const cush = new THREE.Mesh(new THREE.CylinderGeometry(15, 16, 2.2, 24), new THREE.MeshStandardMaterial({ color: 0x14281f, roughness: 1 }));
-  cush.position.y = 8.1; g.add(cush);
+  const stone = new THREE.MeshStandardMaterial({ color: 0x070708, roughness: 0.42, metalness: 0.22 });
+  const gold = new THREE.MeshStandardMaterial({ color: 0xe0c36a, metalness: 1, roughness: 0.28 });
+  const base = new THREE.Mesh(new THREE.BoxGeometry(46, 8, 34), stone); base.position.y = 4; g.add(base);
+  const edge = new THREE.Mesh(new THREE.BoxGeometry(46.6, 0.45, 34.6), gold); edge.position.y = 8.05; g.add(edge);
+  const plinth = new THREE.Mesh(new THREE.CylinderGeometry(16, 17.2, 1.1, 40), stone); plinth.position.y = 8.7; g.add(plinth);
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(15.2, 0.18, 8, 48), gold); ring.rotation.x = Math.PI / 2; ring.position.y = 9.2; g.add(ring);
   return g;
 }
-function ensureParade() {
-  if (parade || !M || !images) return;
-  parade = new THREE.Group(); parade.userData.items = []; scene.add(parade);
-  PARADE_IDS.forEach((id, i) => {
+function ensureGallery() {
+  if (gallery || !M || !images) return;
+  gallery = new THREE.Group(); gallery.userData.items = []; scene.add(gallery);
+  const wallC = document.createElement('canvas'); wallC.width = 512; wallC.height = 512;
+  const wx = wallC.getContext('2d');
+  const vg = wx.createLinearGradient(0, 0, 0, 512);
+  vg.addColorStop(0, '#09090b'); vg.addColorStop(1, '#16130e');
+  wx.fillStyle = vg; wx.fillRect(0, 0, 512, 512);
+  const glow = wx.createRadialGradient(256, 150, 10, 256, 210, 280);
+  glow.addColorStop(0, 'rgba(224,195,106,.34)'); glow.addColorStop(1, 'rgba(0,0,0,0)');
+  wx.fillStyle = glow; wx.fillRect(0, 0, 512, 512);
+  wx.strokeStyle = 'rgba(224,195,106,.16)'; wx.lineWidth = 2;
+  for (let n = 0; n < 7; n++) {
+    wx.beginPath(); wx.moveTo((n * 70) % 512, 0);
+    wx.bezierCurveTo(40 + n * 60, 160, 200 - n * 30, 300, (n * 90) % 512, 512); wx.stroke();
+  }
+  const wallTex = new THREE.CanvasTexture(wallC); wallTex.colorSpace = THREE.SRGBColorSpace;
+  const wall = new THREE.Mesh(new THREE.PlaneGeometry(1100, 460), new THREE.MeshBasicMaterial({ map: wallTex }));
+  wall.position.set(200, 100, -90); gallery.add(wall);
+  GALLERY_SPEC.forEach((spec, i) => {
     try {
-    const W = WATCHES[id];
-    const movR = W.caliber === 'ZQ11' ? 11.65 : 12.8;
-    const ys = W.grand ? { dial: 1.42, hour: 2.05, min: 2.32, sec: 2.58 } : W.caliber === 'ZQ11' ? { dial: 1.0, hour: 1.25, min: 1.45, sec: 1.65 } : { dial: 1.4, hour: 1.95, min: 2.2, sec: 2.45 };
-    const CS = buildCase(M, W, movR); mergeStatic(CS.body);
-    const watch = new THREE.Group(); watch.add(CS.body, CS.caseback);
-    if (W.caliber !== 'ZT18') {
-      const dial = buildDial(M, images, W, ys);
-      const hands = buildHands(M, W, ys);
-      const setA = (hnd, f) => { const r = hnd.getObjectByName('rot'); if (r) r.rotation.y = -f * Math.PI * 2; };
-      setA(hands.hour, 10 / 12); setA(hands.min, 10 / 60); setA(hands.sec, 0.2);
-      watch.add(dial, hands.hour, hands.min, hands.sec);
-    }
-    watch.position.y = (CS.dims.yFront || 6) + 8;
-    const slot = new THREE.Group(); slot.add(makeParadeBox(), watch);
-    const row = Math.floor(i / 2);
-    slot.userData.row = row; slot.userData.side = i % 2 === 0 ? -1 : 1; slot.userData.z = -row * ROW_Z;
-    parade.add(slot); parade.userData.items.push(slot);
-    } catch (err) { console.warn('desfile', id, err); }
+      const W = WATCHES[spec.id], cal = CALIBERS[W.caliber];
+      const MV = buildMovement(M, images, W, cal);
+      for (const id of ['dial', 'hourHand', 'minHand', 'secHand', 'milHand']) if (MV.parts[id]) MV.parts[id].visible = false;
+      if (MV.protector) MV.protector.visible = false;
+      MV.mv.traverse(o => { if (o.isMesh) { o.castShadow = false; o.receiveShadow = false; } });
+      const inner = new THREE.Group();
+      inner.add(MV.mv);
+      if (spec.face === 'dial') { inner.rotation.x = Math.PI; inner.position.y = 16; }
+      else inner.position.y = 11;
+      const slot = new THREE.Group();
+      slot.add(galleryPedestal(), inner);
+      slot.position.set(i * GALLERY_GAP, 0, 0);
+      slot.userData.parts = MV.parts;
+      slot.userData.wheel = MV.wheel || null;
+      slot.userData.baseY = 0;
+      slot.userData.i = i;
+      const key = new THREE.SpotLight(0xfff0d2, 14000, 240, 0.62, 0.55, 1.6);
+      key.position.set(i * GALLERY_GAP + 10, 62, 28);
+      key.target.position.set(i * GALLERY_GAP, 14, 0);
+      const fill = new THREE.PointLight(0xd7e2f2, 380, 90, 2);
+      fill.position.set(i * GALLERY_GAP - 22, 18, -18);
+      gallery.add(slot, key, key.target, fill);
+      gallery.userData.items.push(slot);
+    } catch (err) { console.warn('bóveda', spec.id, err); }
   });
-  parade.userData.rows = Math.ceil(PARADE_IDS.length / 2);
-  parade.visible = false;
+  gallery.visible = false;
 }
 
 function resize() {
@@ -1016,13 +1055,14 @@ async function init() {
   try { await Promise.all(['600 20px Cinzel', '500 20px "Cormorant Garamond"', '400 14px Jost'].map(f => document.fonts.load(f))); } catch (e) { /* fuentes de reserva */ }
   // banco de ónix, tapete de cuero con pespunte dorado y alfombrilla de terciopelo verde
   const bench = new THREE.Mesh(new THREE.PlaneGeometry(900, 900), new THREE.MeshStandardMaterial({ map: onyxTexture(), roughness: 0.32, metalness: 0.1 })); bench.rotation.x = -Math.PI / 2; bench.position.y = -0.2; bench.receiveShadow = true; scene.add(bench);
-  const mat = new THREE.Mesh(new THREE.BoxGeometry(220, 1.2, 170), [0, 0, 1, 0, 0, 0].map(i => i ? new THREE.MeshStandardMaterial({ map: leatherTexture(images.logo), roughness: 0.62, metalness: 0.05 }) : new THREE.MeshStandardMaterial({ color: 0x120c08, roughness: 0.7 }))); mat.position.set(-6, -0.6, 6); mat.receiveShadow = true; scene.add(mat);
-  const rim = new THREE.Mesh(new THREE.BoxGeometry(222, 0.6, 172), new THREE.MeshStandardMaterial({ color: 0xc9a24b, metalness: 1, roughness: 0.28 })); rim.position.set(-6, -0.9, 6); scene.add(rim);
-  const insp = new THREE.Mesh(new THREE.CylinderGeometry(9, 9, 0.5, 40), new THREE.MeshStandardMaterial({ map: velvetTexture('#0e2a21'), roughness: 1 })); insp.position.copy(INSPECT_POS).add(new THREE.Vector3(0, -0.3, 0)); insp.receiveShadow = true; scene.add(insp);
+  benchDress = new THREE.Group(); scene.add(benchDress);
+  const mat = new THREE.Mesh(new THREE.BoxGeometry(220, 1.2, 170), [0, 0, 1, 0, 0, 0].map(i => i ? new THREE.MeshStandardMaterial({ map: leatherTexture(images.logo), roughness: 0.62, metalness: 0.05 }) : new THREE.MeshStandardMaterial({ color: 0x120c08, roughness: 0.7 }))); mat.position.set(-6, -0.6, 6); mat.receiveShadow = true; benchDress.add(mat);
+  const rim = new THREE.Mesh(new THREE.BoxGeometry(222, 0.6, 172), new THREE.MeshStandardMaterial({ color: 0xc9a24b, metalness: 1, roughness: 0.28 })); rim.position.set(-6, -0.9, 6); benchDress.add(rim);
+  const insp = new THREE.Mesh(new THREE.CylinderGeometry(9, 9, 0.5, 40), new THREE.MeshStandardMaterial({ map: velvetTexture('#0e2a21'), roughness: 1 })); insp.position.copy(INSPECT_POS).add(new THREE.Vector3(0, -0.3, 0)); insp.receiveShadow = true; benchDress.add(insp);
   const cloth = new THREE.Mesh(new THREE.PlaneGeometry(168, 122), new THREE.MeshStandardMaterial({ map: clothTexture(), roughness: 0.92, metalness: 0 }));
-  cloth.rotation.x = -Math.PI / 2; cloth.position.set(-6, 0.06, 6); cloth.receiveShadow = true; scene.add(cloth);
+  cloth.rotation.x = -Math.PI / 2; cloth.position.set(-6, 0.06, 6); cloth.receiveShadow = true; benchDress.add(cloth);
   const contact = new THREE.Mesh(new THREE.PlaneGeometry(70, 70), new THREE.MeshBasicMaterial({ map: contactShadowTexture(), transparent: true, depthWrite: false }));
-  contact.rotation.x = -Math.PI / 2; contact.position.set(0, 0.08, 4); scene.add(contact);
+  contact.rotation.x = -Math.PI / 2; contact.position.set(0, 0.08, 4); benchDress.add(contact);
   $('#introLogo').src = images.logo.src; $('#bqLogo').src = images.logo.src; $('#headLogo').src = images.badge.src; $('#toolheadLogo').src = images.logo.src;
   document.querySelectorAll('.tool .stamp').forEach(i => (i.src = images.badge.src));
   buildWorld('miami', 'aceiteSeco', null); setSize(1.0); setSeatMode(seatMode, false); setHQ(hq, false);
