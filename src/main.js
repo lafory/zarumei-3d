@@ -174,20 +174,20 @@ const INSIDE_CAM = [
   { t: 0.00, cam: [0, 74, 52], look: [0, 6, 2] },
   { t: 0.18, cam: [32, 46, 30], look: [0, 5, 0] },
   { t: 0.36, cam: [22, 34, 20], look: [0, 6, 0] },
-  { t: 0.55, cam: [42, 34, 38], look: [0, 6, 0] },
-  { t: 0.78, cam: [34, 26, 30], look: [0, 4, 0] },
+  { t: 0.55, cam: [32, 20, 26], look: [0, 3, 0] },
+  { t: 0.78, cam: [24, 14, 18], look: [0, 2, 0] },
   { t: 1.00, cam: [18, 32, 36], look: [0, 6, 0] }
 ].map(p => ({ t: p.t, cam: new THREE.Vector3(...p.cam), look: new THREE.Vector3(...p.look) }));
 const SPIN_IDS = ['rotor', 'escapeWheel', 'secondWheel', 'thirdWheel', 'fourthWheel', 'interWheel', 'centerWheel', 'fifthWheel', 'ratchet', 'dateDisc', 'dayDisc', 'monthDisc', 'moonDisc', 'hourWheel', 'minuteWheel', 'dateDriver', 'stepRotor'];
 function clamp01(x) { return Math.min(1, Math.max(0, x)); }
 function ramp(a, b, k) { const t = clamp01((k - a) / Math.max(0.0001, b - a)); return t * t * (3 - 2 * t); }
-function frameLanding(cam, look) {
+function frameLanding(cam, look, lift = true) {
   const aspect = camera.aspect || 1;
   const ref = 0.72;
   if (aspect >= ref) return { cam, look };
   const pull = Math.min(1.9, ref / aspect);
   const aimed = look.clone();
-  aimed.y += 11 * (pull - 1);
+  if (lift) aimed.y += 11 * (pull - 1);
   const out = aimed.clone().add(cam.clone().sub(look).multiplyScalar(pull));
   return { cam: out, look: aimed };
 }
@@ -321,7 +321,7 @@ function spinGallery(t) {
 }
 function driveLanding(t) {
   if (!G) return;
-  landKs += (landK - landKs) * 0.045;
+  landKs += (landK - landKs) * 0.09;
   const k = landKs;
   const insideU = clamp01(k / INSIDE_END);
   const vaultU = clamp01((k - VAULT_AT) / (0.9 - VAULT_AT));
@@ -343,7 +343,7 @@ function driveLanding(t) {
     cam = samplePath(INSIDE_CAM, 1, 'cam').lerp(samplePath(LAND_CAM, 0, 'cam'), s);
     look = samplePath(INSIDE_CAM, 1, 'look').lerp(samplePath(LAND_CAM, 0, 'look'), s);
   }
-  const framed = frameLanding(cam, look);
+  const framed = frameLanding(cam, look, k >= VAULT_AT);
   framed.cam.x += landTilt.x * 10;
   framed.cam.y += landTilt.y * 6;
   camera.position.copy(framed.cam);
