@@ -16,9 +16,9 @@ export function buildDial(M, images, watch, ys) {
   const { r, kind, date } = watch.dial; const metal = M.metal(watch.hands.metal);
   const dial = tag(new THREE.Group(), 'dial');
   if (kind === 'recta') {
-    const face = new THREE.Mesh(new THREE.PlaneGeometry(22.4, 16.4).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ map: TX.dialTexture('recta', images, 1), roughness: 0.3, metalness: 0.05 }));
-    face.position.y = ys.dial; dial.add(face);
-    dial.add(hitProxy(M, 10, 0.5, ys.dial));
+    const face = new THREE.Mesh(new THREE.PlaneGeometry(21.6, 14.8).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ map: TX.dialTexture('recta', images, 1), roughness: 0.32, metalness: 0.02 }));
+    face.position.y = ys.dial + 1.85; dial.add(face);
+    dial.add(hitProxy(M, 10, 0.4, ys.dial + 1.85));
     return dial;
   }
   if (watch.grand) {
@@ -53,14 +53,15 @@ export function buildDial(M, images, watch, ys) {
   return dial;
 }
 export function buildHands(M, watch, ys) {
-  const st = watch.hands.style, metal = M.metal(watch.hands.metal), r = watch.dial.r, lume = st !== 'leaf';
+  const st = watch.hands.style, metal = M.metal(watch.hands.metal), r = watch.dial.kind === 'recta' ? 11.2 : watch.dial.r, lume = st !== 'leaf';
+  const lift = watch.dial.kind === 'recta' ? 1.85 : 0;
   const mk = (id, len, w, y) => {
     const g = tag(new THREE.Group(), id); const inner = new THREE.Group(); inner.name = 'rot'; g.add(inner);
     inner.add(new THREE.Mesh(handShape(st, len, w), metal));
     if (lume) { const l = new THREE.Mesh(handShape(st, len * 0.8, w * 0.45), M.lume); l.position.y = 0.05; inner.add(l); }
     inner.add(at(cyl(0.6, 0.14, metal, 16), 0, 0, 0));
     const hp = new THREE.Mesh(new THREE.BoxGeometry(w + 1.2, 0.6, len), M.hit); hp.userData.isHit = true; hp.position.set(0, 0, -len / 2); inner.add(hp);
-    g.position.y = y; return g;
+    g.position.y = y + lift; return g;
   };
   const hour = mk('hourHand', r * 0.53, st === 'leaf' ? 1.3 : 1.5, ys.hour);
   const min = mk('minHand', r * 0.79, st === 'leaf' ? 1.0 : 1.1, ys.min);
@@ -69,6 +70,6 @@ export function buildHands(M, watch, ys) {
     inner.add(new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.08, r * 1.05).translate(0, 0, -r * 0.33), col));
     if (lume) { const c = new THREE.Mesh(new THREE.CylinderGeometry(0.75, 0.75, 0.1, 20), M.lume); c.position.z = -r * 0.62; inner.add(c); }
     inner.add(cyl(0.5, 0.14, col, 16)); const hp = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.6, r), M.hit); hp.userData.isHit = true; hp.position.z = -r * 0.3; inner.add(hp);
-    sec.position.y = ys.sec; }
+    sec.position.y = ys.sec + lift; }
   return { hour, min, sec };
 }
