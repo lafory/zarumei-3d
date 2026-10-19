@@ -241,14 +241,21 @@ button:disabled{opacity:.45}
     <div class="tabs"><button class="tab on" data-tab="story">Historia</button><button class="tab" data-tab="play">Modo libre</button></div>
     <div id="storyPane"><div id="caseList"></div></div>
     <div id="playPane" hidden>
-      <p class="cinzel" style="margin-top:12px">I · Turbillones nuevos</p>
+      <p class="cinzel" style="margin-top:12px">I · Grandes complicaciones</p>
+      <div id="grandList">
+        <button type="button" class="wcard" data-go="diablo"><b><em class="nuevo">Nuevo</em>ZARUMEI Diablo Rojo</b><span>Cronógrafo, día, mes y profundímetro. Laca roja y la máscara.</span><small>ZC-40 · mecánico</small></button>
+        <button type="button" class="wcard" data-go="espina"><b><em class="nuevo">Nuevo</em>ZARUMEI Espina</b><span>Lo mismo, más brújula sobre la esfera y bisel de púas.</span><small>ZC-41 · mecánico</small></button>
+        <button type="button" class="wcard" data-go="ala"><b><em class="nuevo">Nuevo</em>ZARUMEI Ala de Fuego</b><span>Alas de oro, brújula y hora militar de 24 h.</span><small>ZC-42 · mecánico</small></button>
+        <button type="button" class="wcard" data-go="orbital"><b><em class="nuevo">Nuevo</em>ZARUMEI Orbital</b><span>Todo lo anterior y las fases de la luna, en jaula calada.</span><small>ZC-43 · mecánico</small></button>
+      </div>
+      <p class="cinzel" style="margin-top:12px">II · Turbillones</p>
       <div id="astralList">
         <button type="button" class="wcard" data-go="astralMiami"><b><em class="nuevo">Nuevo</em>ZARUMEI Astral «Miami»</b><span>Turbillón de oro 18 k, nebulosa violeta, diamante y el oso Miami.</span><small>ZT-18 · cuerda manual</small></button>
         <button type="button" class="wcard" data-go="astralCuba"><b><em class="nuevo">Nuevo</em>ZARUMEI Astral «Cuba»</b><span>Turbillón de oro, cielo azul, jaula de volante, diamante y el oso Cuba.</span><small>ZT-18 · cuerda manual</small></button>
       </div>
-      <p class="cinzel" style="margin-top:12px">II · Los de siempre</p>
+      <p class="cinzel" style="margin-top:12px">III · Los de siempre</p>
       <div id="watchList"></div>
-      <p class="cinzel" style="margin-top:14px">III · La falla <span class="small" style="text-transform:none;letter-spacing:0">(o «sin falla» para desarmar libremente)</span></p>
+      <p class="cinzel" style="margin-top:14px">IV · La falla <span class="small" style="text-transform:none;letter-spacing:0">(o «sin falla» para desarmar libremente)</span></p>
       <div id="faultList"></div>
       <div class="row"><button class="lux primary" id="playBtn">Empezar</button></div>
     </div>
@@ -277,7 +284,7 @@ button:disabled{opacity:.45}
   <div id="bqDetail" hidden><button class="lux" id="bqBack">← Volver</button><div id="bqStage"></div><div id="bqInfo"></div></div>
 </div>
 
-<script src="game.js?v=macro1"></script>
+<script src="game.js?v=grand1"></script>
 <script>
 setInterval(function(){var g=window.__game;if(!g||!g.started)return;var el=document.getElementById('timer');if(!el._t0)el._t0=Date.now();if(document.getElementById('endOverlay').hidden){var e=Math.floor((Date.now()-el._t0)/1000);el.textContent=Math.floor(e/60)+':'+String(e%60).padStart(2,'0');}},500);
 document.getElementById('menuTop').onclick=function(){document.getElementById('intro').hidden=false;};

@@ -33,6 +33,65 @@ function dateWindow(x, R, day, frame = '#b8862b') {
   x.fillStyle = '#111'; x.font = `bold ${R * 0.13}px Helvetica, Arial`; x.textAlign = 'center'; x.textBaseline = 'middle';
   x.fillText(String(day), R * 0.76, R * 0.005);
 }
+function punch(x, cx, cy, w, h, round) {
+  x.save();
+  x.globalCompositeOperation = 'destination-out';
+  x.fillStyle = '#000';
+  if (round) { x.beginPath(); x.arc(cx, cy, w, 0, Math.PI * 2); x.fill(); }
+  else x.fillRect(cx - w / 2, cy - h / 2, w, h);
+  x.restore();
+  x.strokeStyle = 'rgba(212,175,90,.9)'; x.lineWidth = 5;
+  if (round) { x.beginPath(); x.arc(cx, cy, w, 0, Math.PI * 2); x.stroke(); }
+  else x.strokeRect(cx - w / 2, cy - h / 2, w, h);
+}
+function grandDial(x, R, kind) {
+  const compass = kind !== 'diablo';
+  const g = x.createRadialGradient(-R * 0.2, -R * 0.3, R * 0.05, 0, 0, R);
+  if (kind === 'diablo') { g.addColorStop(0, '#7a1020'); g.addColorStop(0.55, '#4a0814'); g.addColorStop(1, '#1a0408'); }
+  else if (kind === 'espina') { g.addColorStop(0, '#8fd4ff'); g.addColorStop(0.35, '#5a4ad4'); g.addColorStop(0.7, '#c45a18'); g.addColorStop(1, '#1a120c'); }
+  else if (kind === 'ala') { g.addColorStop(0, '#ff4fa8'); g.addColorStop(0.5, '#9a1468'); g.addColorStop(1, '#2a0818'); }
+  else { g.addColorStop(0, '#1e8f62'); g.addColorStop(0.45, '#0c3d32'); g.addColorStop(1, '#070d0c'); }
+  x.fillStyle = g; x.beginPath(); x.arc(0, 0, R, 0, Math.PI * 2); x.fill();
+  minuteTrack(x, R, kind === 'ala' ? '#f6d78a' : '#f2efe6', 0.97, 0.93, 0.9);
+  if (kind === 'ala' || kind === 'orbital') {
+    x.fillStyle = 'rgba(246,215,138,.85)'; x.font = `600 ${R * 0.045}px Georgia, serif`; x.textAlign = 'center';
+    for (let h = 1; h <= 24; h++) {
+      const a = h / 24 * Math.PI * 2 - Math.PI / 2;
+      x.fillText(String(h), Math.cos(a) * R * 0.78, Math.sin(a) * R * 0.78);
+    }
+  }
+  x.fillStyle = 'rgba(255,255,255,.75)'; x.font = `600 ${R * 0.04}px Georgia, serif`; x.textAlign = 'center';
+  x.fillText(kind === 'diablo' ? 'DIABLO · 100 M' : kind === 'espina' ? 'ESPINA · BRÚJULA' : kind === 'ala' ? 'ALA · 24 H' : 'ORBITAL · LUNA', 0, R * 0.22);
+  const day = compass ? [-R * 0.41, -R * 0.21] : [0, -R * 0.56];
+  const month = compass ? [R * 0.41, -R * 0.21] : [0, -R * 0.40];
+  punch(x, day[0], day[1], R * 0.22, R * 0.1, false);
+  punch(x, month[0], month[1], R * 0.24, R * 0.1, false);
+  if (kind === 'orbital') punch(x, 0, R * 0.47, R * 0.16, 0, true);
+  x.fillStyle = 'rgba(255,255,255,.55)'; x.font = `500 ${R * 0.032}px Helvetica, Arial`;
+  x.fillText('DÍA', day[0], day[1] - R * 0.09);
+  x.fillText('MES', month[0], month[1] - R * 0.09);
+  if (compass) { x.strokeStyle = 'rgba(246,215,138,.7)'; x.beginPath(); x.arc(0, -R * 0.52, R * 0.13, 0, 7); x.stroke(); x.fillText('N', 0, -R * 0.52); }
+  const depth = kind === 'orbital' ? [R * 0.35, R * 0.32] : [0, R * 0.48];
+  x.strokeStyle = 'rgba(255,255,255,.45)'; x.beginPath(); x.arc(depth[0], depth[1], R * 0.11, 0, 7); x.stroke();
+  x.fillText('PROF.', depth[0], depth[1] + R * 0.16);
+}
+export function calendarDiscTexture(words, color = '#f6f1e6') {
+  const S = 512, c = canvas(S), x = c.getContext('2d'), R = S / 2; x.translate(R, R);
+  x.fillStyle = color; x.beginPath(); x.arc(0, 0, R, 0, Math.PI * 2); x.fill();
+  x.fillStyle = '#1c140c'; x.font = `bold ${R * 0.18}px Helvetica, Arial`; x.textAlign = 'center'; x.textBaseline = 'middle';
+  words.forEach((w, i) => { x.save(); x.rotate(i / words.length * Math.PI * 2); x.fillText(w, 0, -R * 0.55); x.restore(); });
+  return tex(c);
+}
+export function moonDiscTexture() {
+  const S = 512, c = canvas(S), x = c.getContext('2d');
+  x.fillStyle = '#071428'; x.fillRect(0, 0, S, S);
+  for (let i = 0; i < 40; i++) { x.fillStyle = '#fff'; x.fillRect(Math.random() * S, Math.random() * S, 2, 2); }
+  for (const cx of [S * 0.28, S * 0.72]) {
+    x.fillStyle = '#f4e2a8'; x.beginPath(); x.arc(cx, S / 2, S * 0.16, 0, 7); x.fill();
+    x.fillStyle = '#071428'; x.beginPath(); x.arc(cx + S * 0.08, S / 2 - S * 0.02, S * 0.13, 0, 7); x.fill();
+  }
+  return tex(c);
+}
 export function dialTexture(kind, images, day) {
   const S = 2048, c = canvas(S), x = c.getContext('2d'), R = S / 2;
   x.translate(R, R);
@@ -54,6 +113,8 @@ export function dialTexture(kind, images, day) {
     minuteTrack(x, R, '#e8eef8', 0.995, 0.955, 0.935); dateWindow(x, R, day, '#c9d3e3');
     x.textAlign = 'center'; x.fillStyle = '#ffffff'; x.font = `900 ${R * 0.075}px Helvetica, Arial`; x.fillText('ZARUMEI', 0, -R * 0.6);
     x.font = `bold ${R * 0.04}px Helvetica, Arial`; x.fillStyle = '#ff5a4f'; x.fillText('CUBA AZUL · 200 M', 0, R * 0.63);
+  } else if (kind === 'diablo' || kind === 'espina' || kind === 'ala' || kind === 'orbital') {
+    grandDial(x, R, kind);
   } else { // rose: laca blanca + arte del oso ZARUMEI neón
     const g = x.createRadialGradient(-R * 0.2, -R * 0.25, R * 0.1, 0, 0, R); g.addColorStop(0, '#ffffff'); g.addColorStop(1, '#ece9e6');
     x.fillStyle = g; x.beginPath(); x.arc(0, 0, R, 0, Math.PI * 2); x.fill();

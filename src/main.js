@@ -17,6 +17,7 @@ import { fmtPrice } from './data/boutique.js';
 import { makeMaterials } from './materials.js';
 import { buildZR28, buildZQ11 } from './movement.js';
 import { buildZT18 } from './tourbillon.js';
+import { buildGrand } from './grand.js';
 import { buildCase } from './case3d.js';
 import { makeTools } from './tools3d.js';
 import { ICONS } from './icons.js';
@@ -165,6 +166,7 @@ function disposeWorld() {
 function buildMovement(M, images, W, cal) {
   if (W.caliber === 'ZQ11') return buildZQ11(M, images, W, cal);
   if (W.caliber === 'ZT18') return buildZT18(M, images, W, cal);
+  if (W.grand) return buildGrand(M, images, W, cal);
   return buildZR28(M, images, W, cal);
 }
 function buildWorld(watchId, faultId, story) {
@@ -639,11 +641,11 @@ function renderMenu() {
     b.onclick = () => { if (locked) { b.classList.add('shake'); setTimeout(() => b.classList.remove('shake'), 400); return; } startStory(c.id); }; list.appendChild(b);
   });
   const wl = $('#watchList'); wl.innerHTML = '';
-  document.querySelectorAll('#astralList [data-go]').forEach(b => {
+  document.querySelectorAll('#astralList [data-go], #grandList [data-go]').forEach(b => {
     b.classList.toggle('on', b.dataset.go === playWatch);
     b.onclick = () => { playWatch = b.dataset.go; renderMenu(); };
   });
-  Object.values(WATCHES).filter(w => w.caliber !== 'ZT18').forEach(w => { const b = document.createElement('button'); b.className = 'wcard' + (playWatch === w.id ? ' on' : ''); b.dataset.watch = w.id; b.innerHTML = `<b>${w.name}</b><span>${w.blurb}</span><small>${CALIBERS[w.caliber].name} · ${CALIBERS[w.caliber].desc}</small>`; b.onclick = () => { playWatch = w.id; renderMenu(); }; wl.appendChild(b); });
+  Object.values(WATCHES).filter(w => w.caliber !== 'ZT18' && !w.grand).forEach(w => { const b = document.createElement('button'); b.className = 'wcard' + (playWatch === w.id ? ' on' : ''); b.dataset.watch = w.id; b.innerHTML = `<b>${w.name}</b><span>${w.blurb}</span><small>${CALIBERS[w.caliber].name} · ${CALIBERS[w.caliber].desc}</small>`; b.onclick = () => { playWatch = w.id; renderMenu(); }; wl.appendChild(b); });
   const fl = $('#faultList'); fl.innerHTML = ''; const type = CALIBERS[WATCHES[playWatch].caliber].type;
   if (!FAULTS[playFault].calibers.includes(type)) playFault = 'sinFalla';
   Object.values(FAULTS).filter(f => f.calibers.includes(type)).forEach(f => { const b = document.createElement('button'); b.className = 'fchip' + (playFault === f.id ? ' on' : ''); b.dataset.fault = f.id; b.textContent = f.name; b.onclick = () => { playFault = f.id; renderMenu(); }; fl.appendChild(b); });
@@ -690,8 +692,10 @@ function loop(now) {
   if (G) {
     const E = G.E, run = E.running(), P = G.parts;
     const d = new Date(); const quartz = E.quartz;
-    const sec = quartz ? d.getSeconds() : d.getSeconds() + Math.floor(d.getMilliseconds() / 125) / 8, mn = d.getMinutes() + sec / 60, hr = (d.getHours() % 12) + mn / 60;
-    if (run) { for (const [id, v] of [['secHand', sec / 60], ['minHand', mn / 60], ['hourHand', hr / 12]]) { const r = P[id] && P[id].getObjectByName('rot'); if (r && E.st[id] === 'in') r.rotation.y = -v * Math.PI * 2; } }
+    const sec = quartz ? d.getSeconds() : d.getSeconds() + Math.floor(d.getMilliseconds() / 125) / 8, mn = d.getMinutes() + sec / 60, hr = (d.getHours() % 12) + mn / 60, h24 = d.getHours() + mn / 60;
+    if (run) { for (const [id, v] of [['secHand', sec / 60], ['minHand', mn / 60], ['hourHand', hr / 12], ['milHand', h24 / 24], ['depthHand', (Math.sin(t * 0.35) * 0.5 + 0.5) * 0.42]]) { const r = P[id] && P[id].getObjectByName('rot'); if (r && E.st[id] === 'in') r.rotation.y = -v * Math.PI * 2; } }
+    const needle = P.compassNeedle && P.compassNeedle.getObjectByName('rot'); if (needle && E.st.compassNeedle === 'in') needle.rotation.y = Math.sin(t * 0.25) * 0.18;
+    if (P.moonDisc && E.st.moonDisc === 'in') P.moonDisc.rotation.y = t * 0.05;
     if (G.MV.wheel) { const amp = run ? THREE.MathUtils.degToRad(E.amplitude()) : 0; G.MV.wheel.rotation.y = run ? amp * Math.sin(t * Math.PI * 8) : G.MV.wheel.rotation.y * 0.92; }
     if (run && P.escapeWheel) P.escapeWheel.rotation.y = -Math.floor(t * 8) * (Math.PI * 2 / 20) / 2;
     if (run && G.MV.kind === 'tourbillon') {

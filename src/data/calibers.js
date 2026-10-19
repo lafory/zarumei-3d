@@ -120,3 +120,79 @@ export const CALIBERS = {
     ]
   }
 };
+
+function grandCaliber(id, name, desc, opt) {
+  const dialCover = ['hourHand', 'emblem', 'depthHand'];
+  if (opt.military) dialCover.push('milHand');
+  if (opt.compass) dialCover.push('compassBowl');
+  const parts = [
+    { id: 'caseback', name: 'el fondo roscado', side: 'case', coveredBy: [], tool: 'caseWrench', oil: { when: 'before', lube: 'grasa de silicona', msg: 'Grasa de silicona en la junta del fondo.' } },
+    { id: 'rotor', name: 'el rotor', side: 'bridge', coveredBy: ['caseback'], tool: 'tweezers', screws: [{ s: 1.6, k: 'rotor', p: [0, 0.55, 0] }] },
+    { id: 'stem', name: 'la tija y corona', side: 'case', coveredBy: ['caseback'], tool: 'screwdriver', anySize: true, placeTool: 'tweezers', removeMsg: 'Presionaste el pulsador y salió la corona con su tija.' },
+    { id: 'clamps', name: 'las bridas de caja', side: 'case', coveredBy: ['caseback'], tool: 'tweezers', screws: [{ s: 1.2, k: 'clamp', p: [-7.4, 1.45, 9.4] }, { s: 1.2, k: 'clamp', p: [9.6, 1.45, -5.2] }] },
+    { id: 'movement', name: 'el movimiento', side: 'case', coveredBy: ['stem', 'clamps'], tool: 'holder', placeNeedsDial: true },
+    { id: 'auto', name: 'el módulo automático', side: 'bridge', coveredBy: ['rotor'], tool: 'tweezers', screws: [{ s: 1.2, k: 'auto', p: [-7.6, 0.6, -2.2] }, { s: 1.2, k: 'auto', p: [2.4, 0.6, -8.6] }] },
+    { id: 'chronoBridge', name: 'el puente de cronógrafo', side: 'bridge', coveredBy: ['rotor'], tool: 'tweezers', requires: ['letdown'], screws: [{ s: 1.0, k: 'chrono', p: [6.2, 0.6, 4.8] }, { s: 1.0, k: 'chrono', p: [-6.0, 0.6, 3.2] }, { s: 1.0, k: 'chrono', p: [0.4, 0.6, -0.8] }], oil: { when: 'after', lube: '9010', msg: '9010 en los rubíes del cronógrafo.' } },
+    { id: 'columnWheel', name: 'la rueda de columnas', side: 'bridge', coveredBy: ['chronoBridge'], tool: 'tweezers', screws: [{ s: 0.8, k: 'column', p: [0, 0.55, 0] }] },
+    { id: 'coupling', name: 'el acoplamiento del cronógrafo', side: 'bridge', coveredBy: ['chronoBridge'], tool: 'tweezers' },
+    { id: 'brake', name: 'el freno del cronógrafo', side: 'bridge', coveredBy: ['chronoBridge'], tool: 'tweezers' },
+    { id: 'chronoMinute', name: 'el contador de minutos', side: 'bridge', coveredBy: ['chronoBridge'], tool: 'tweezers' },
+    { id: 'chronoHour', name: 'el contador de horas del cronógrafo', side: 'bridge', coveredBy: ['chronoBridge'], tool: 'tweezers' },
+    { id: 'chronoRunner', name: 'la rueda de segundos del cronógrafo', side: 'bridge', coveredBy: ['chronoBridge'], tool: 'tweezers' },
+    { id: 'balance', name: 'el volante con su puente', side: 'bridge', coveredBy: ['rotor'], tool: 'tweezers', requires: ['letdown'], inspect: true, screws: [{ s: 1.2, k: 'cock', p: [3.4, 0.85, -1.6] }] },
+    { id: 'palletBridge', name: 'el puente de áncora', side: 'bridge', coveredBy: ['balance'], tool: 'tweezers', requires: ['letdown'], screws: [{ s: 1.0, k: 'pallet', p: [4.4, 0.6, 3.0] }, { s: 1.0, k: 'pallet', p: [6.8, 0.6, 3.6] }], oil: { when: 'after', lube: '9415', msg: '9415 en las paletas del áncora.' } },
+    { id: 'palletFork', name: 'el áncora', side: 'bridge', coveredBy: ['palletBridge'], tool: 'tweezers', requires: ['letdown'] },
+    { id: 'ratchet', name: 'el rochet', side: 'bridge', coveredBy: ['auto'], tool: 'tweezers', requires: ['letdown'], screws: [{ s: 1.4, k: 'ratchet', p: [0, 0.32, 0] }] },
+    { id: 'crownWheel', name: 'la rueda de corona', side: 'bridge', coveredBy: ['auto'], tool: 'tweezers', requires: ['letdown'], screws: [{ s: 1.0, k: 'crownLH', lh: true, p: [0, 0.28, 0] }] },
+    { id: 'click', name: 'el cliquet', side: 'bridge', coveredBy: ['auto', 'ratchet', 'crownWheel'], tool: 'tweezers', action: { tool: 'tweezers', flag: 'letdown', needOut: ['auto'], msg: '✅ Muelle real descargado poco a poco. El volante se detiene: ya se puede tocar el escape y el cronógrafo.' } },
+    { id: 'barrelBridge', name: 'el puente de barrilete', side: 'bridge', coveredBy: ['ratchet', 'crownWheel', 'click'], tool: 'tweezers', screws: [{ s: 1.2, k: 'bridge', p: [-9.2, 0.75, -3.4] }, { s: 1.2, k: 'bridge', p: [-1.4, 0.75, -9.2] }, { s: 1.2, k: 'bridge', p: [-2.2, 0.75, -2.4] }] },
+    { id: 'barrel', name: 'el barrilete', side: 'bridge', coveredBy: ['barrelBridge'], tool: 'tweezers', oil: { when: 'after', lube: '8217', msg: 'Grasa 8217 en la pared del barrilete.' } },
+    { id: 'trainBridge', name: 'el puente de rodaje', side: 'bridge', coveredBy: ['auto', 'palletFork'], tool: 'tweezers', requires: ['letdown'], screws: [{ s: 1.2, k: 'bridge', p: [8.2, 0.75, -2.6] }, { s: 1.2, k: 'bridge', p: [7.2, 0.75, 2.8] }], oil: { when: 'after', lube: '9010', msg: '9010 en los rubíes del rodaje.' } },
+    { id: 'secondWheel', name: 'la rueda de segundos', side: 'bridge', coveredBy: ['trainBridge'], tool: 'tweezers' },
+    { id: 'thirdWheel', name: 'la rueda media', side: 'bridge', coveredBy: ['trainBridge'], tool: 'tweezers' },
+    { id: 'escapeWheel', name: 'la rueda de escape', side: 'bridge', coveredBy: ['trainBridge', 'palletFork'], tool: 'tweezers', requires: ['letdown'] },
+    { id: 'interWheel', name: 'la rueda intermedia', side: 'bridge', coveredBy: ['trainBridge'], tool: 'tweezers' },
+    { id: 'secHand', name: 'el segundero del cronógrafo', side: 'dial', coveredBy: [], tool: 'handLevers', placeTool: 'handPress', requires: ['protector'], placeRequires: ['protector'] },
+    { id: 'minHand', name: 'la aguja de minutos', side: 'dial', coveredBy: ['secHand'], tool: 'handLevers', placeTool: 'handPress', requires: ['protector'], placeRequires: ['protector'] },
+    { id: 'hourHand', name: 'la aguja de horas', side: 'dial', coveredBy: ['minHand'], tool: 'handLevers', placeTool: 'handPress', requires: ['protector'], placeRequires: ['protector'] },
+    { id: 'depthHand', name: 'la aguja del profundímetro', side: 'dial', coveredBy: [], tool: 'handLevers', placeTool: 'handPress', requires: ['protector'], placeRequires: ['protector'] },
+    { id: 'emblem', name: opt.emblem === 'diablo' ? 'la máscara del diablo' : opt.emblem === 'espina' ? 'el cabujón de púas' : opt.emblem === 'ala' ? 'las alas de esmalte' : 'la jaula calada', side: 'dial', coveredBy: ['hourHand'], tool: 'tweezers', screws: [{ s: 0.8, k: 'emblem', p: [2.1, 0.45, 1.4] }, { s: 0.8, k: 'emblem', p: [-2.1, 0.45, 1.4] }] },
+    { id: 'dial', name: 'la esfera', side: 'dial', coveredBy: dialCover, tool: 'tweezers', screws: [{ s: 0.8, k: 'dial', p: [-8.6, 0.15, -8.6] }, { s: 0.8, k: 'dial', p: [8.6, 0.15, 8.6] }] },
+    { id: 'calendarPlate', name: 'el puente de calendario', side: 'dial', coveredBy: ['dial'], tool: 'tweezers', screws: [{ s: 1.0, k: 'date', p: [8.4, 0.28, 0] }, { s: 1.0, k: 'date', p: [-8.2, 0.28, 2.2] }, { s: 1.0, k: 'date', p: [0, 0.28, 9.2] }] },
+    { id: 'dayDisc', name: 'el disco de los días', side: 'dial', coveredBy: ['calendarPlate'], tool: 'tweezers' },
+    { id: 'monthDisc', name: 'el disco de los meses', side: 'dial', coveredBy: ['calendarPlate'], tool: 'tweezers' },
+    { id: 'dayJumper', name: 'el saltador del día', side: 'dial', coveredBy: ['calendarPlate'], tool: 'tweezers' },
+    { id: 'membrane', name: 'la membrana del profundímetro', side: 'dial', coveredBy: ['dial'], tool: 'tweezers' },
+    { id: 'depthRack', name: 'la cremallera del profundímetro', side: 'dial', coveredBy: ['membrane'], tool: 'tweezers' },
+    { id: 'depthPinion', name: 'el piñón del profundímetro', side: 'dial', coveredBy: ['depthRack'], tool: 'tweezers' },
+    { id: 'hourWheel', name: 'la rueda de horas', side: 'dial', coveredBy: ['dial'], tool: 'tweezers' },
+    { id: 'minuteWheel', name: 'la rueda de minutería', side: 'dial', coveredBy: ['dial'], tool: 'tweezers' },
+    { id: 'cannonPinion', name: 'el piñón de minutos', side: 'dial', coveredBy: ['hourWheel', 'minuteWheel'], tool: 'handLevers', placeTool: 'tweezers' },
+    { id: 'keylessPlate', name: 'el resorte-placa de remontoir', side: 'dial', coveredBy: ['dial'], tool: 'tweezers', screws: [{ s: 1.0, k: 'keyless', p: [8.2, 0.28, 0] }] },
+    { id: 'yoke', name: 'el balancín', side: 'dial', coveredBy: ['keylessPlate'], tool: 'tweezers' },
+    { id: 'settingLever', name: 'la tirette', side: 'dial', coveredBy: ['keylessPlate', 'yoke'], tool: 'tweezers' },
+    { id: 'slidingPinion', name: 'el piñón corredizo', side: 'dial', coveredBy: ['yoke'], tool: 'tweezers' },
+    { id: 'windingPinion', name: 'el piñón de remontoir', side: 'dial', coveredBy: ['slidingPinion'], tool: 'tweezers' }
+  ];
+  if (opt.military) parts.push(
+    { id: 'milHand', name: 'la aguja de hora militar (24 h)', side: 'dial', coveredBy: [], tool: 'handLevers', placeTool: 'handPress', requires: ['protector'], placeRequires: ['protector'] },
+    { id: 'hour24', name: 'la rueda de 24 horas', side: 'dial', coveredBy: ['dial'], tool: 'tweezers' }
+  );
+  if (opt.compass) parts.push(
+    { id: 'compassCap', name: 'el cristal de la brújula', side: 'dial', coveredBy: [], tool: 'tweezers' },
+    { id: 'compassNeedle', name: 'la aguja de la brújula', side: 'dial', coveredBy: ['compassCap'], tool: 'tweezers' },
+    { id: 'compassBowl', name: 'la caja de la brújula', side: 'dial', coveredBy: ['compassNeedle'], tool: 'tweezers', screws: [{ s: 0.8, k: 'compass', p: [1.5, 0.28, 0] }, { s: 0.8, k: 'compass', p: [-1.5, 0.28, 0] }] }
+  );
+  if (opt.moon) parts.push(
+    { id: 'moonDisc', name: 'el disco de las fases de la luna', side: 'dial', coveredBy: ['dial'], tool: 'tweezers' },
+    { id: 'moonWheel', name: 'la rueda de la luna', side: 'dial', coveredBy: ['moonDisc'], tool: 'tweezers' }
+  );
+  return { id, name, type: 'auto', desc, lift: 50, ampOk: [270, 310], parts };
+}
+
+Object.assign(CALIBERS, {
+  ZC40: grandCaliber('ZC40', 'ZC-40', 'Cronógrafo mecánico, día, mes y profundímetro de membrana. 4 Hz, 28 rubíes.', { emblem: 'diablo' }),
+  ZC41: grandCaliber('ZC41', 'ZC-41', 'El ZC-40 más una brújula mecánica sobre la esfera.', { emblem: 'espina', compass: true }),
+  ZC42: grandCaliber('ZC42', 'ZC-42', 'Cronógrafo, calendario, profundímetro, brújula y hora militar de 24 h.', { emblem: 'ala', compass: true, military: true }),
+  ZC43: grandCaliber('ZC43', 'ZC-43', 'Gran complicación: todo lo anterior y fases de la luna.', { emblem: 'orbital', compass: true, military: true, moon: true })
+});

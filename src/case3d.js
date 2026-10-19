@@ -5,10 +5,15 @@ import { tag, hitProxy } from './geom.js';
 const V2 = (pts, k = 1) => pts.map(([r, y]) => new THREE.Vector2(r * k, y));
 
 export function buildCase(M, watch, movR) {
-  const C = watch.case, body = new THREE.Group(), metal = M.metal(C.metal), brushed = M.metal(C.metal, true);
+  const C = watch.case, body = new THREE.Group();
+  let metal = M.metal(C.metal), brushed = M.metal(C.metal, true);
+  if (C.lacquer != null) {
+    metal = new THREE.MeshPhysicalMaterial({ color: C.lacquer, metalness: 0.22, roughness: 0.15, clearcoat: 1, clearcoatRoughness: 0.05, envMapIntensity: 0.9 });
+    brushed = metal;
+  }
   const k = C.r / 20;
   let dims;
-  if (C.style === 'diver') {
+  if (C.style === 'diver' || C.style === 'chrono') {
     const prof = V2([[16.3, -5.5], [18.6, -5.5], [19.6, -4.5], [20.0, -2.2], [20.0, 1.2], [19.4, 2.2], [16.3, 2.2]], k);
     const cm = new THREE.Mesh(new THREE.LatheGeometry(prof, 128), metal.clone()); cm.material.side = THREE.DoubleSide; body.add(cm);
     const inner = new THREE.Mesh(new THREE.CylinderGeometry(16.3 * k, 16.3 * k, 7.7, 96, 1, true), brushed.clone()); inner.material.side = THREE.BackSide; inner.position.y = -1.65; body.add(inner);
@@ -16,14 +21,32 @@ export function buildCase(M, watch, movR) {
     for (const s of [-1, 1]) for (const xx of [-8.6, 8.6]) { const lug = new THREE.Mesh(new THREE.BoxGeometry(4.2, 4.6, 10), metal); lug.position.set(xx, -1.4, s * 21.5 * k); body.add(lug); }
     if (C.crownGuards) for (const s of [-1, 1]) { const sh = new THREE.Mesh(new THREE.BoxGeometry(3.4, 4.4, 2.6), metal); sh.position.set(20.6 * k, -0.9, s * 4.6); body.add(sh); }
     const bz = new THREE.Mesh(new THREE.LatheGeometry(V2([[16.0, 2.2], [19.6, 2.2], [19.9, 2.8], [19.4, 3.6], [16.0, 3.7]], k), 128), metal); bz.material = metal.clone(); bz.material.side = THREE.DoubleSide; body.add(bz);
-    const topMat = C.bezel === 'ceramicBlue'
+    const topMat = C.lacquer != null ? metal : C.bezel === 'ceramicBlue'
       ? new THREE.MeshPhysicalMaterial({ map: TX.ceramicBezelTexture(), roughness: 0.12, metalness: 0.05, clearcoat: 1, clearcoatRoughness: 0.05 })
       : new THREE.MeshStandardMaterial({ color: metal.color, metalness: 1, roughness: 0.36, map: TX.bezelTexture(), envMapIntensity: 0.6 });
     const R1 = 19.3 * k, top = new THREE.Mesh(new THREE.RingGeometry(16.1 * k, R1, 128, 1).rotateX(-Math.PI / 2), topMat); top.position.y = 3.72; body.add(top);
     { const uv = top.geometry.attributes.uv, pos = top.geometry.attributes.position; for (let i = 0; i < uv.count; i++) uv.setXY(i, pos.getX(i) / (2 * R1) + 0.5, -pos.getZ(i) / (2 * R1) + 0.5); }
     const nG = new THREE.BoxGeometry(0.3, 0.6, 0.5); for (let i = 0; i < 120; i++) { const n = new THREE.Mesh(nG, brushed); const a = i / 120 * Math.PI * 2; n.position.set(Math.cos(a) * 19.85 * k, 2.9, Math.sin(a) * 19.85 * k); n.rotation.y = -a; body.add(n); }
+    if (C.style === 'chrono') {
+      const capMat = C.pusher === 'orb' ? new THREE.MeshPhysicalMaterial({ color: 0x0e0e0e, metalness: 0.8, roughness: 0.18, clearcoat: 1, clearcoatRoughness: 0.08 }) : metal;
+      for (const z of [-6.4, 6.6]) {
+        const geo = C.pusher === 'orb' ? new THREE.SphereGeometry(1.65, 18, 14) : new THREE.CylinderGeometry(1.1, 1.2, 2.1, 16).rotateZ(Math.PI / 2);
+        const p = new THREE.Mesh(geo, capMat); p.position.set(19.6 * k, 0.2, z); body.add(p);
+      }
+    }
+    if (C.spikes) {
+      const spikeMat = M.metal('gold');
+      for (let i = 0; i < 18; i++) {
+        const a = i / 18 * Math.PI * 2;
+        const cone = new THREE.Mesh(new THREE.ConeGeometry(0.62, 3.2, 8), spikeMat);
+        cone.position.set(Math.cos(a) * 20.4 * k, 3.15, Math.sin(a) * 20.4 * k);
+        cone.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(Math.cos(a), 0.45, Math.sin(a)).normalize());
+        body.add(cone);
+      }
+    }
     const crystal = new THREE.Mesh(new THREE.CylinderGeometry(16.1 * k, 16.1 * k, 0.8, 96), M.crystal); crystal.position.y = 3.3; crystal.renderOrder = 5; body.add(crystal);
-    bracelet(body, M, watch, k, -2.2, 21.5 * k + 5.6, 7.6);
+    if (watch.bracelet.style === 'alligator') alligator(body, -2.2, 21.5 * k + 5.6);
+    else bracelet(body, M, watch, k, -2.2, 21.5 * k + 5.6, 7.6);
     dims = { cbY: -5.95, yFront: 6.55, yBack: 3.8 };
   } else if (C.style === 'astral') {
     const prof = V2([[15.2, -4.4], [18.4, -4.4], [20.4, -3.1], [20.7, 0.2], [20.0, 1.7], [17.6, 2.55], [15.2, 2.55]], k);

@@ -33,5 +33,33 @@ export const WATCHES = {
     case: { style: 'astral', metal: 'gold', r: 21, bezel: 'polished', crownGuards: false, caseback: 'screw', backText: 'ZARUMEI · TOURBILLON · ZT-18 · 18 RUBIS · ORO 18K · ASTRAL CUBA · Nº 019 · ', backMono: '★' },
     dial: { kind: 'astral', r: 12.2, date: false }, hands: { style: 'leaf', metal: 'gold' }, bracelet: { style: 'alligator', metal: 'gold' },
     astral: { sky: 'blue', bear: 'cuba', layout: { time: [0, -7.5], bear: [7.15, 1.55], diamond: [-6.5, 4.85], balance: [-6.7, -2.7] } }
+  },
+  diablo: {
+    id: 'diablo', name: 'ZARUMEI Diablo Rojo', caliber: 'ZC40', grand: { emblem: 'diablo' },
+    blurb: 'Cronógrafo mecánico de laca roja. Día, mes y profundímetro de membrana. Máscara del diablo.',
+    case: { style: 'chrono', metal: 'gold', lacquer: 0x8c1422, pusher: 'orb', r: 21, bezel: 'polished', crownGuards: true, caseback: 'screw', backText: 'ZARUMEI · ZC-40 · CHRONOGRAPHE · JOUR · MOIS · PROFONDEUR · 100 M · Nº 040 · ', backMono: 'D' },
+    dial: { kind: 'diablo', r: 16.2, date: false }, hands: { style: 'sword', metal: 'gold' }, bracelet: { style: 'alligator', metal: 'gold' },
+    rotorText: 'ZARUMEI · DIABLO'
+  },
+  espina: {
+    id: 'espina', name: 'ZARUMEI Espina', caliber: 'ZC41', grand: { emblem: 'espina', compass: true },
+    blurb: 'El mismo calibre, bisel de púas de oro y una brújula mecánica sobre la esfera, a las 12.',
+    case: { style: 'chrono', metal: 'gold', spikes: true, r: 21, bezel: 'engraved', crownGuards: true, caseback: 'screw', backText: 'ZARUMEI · ZC-41 · CHRONOGRAPHE · BOUSSOLE · 100 M · OR 18K · Nº 041 · ', backMono: 'E' },
+    dial: { kind: 'espina', r: 16.2, date: false }, hands: { style: 'sword', metal: 'gold' }, bracelet: { style: 'oyster', metal: 'gold' },
+    rotorText: 'ZARUMEI · ESPINA'
+  },
+  ala: {
+    id: 'ala', name: 'ZARUMEI Ala de Fuego', caliber: 'ZC42', grand: { emblem: 'ala', compass: true, military: true },
+    blurb: 'Alas de oro y esmalte magenta, brújula y aguja de hora militar de 24 horas.',
+    case: { style: 'chrono', metal: 'gold', r: 21, bezel: 'engraved', crownGuards: true, caseback: 'screw', backText: 'ZARUMEI · ZC-42 · 24H · BOUSSOLE · CHRONOGRAPHE · OR 18K · Nº 042 · ', backMono: 'A' },
+    dial: { kind: 'ala', r: 16.2, date: false }, hands: { style: 'sword', metal: 'gold' }, bracelet: { style: 'oyster', metal: 'gold' },
+    rotorText: 'ZARUMEI · ALA'
+  },
+  orbital: {
+    id: 'orbital', name: 'ZARUMEI Orbital', caliber: 'ZC43', grand: { emblem: 'orbital', compass: true, military: true, moon: true },
+    blurb: 'Jaula calada de acero y oro, esfera verde y fases de la luna. Lleva todas las complicaciones.',
+    case: { style: 'chrono', metal: 'steel', r: 21, bezel: 'polished', crownGuards: true, caseback: 'screw', backText: 'ZARUMEI · ZC-43 · LUNE · 24H · BOUSSOLE · CHRONOGRAPHE · ACIER · Nº 043 · ', backMono: 'O' },
+    dial: { kind: 'orbital', r: 16.2, date: false }, hands: { style: 'baton', metal: 'steel' }, bracelet: { style: 'oyster', metal: 'steel' },
+    rotorText: 'ZARUMEI · ORBITAL'
   }
 };

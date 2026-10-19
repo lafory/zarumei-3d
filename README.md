@@ -29,7 +29,7 @@ La interfaz tiene estética de boutique de alta joyería: ónix, terciopelo verd
 
 ### Modos
 - **Historia:** 7 órdenes de trabajo con los 3 relojes (`src/data/story.js`). Cada caso nuevo se desbloquea al terminar el anterior y el progreso se guarda en `localStorage`.
-- **Modo libre:** eliges cualquier reloj y cualquier falla compatible con su calibre, o **«sin falla»** para desarmarlo por completo y volver a montarlo. Las herramientas de diagnóstico (timegrapher, brújula, multímetro, lupa) muestran la falla que elegiste.
+- **Modo libre:** eliges cualquier reloj y cualquier falla compatible con su calibre, o **«sin falla»** para desarmarlo por completo y volver a montarlo. Las herramientas de diagnóstico (timegrapher, brújula, multímetro, lupa) muestran la falla que elegiste. Los cuatro nuevos (Diablo, Espina, Ala, Orbital) son el calibre ZC: cronógrafo, día, mes y profundímetro; Espina suma brújula, Ala la hora militar y Orbital la luna.
 - **Boutique LA FORY:** vitrinas con foco sobre terciopelo y tres colecciones (Relojes, Herramientas, Joyería), con fichas y precios. La vista de detalle es 3D y se gira con el dedo. Las piezas se compran con los honorarios que cobras en cada reparación; es moneda del juego, no hay pagos reales.
 
 ### Controles
