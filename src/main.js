@@ -162,13 +162,13 @@ const LAND_BEATS = [
   { k: 0, kicker: 'ZARUMEI 3D', title: 'La bóveda', text: 'Desliza. La cámara entra en el reloj.' },
   { k: 0.10, kicker: 'El fondo', title: 'Se abre', text: 'El fondo sale. Detrás está la máquina.' },
   { k: 0.24, kicker: 'Calibre ZR-28', title: 'Dentro', text: 'Ruedas, rubíes y el volante, en marcha.' },
-  { k: 0.42, kicker: 'La bóveda', title: 'Flota', text: 'Sin caja y sin peana. El reloj queda en el aire.' },
-  { k: 0.54, kicker: 'Miami', title: 'Oro', text: 'La esfera entra sola. El brazalete cuelga.' },
-  { k: 0.66, kicker: 'Astral', title: 'Turbillón', text: 'Gira entero, como recortado del fondo.' },
-  { k: 0.76, kicker: 'Diablo', title: 'Rojo', text: 'Laca, máscara y cronógrafo. Nada lo sostiene.' },
-  { k: 0.86, kicker: 'El libro', title: 'Entra', text: 'Tu nombre guarda el tiempo y el reloj a medias.' }
+  { k: 0.30, kicker: 'La bóveda', title: 'Flota', text: 'Sin caja y sin peana. El reloj queda en el aire.' },
+  { k: 0.46, kicker: 'Miami', title: 'Oro', text: 'La esfera entra sola. El brazalete cuelga.' },
+  { k: 0.58, kicker: 'Astral', title: 'Turbillón', text: 'Gira entero, como recortado del fondo.' },
+  { k: 0.70, kicker: 'Diablo', title: 'Rojo', text: 'Laca, máscara y cronógrafo. Nada lo sostiene.' },
+  { k: 0.84, kicker: 'El libro', title: 'Entra', text: 'Tu nombre guarda el tiempo y el reloj a medias.' }
 ];
-const INSIDE_END = 0.42, VAULT_AT = 0.50;
+const INSIDE_END = 0.30, VAULT_AT = 0.36;
 const INSIDE_CAM = [
   { t: 0.00, cam: [0, 74, 52], look: [0, 6, 2] },
   { t: 0.18, cam: [32, 46, 30], look: [0, 5, 0] },
@@ -315,12 +315,17 @@ function poseInside(u, t) {
   if (u > 0.4) spinParts(G.parts, G.MV.wheel, t);
   G.root.traverse(o => { if (o.name === 'cageSpin') o.rotation.y = t * 0.7; });
 }
-function spinGallery(t) {
+function spinGallery(t, vaultU) {
   if (!gallery) return;
-  for (const slot of gallery.userData.items) {
-    slot.rotation.y = Math.sin(t * 0.55 + slot.userData.i) * 0.42;
-    slot.position.y = slot.userData.baseY + Math.sin(t * 0.85 + slot.userData.i) * 1.8;
-    const parts = slot.userData.parts;
+  const items = gallery.userData.items;
+  if (gallery.userData.left && gallery.userData.left.length) addFloating(gallery.userData.left.shift());
+  const idx = items.length ? Math.min(items.length - 1, Math.floor(vaultU * GALLERY_SPEC.length)) : -1;
+  for (let i = 0; i < items.length; i++) {
+    const slot = items[i];
+    slot.visible = i === idx;
+    slot.rotation.y = Math.sin(t * 0.55 + i) * 0.42;
+    slot.position.y = Math.sin(t * 0.85 + i) * 1.8;
+    const parts = slot.userData.parts || {};
     const turn = (id, v) => { const r = parts[id] && parts[id].getObjectByName('rot'); if (r) r.rotation.y = -v * Math.PI * 2; };
     turn('secHand', (t * 0.2) % 1);
     turn('minHand', 0.22);
@@ -335,25 +340,21 @@ function driveLanding(t) {
   const k = landKs;
   const insideU = clamp01(k / INSIDE_END);
   const vaultU = clamp01((k - VAULT_AT) / (0.9 - VAULT_AT));
-  const bridge = clamp01((k - INSIDE_END) / (VAULT_AT - INSIDE_END));
-  const inWatch = k <= INSIDE_END;
-  if (G.root) G.root.visible = inWatch;
-  if (gallery) gallery.visible = !inWatch;
-  if (inWatch) poseInside(insideU, t);
-  else spinGallery(t);
+  const showVault = k >= VAULT_AT && gallery && gallery.userData.items.length;
+  if (G.root) G.root.visible = !showVault;
+  if (gallery) gallery.visible = !!showVault;
+  if (!showVault) poseInside(insideU, t);
+  else spinGallery(t, vaultU);
   let cam, look;
-  if (k <= INSIDE_END) {
+  if (!showVault) {
     cam = samplePath(INSIDE_CAM, insideU, 'cam');
     look = samplePath(INSIDE_CAM, insideU, 'look');
-  } else if (k >= VAULT_AT) {
-    cam = samplePath(LAND_CAM, vaultU, 'cam');
-    look = samplePath(LAND_CAM, vaultU, 'look');
   } else {
-    const s = bridge * bridge * (3 - 2 * bridge);
-    cam = samplePath(INSIDE_CAM, 1, 'cam').lerp(samplePath(LAND_CAM, 0, 'cam'), s);
-    look = samplePath(INSIDE_CAM, 1, 'look').lerp(samplePath(LAND_CAM, 0, 'look'), s);
+    cam = new THREE.Vector3(8, 4, 102);
+    look = new THREE.Vector3(0, 0, 0);
+    cam.x += Math.sin(vaultU * Math.PI) * 14;
   }
-  const framed = frameLanding(cam, look, k >= VAULT_AT);
+  const framed = frameLanding(cam, look, false);
   framed.cam.x += landTilt.x * 10;
   framed.cam.y += landTilt.y * 6;
   camera.position.copy(framed.cam);
@@ -375,30 +376,37 @@ function floatingWatch(id) {
   for (const s of Object.values(MV.screws)) if (s.ghost) s.ghost.visible = false;
   root.traverse(o => { if (o.isMesh) { o.castShadow = false; o.receiveShadow = false; } });
   root.rotation.x = Math.PI / 2;
+  root.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(root);
+  root.position.sub(box.getCenter(new THREE.Vector3()));
   const g = new THREE.Group();
   g.add(root);
   g.userData.parts = MV.parts;
   return g;
 }
+function addFloating(id) {
+  if (!gallery || !id) return;
+  try {
+    const watch = floatingWatch(id);
+    watch.userData.i = gallery.userData.items.length;
+    gallery.add(watch);
+    gallery.userData.items.push(watch);
+  } catch (err) { console.warn('bóveda', id, err); }
+}
 function ensureGallery() {
   if (gallery || !M || !images) return;
-  gallery = new THREE.Group(); gallery.userData.items = []; scene.add(gallery);
-  GALLERY_SPEC.forEach((spec, i) => {
-    try {
-      const watch = floatingWatch(spec.id);
-      watch.position.set(i * GALLERY_GAP, 0, 0);
-      watch.userData.baseY = 0;
-      watch.userData.i = i;
-      const key = new THREE.SpotLight(0xfff6e4, 16000, 260, 0.6, 0.45, 1.2);
-      key.position.set(i * GALLERY_GAP + 18, 54, 40);
-      key.target.position.set(i * GALLERY_GAP, 10, 0);
-      const fill = new THREE.PointLight(0xfff3dc, 700, 120, 2);
-      fill.position.set(i * GALLERY_GAP - 20, 16, 28);
-      gallery.add(watch, key, key.target, fill);
-      gallery.userData.items.push(watch);
-    } catch (err) { console.warn('bóveda', spec.id, err); }
-  });
+  gallery = new THREE.Group();
+  gallery.userData.items = [];
+  gallery.userData.left = GALLERY_SPEC.map(s => s.id);
+  scene.add(gallery);
+  const key = new THREE.SpotLight(0xfff6e4, 14000, 280, 0.7, 0.5, 1.2);
+  key.position.set(16, 36, 48);
+  key.target.position.set(0, 0, 0);
+  const fill = new THREE.PointLight(0xfff3dc, 600, 140, 2);
+  fill.position.set(-24, 8, 36);
+  gallery.add(key, key.target, fill);
   gallery.visible = false;
+  addFloating(gallery.userData.left.shift());
 }
 
 function resize() {
@@ -1042,7 +1050,7 @@ function dressCard(b, watchId) {
     const p = document.createElement('div');
     p.className = 'pair';
     p.dataset.watch = watchId;
-    p.innerHTML = '<div class="face"><img alt=""></div><div class="boxshot"><img alt=""></div>';
+    p.innerHTML = '<div class="face"><img alt=""></div>';
     b.prepend(p);
   }
   b.classList.add('arrive');
@@ -1050,9 +1058,7 @@ function dressCard(b, watchId) {
 function paintPortrait(id, shot) {
   document.querySelectorAll(`.pair[data-watch="${id}"]`).forEach(p => {
     const face = p.querySelector('.face img');
-    const box = p.querySelector('.boxshot img');
     if (shot.face && face) { face.src = shot.face; face.classList.add('in'); }
-    if (shot.box && box) { box.src = shot.box; box.classList.add('in'); }
   });
 }
 function placeArrivals() {
@@ -1131,7 +1137,11 @@ $('#landing').addEventListener('pointermove', e => {
   landTilt.x = (e.clientX / window.innerWidth - 0.5) * 0.2;
   landTilt.y = (e.clientY / window.innerHeight - 0.5) * 0.1;
 });
-$('#landSkip').onclick = () => { const el = $('#landing'); el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' }); };
+$('#landSkip').onclick = () => {
+  const el = $('#landing'), max = el.scrollHeight - el.clientHeight;
+  if (landK > 0.72) { closeLanding(); return; }
+  el.scrollTop = max * 0.5;
+};
 $('#landContinue').onclick = () => closeLanding();
 $('#landSwitch').onclick = () => { book.logout(); paintLandingAuth(); const el = $('#landing'); el.scrollTop = el.scrollHeight; };
 async function begin(watchId, faultId, story) {

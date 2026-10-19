@@ -143,20 +143,12 @@ function ensureBox() {
   scene.add(boxRig); boxRig.visible = false;
 }
 function shootPortrait(id) {
-  setup(); ensureBox();
+  setup();
   const exposure = R.toneMappingExposure, envI = scene.environmentIntensity;
-  R.toneMappingExposure = 1.7; scene.environmentIntensity = 1.45;
-  R.setClearColor(0x120e0a, 1);
+  R.toneMappingExposure = 1.45; scene.environmentIntensity = 1.2;
+  R.setClearColor(0x070605, 1);
   pedestal.visible = false; holder.clear();
-  if (!boxShot) {
-    boxRig.visible = true;
-    const prev = boxRig.getObjectByName('watch'); if (prev) boxRig.remove(prev);
-    R.setSize(480, 640, false); camera.aspect = 480 / 640; camera.fov = 32; camera.updateProjectionMatrix();
-    camera.position.set(86, 74, 108); camera.lookAt(0, 14, -8);
-    R.render(scene, camera);
-    boxShot = R.domElement.toDataURL('image/jpeg', 0.84);
-  }
-  boxRig.visible = false;
+  if (boxRig) boxRig.visible = false;
   const { g } = watchModel(id);
   const root = g.children[0];
   root.rotation.x = Math.PI / 2;
@@ -168,13 +160,13 @@ function shootPortrait(id) {
   const size = wb.getSize(new THREE.Vector3());
   g.position.sub(c);
   const dial = Math.max(size.x, size.z);
-  const fov = 22;
-  const dist = (dial / 2) / Math.tan(THREE.MathUtils.degToRad(fov / 2)) * 0.9;
-  R.setSize(640, 800, false); camera.aspect = 640 / 800; camera.fov = fov; camera.updateProjectionMatrix();
-  camera.position.set(dial * 0.02, dial * 0.04, dist);
+  const fov = 24;
+  const dist = (dial / 2) / Math.tan(THREE.MathUtils.degToRad(fov / 2)) * 1.05;
+  R.setSize(480, 640, false); camera.aspect = 480 / 640; camera.fov = fov; camera.updateProjectionMatrix();
+  camera.position.set(0, dial * 0.02, dist);
   camera.lookAt(0, 0, 0);
   R.render(scene, camera);
-  portraits[id] = { face: R.domElement.toDataURL('image/jpeg', 0.86), box: boxShot };
+  portraits[id] = { face: R.domElement.toDataURL('image/jpeg', 0.84) };
   holder.clear();
   R.toneMappingExposure = exposure; scene.environmentIntensity = envI;
 }
