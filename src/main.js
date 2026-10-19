@@ -254,7 +254,15 @@ async function fxScrew(sid) { const obj = G.MV.screws[sid].obj, h = G.home[sid];
 async function fxLost(sid) { const obj = G.MV.screws[sid].obj; await moveWorld(obj, obj.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(60, -20, 50)), obj.quaternion.clone(), new THREE.Vector3(1, 1, 1), 500, 25); obj.visible = false; }
 function refreshGhosts() {
   if (!G) return;
-  for (const [sid, s] of Object.entries(G.MV.screws)) { const sc = G.E.screws[sid]; s.ghost.visible = G.E.st[sc.part] === 'in' && sc.state !== 'in'; }
+  for (const [sid, s] of Object.entries(G.MV.screws)) {
+    const sc = G.E.screws[sid];
+    const covered = G.E.P[sc.part].coveredBy.some(c => G.E.st[c] === 'in');
+    const buried = G.E.st[sc.part] === 'in' && covered;
+    if (sc.state === 'lost') s.obj.visible = false;
+    else if (sc.state === 'in') s.obj.visible = !buried;
+    else s.obj.visible = true;
+    s.ghost.visible = sc.state !== 'in' && sc.state !== 'lost' && G.E.st[sc.part] === 'in' && !covered;
+  }
 }
 function hideSeat() {
   heldId = null;
@@ -569,7 +577,7 @@ function pick(cx, cy) {
   const hits = ray.intersectObjects(scene.children.filter(o => o !== toolGroup), true).filter(h => visibleChain(h.object));
   const firstD = hits.length ? hits[0].distance : 0;
   for (const h of hits) { if (h.distance - firstD > 2.5) break; for (let n = h.object; n; n = n.parent) if (n.userData.seat) return { seat: n.userData.seat, chain: [] }; }
-  for (const h of hits.slice(0, 8)) { if (h.distance - firstD > 8) break; for (let n = h.object; n; n = n.parent) { if (n.userData.screwId) return { screw: n.userData.screwId }; if (n.userData.screwGhost) return { ghost: n.userData.screwGhost }; } }
+  for (const h of hits.slice(0, 8)) { if (h.distance - firstD > 8) break; for (let n = h.object; n; n = n.parent) { const sid = n.userData.screwId || n.userData.screwGhost; if (!sid || !G) continue; const sc = G.E.screws[sid]; if (G.E.P[sc.part].coveredBy.some(c => G.E.st[c] === 'in')) continue; return n.userData.screwId ? { screw: sid } : { ghost: sid }; } }
   for (const h of hits) { const chain = []; for (let n = h.object; n; n = n.parent) if (n.userData.partId) chain.push(n.userData.partId); if (chain.length) return { chain }; if (!h.object.userData.isHit) return { chain: [] }; }
   return { chain: [] };
 }

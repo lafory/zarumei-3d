@@ -260,7 +260,7 @@ export function createEngine({ watchId, faultId, story = null }) {
     if (!access(sc.part)) return R('info', accessMsg(sc.part));
     if (!out) {
       if (story && diagPending()) return bad(`Antes de abrir, un relojero <b>diagnostica</b>: usa ${toolName(diagPending())}.`, 5, 'wrongOrder');
-      const cov = p.coveredBy.find(c => st[c] === 'in'); if (cov) return bad(`Orden incorrecto: ese tornillo está tapado por ${name(cov)}.`, 5, 'wrongOrder');
+      const cov = p.coveredBy.find(c => st[c] === 'in'); if (cov) return bad(`Ese tornillo está debajo de ${name(cov)}. Quítala primero; la pista marca el que sí sale.`, 5, 'wrongOrder');
     }
     if (sc.prog === 0) {
       if (size > sc.s + 0.05) return bad(`Punta de ${mm(size)} demasiado <b>grande</b>: no entra en la ranura y rayaría el puente. Este tornillo pide ${mm(sc.s)}.`, 2, 'wrongTool');
@@ -351,7 +351,7 @@ export function createEngine({ watchId, faultId, story = null }) {
     return { tool: placeTool(id), target: { chip: id } };
   }
   function planAssembly() {
-    for (const p of C.parts) if (st[p.id] === 'in') {
+    for (const p of C.parts) if (st[p.id] === 'in' && !p.coveredBy.some(c => st[c] === 'in')) {
       const sc = screwsOf(p.id).find(s => s.state !== 'in');
       if (sc) { const loc = planLocation(p.id, 'install'); return loc || { tool: 'screwdriver', size: sc.s, target: { screw: sc.id } }; }
       if (oilPending(p.id)) { const loc = planLocation(p.id, 'install'); return loc || { tool: 'oiler', target: { part: p.id } }; }
@@ -390,7 +390,7 @@ export function createEngine({ watchId, faultId, story = null }) {
   function hint() { stats.hints++; score = Math.max(0, score - 2); const a = suggest(); return { action: a, msg: '💡 ' + describe(a) }; }
   function goal() {
     const dp = diagPending(); if (dp) return { phase: 'Diagnóstico', text: `Diagnostica: ${toolName(dp)}` };
-    if (F.free && !removedOnce.size) return { phase: 'Desarme', text: 'Desarma libremente: empieza por el fondo' };
+    if (F.free && C.parts.some(p => st[p.id] === 'in' && !removedOnce.has(p.id))) return { phase: 'Desarme', text: 'Sigue quitando. Un tornillo que no gira está debajo de otra pieza.' };
     const s = curStep(); if (s) return { phase: 'Reparación', text: revealed || fstep > 0 ? s.title : (F.free ? 'Desarma' : 'Encuentra la falla') };
     if (!allIn()) { const total = C.parts.length + Object.keys(screws).length; const done = C.parts.filter(p => st[p.id] === 'in').length + Object.values(screws).filter(x => x.state === 'in').length; return { phase: 'Montaje', text: `Monta: ${done}/${total} piezas y tornillos` }; }
     if (!quartz && flags.letdown) return { phase: 'Montaje', text: 'Da cuerda' };
