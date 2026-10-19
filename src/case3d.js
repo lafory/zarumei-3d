@@ -60,6 +60,46 @@ export function buildCase(M, watch, movR) {
     const crystal = new THREE.Mesh(new THREE.SphereGeometry(42, 72, 24, 0, Math.PI * 2, 0, Math.asin(15.1 * k / 42)), M.crystal); crystal.position.y = 3.7 - 42; crystal.renderOrder = 5; body.add(crystal);
     alligator(body, -1.05, 21.2 * k + 4.2);
     dims = { cbY: -4.85, yFront: 6.15, yBack: 3.6 };
+  } else if (C.style === 'octagon') {
+    const kk = C.r / 20;
+    const prof = V2([[14.6, -4.2], [16.8, -4.2], [17.4, -2.2], [17.4, 1.5], [16.2, 2.35], [14.6, 2.35]], kk);
+    const cm = new THREE.Mesh(new THREE.LatheGeometry(prof, 96), metal.clone()); cm.material.side = THREE.DoubleSide; body.add(cm);
+    const inner = new THREE.Mesh(new THREE.CylinderGeometry(14.6 * kk, 14.6 * kk, 6.2, 80, 1, true), brushed.clone()); inner.material.side = THREE.BackSide; inner.position.y = -0.95; body.add(inner);
+    const spacer = new THREE.Mesh(new THREE.LatheGeometry(V2([[movR + 0.15, -2.6], [14.4 * kk, -2.6], [14.4 * kk, 0.1], [movR + 0.15, 0.1]]), 64), M.spacer); spacer.material.side = THREE.DoubleSide; body.add(spacer);
+    const oct = new THREE.Shape();
+    const Rout = 19.3 * kk;
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2 - Math.PI / 8;
+      const x = Math.cos(a) * Rout, y = Math.sin(a) * Rout;
+      if (i === 0) oct.moveTo(x, y); else oct.lineTo(x, y);
+    }
+    oct.closePath();
+    const hole = new THREE.Path(); hole.absarc(0, 0, 14.7 * kk, 0, Math.PI * 2, true); oct.holes.push(hole);
+    const bezel = new THREE.Mesh(new THREE.ExtrudeGeometry(oct, { depth: 1.3, bevelEnabled: true, bevelThickness: 0.1, bevelSize: 0.1, bevelSegments: 1 }).rotateX(-Math.PI / 2), metal.clone());
+    bezel.position.y = 2.2; body.add(bezel);
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2;
+      const sc = new THREE.Mesh(new THREE.CylinderGeometry(0.58, 0.58, 0.32, 12), brushed);
+      sc.position.set(Math.cos(a) * 17.3 * kk, 3.4, Math.sin(a) * 17.3 * kk);
+      const slot = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.06, 0.1), M.darkSteel);
+      slot.position.set(sc.position.x, sc.position.y + 0.18, sc.position.z);
+      body.add(sc, slot);
+    }
+    const crystal = new THREE.Mesh(new THREE.CylinderGeometry(14.6 * kk, 14.6 * kk, 0.5, 64), M.crystal);
+    crystal.position.y = 3.2; crystal.renderOrder = 5; body.add(crystal);
+    bracelet(body, M, watch, kk, -1.5, 16.4 * kk + 4, 8);
+    dims = { cbY: -4.35, yFront: 5.7, yBack: 3.35 };
+  } else if (C.style === 'tank') {
+    const gold = metal.clone();
+    const shell = new THREE.Mesh(new THREE.BoxGeometry(30, 7.2, 22), gold); body.add(shell);
+    const lip = new THREE.Mesh(new THREE.BoxGeometry(24.2, 0.7, 17.2), brushed.clone()); lip.position.y = 3.5; body.add(lip);
+    const crystal = new THREE.Mesh(new THREE.BoxGeometry(22.8, 0.4, 16), M.crystal); crystal.position.y = 3.85; crystal.renderOrder = 5; body.add(crystal);
+    for (const s of [-1, 1]) { const lug = new THREE.Mesh(new THREE.BoxGeometry(14, 2.6, 3.6), gold); lug.position.set(0, -1.1, s * 12.4); body.add(lug); }
+    const crown = new THREE.Mesh(new THREE.CylinderGeometry(1.15, 1.2, 1.7, 16).rotateZ(Math.PI / 2), gold); crown.position.set(16.2, 0.2, 0); body.add(crown);
+    const cab = new THREE.Mesh(new THREE.SphereGeometry(0.55, 14, 10), new THREE.MeshPhysicalMaterial({ color: 0x1a3f86, roughness: 0.08, metalness: 0.15, clearcoat: 1 }));
+    cab.position.set(17.15, 0.2, 0); body.add(cab);
+    alligator(body, -1.3, 16.2);
+    dims = { cbY: -3.8, yFront: 4.4, yBack: 2.5 };
   } else {
     const prof = V2([[15.4, -3.0], [18.2, -3.0], [18.9, -2.2], [19.0, 0.2], [18.6, 1.3], [15.4, 1.3]], k);
     const cm = new THREE.Mesh(new THREE.LatheGeometry(prof, 128), metal.clone()); cm.material.side = THREE.DoubleSide; body.add(cm);

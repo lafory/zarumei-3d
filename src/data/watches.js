@@ -61,5 +61,31 @@ export const WATCHES = {
     case: { style: 'chrono', metal: 'steel', r: 21, bezel: 'polished', crownGuards: true, caseback: 'screw', backText: 'ZARUMEI · ZC-43 · LUNE · 24H · BOUSSOLE · CHRONOGRAPHE · ACIER · Nº 043 · ', backMono: 'O' },
     dial: { kind: 'orbital', r: 16.2, date: false }, hands: { style: 'baton', metal: 'steel' }, bracelet: { style: 'oyster', metal: 'steel' },
     rotorText: 'ZARUMEI · ORBITAL'
+  },
+  ancla: {
+    id: 'ancla', name: 'ZARUMEI Ancla', caliber: 'ZR28', maison: true,
+    blurb: 'Oro 18 k y azul marino. Bisel cerámico, esfera sol y ancla. Mismos tornillos que el Miami: calibre ZR-28.',
+    case: { style: 'diver', metal: 'gold', r: 20, bezel: 'ceramicBlue', crownGuards: true, caseback: 'screw', backText: 'ZARUMEI · ANCLA · AUTOMATIC · 28.800 A/h · 100 M · ORO 18K · Nº 050 · ', backMono: 'A' },
+    dial: { kind: 'ancla', r: 16.2, date: true }, hands: { style: 'sword', metal: 'gold' }, bracelet: { style: 'oyster', metal: 'gold' },
+    rotorText: 'ZARUMEI · ANCLA'
+  },
+  octava: {
+    id: 'octava', name: 'ZARUMEI Octava', caliber: 'ZR28', maison: true,
+    blurb: 'Bisel de ocho lados, ocho tornillos de caja y brazalete integrado. El movimiento es el ZR-28, tornillo por tornillo.',
+    case: { style: 'octagon', metal: 'steel', r: 21, bezel: 'polished', crownGuards: false, caseback: 'screw', backText: 'ZARUMEI · OCTAVA · AUTOMATIC · 28.800 A/h · ACERO · Nº 051 · ', backMono: '8' },
+    dial: { kind: 'octava', r: 15.2, date: true }, hands: { style: 'baton', metal: 'steel' }, bracelet: { style: 'oyster', metal: 'steel' },
+    rotorText: 'ZARUMEI · OCTAVA'
+  },
+  lira: {
+    id: 'lira', name: 'ZARUMEI Lira', caliber: 'ZQ11', maison: true,
+    blurb: 'Vestir extraplano en oro, esfera crema y agujas hoja. Mismos tornillos que el Rosé: cuarzo ZQ-11.',
+    case: { style: 'slim', metal: 'gold', r: 19, bezel: 'polished', crownGuards: false, caseback: 'snap', backText: 'ZARUMEI · LIRA · QUARTZ · ORO 18K · 3 ATM · Nº 052 · ', backMono: 'L' },
+    dial: { kind: 'lira', r: 15.4, date: false }, hands: { style: 'leaf', metal: 'gold' }, bracelet: { style: 'alligator', metal: 'gold' }
+  },
+  recta: {
+    id: 'recta', name: 'ZARUMEI Recta', caliber: 'ZQ11', maison: true,
+    blurb: 'Caja rectángulo de oro, números romanos, cabujón azul y correa. El calibre y los tornillos son los del ZQ-11.',
+    case: { style: 'tank', metal: 'gold', r: 20, bezel: 'polished', crownGuards: false, caseback: 'snap', backText: 'ZARUMEI · RECTA · QUARTZ · ORO 18K · Nº 053 · ', backMono: 'R' },
+    dial: { kind: 'recta', r: 7.2, date: false }, hands: { style: 'sword', metal: 'gold' }, bracelet: { style: 'alligator', metal: 'gold' }
   }
 };

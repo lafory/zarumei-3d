@@ -15,6 +15,12 @@ function handShape(style, len, w) {
 export function buildDial(M, images, watch, ys) {
   const { r, kind, date } = watch.dial; const metal = M.metal(watch.hands.metal);
   const dial = tag(new THREE.Group(), 'dial');
+  if (kind === 'recta') {
+    const face = new THREE.Mesh(new THREE.PlaneGeometry(22.4, 16.4).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ map: TX.dialTexture('recta', images, 1), roughness: 0.3, metalness: 0.05 }));
+    face.position.y = ys.dial; dial.add(face);
+    dial.add(hitProxy(M, 10, 0.5, ys.dial));
+    return dial;
+  }
   if (watch.grand) {
     const face = new THREE.Mesh(new THREE.CircleGeometry(r, 96).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ map: TX.dialTexture(kind, images, 1), transparent: true, alphaTest: 0.45, roughness: kind === 'espina' ? 0.28 : 0.48, metalness: kind === 'espina' ? 0.35 : 0.04 }));
     face.position.y = ys.dial; dial.add(face);
@@ -22,12 +28,12 @@ export function buildDial(M, images, watch, ys) {
     dial.add(hitProxy(M, r, 0.5, ys.dial));
     return dial;
   }
-  const face = new THREE.Mesh(new THREE.CircleGeometry(r, 128).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ map: TX.dialTexture(kind, images, new Date().getDate()), roughness: kind === 'rose' ? 0.25 : 0.5, metalness: 0 }));
+  const face = new THREE.Mesh(new THREE.CircleGeometry(r, 128).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ map: TX.dialTexture(kind, images, new Date().getDate()), roughness: kind === 'rose' || kind === 'lira' ? 0.25 : kind === 'octava' ? 0.35 : 0.5, metalness: kind === 'octava' ? 0.08 : 0 }));
   face.position.y = ys.dial; dial.add(face);
   const edge = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 0.3, 96, 1, true), M.darkSteel); edge.position.y = ys.dial - 0.15; dial.add(edge);
   const under = new THREE.Mesh(new THREE.CircleGeometry(r, 64).rotateX(Math.PI / 2), M.brassDial || M.darkSteel); under.position.y = ys.dial - 0.3; dial.add(under);
   for (const a of [0.8, 3.9]) { const foot = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 1.2, 8), M.goldWheel); foot.position.set(Math.cos(a) * 10.8, ys.dial - 0.9, Math.sin(a) * 10.8); dial.add(foot); }
-  const idx = (kind === 'rose') ? 'baton' : kind;
+  const idx = (kind === 'rose' || kind === 'lira' || kind === 'octava') ? 'baton' : kind;
   const ri = r * 0.815, y = ys.dial + 0.22;
   for (let h = 1; h <= 12; h++) {
     if (h === 3 && date) continue;

@@ -19,6 +19,7 @@ import { buildZR28, buildZQ11 } from './movement.js';
 import { buildZT18 } from './tourbillon.js';
 import { buildGrand } from './grand.js';
 import { buildCase } from './case3d.js';
+import { buildDial, buildHands } from './dialside.js';
 import { makeTools } from './tools3d.js';
 import { ICONS } from './icons.js';
 import { unlock as unlockAudio, play as playSfx, pulse as pulseSfx, setMuted, isMuted } from './audio.js';
@@ -136,18 +137,20 @@ function workView() { if (!G) return 'front'; return G.E.flags.mvLoc === 'holder
 let landingOn = false, landK = 0, landKs = 0, landBeat = -1, spinHome = null;
 const landTilt = { x: 0, y: 0 };
 const LAND_CAM = [
-  { t: 0, cam: [0, 48, 58], look: [0, 7, 0] },
-  { t: 0.24, cam: [14, 26, 30], look: [0, 8, 0] },
-  { t: 0.46, cam: [16, 14, -10], look: [0, 6, 0] },
-  { t: 0.66, cam: [2, 22, 4], look: [0, 7, 0] },
-  { t: 0.84, cam: [6, 14, 5], look: [0, 6, 0] },
-  { t: 1, cam: [0, 19, 16], look: [0, 8, 0] }
+  { t: 0, cam: [0, 46, 56], look: [0, 7, 0] },
+  { t: 0.1, cam: [10, 24, 30], look: [0, 8, 0] },
+  { t: 0.2, cam: [20, 12, -6], look: [0, 6, 0] },
+  { t: 0.32, cam: [2, 15, 3], look: [1, 5.5, -1] },
+  { t: 0.46, cam: [-5, 12, 7], look: [2, 5, -1] },
+  { t: 0.58, cam: [1, 14, 5], look: [0, 5.5, 0] }
 ].map(p => ({ t: p.t, cam: new THREE.Vector3(...p.cam), look: new THREE.Vector3(...p.look) }));
 const LAND_BEATS = [
-  { k: 0, kicker: 'Maison LA FORY', title: 'ZARUMEI', text: 'Desliza. El calibre se abre contigo.' },
-  { k: 0.2, kicker: 'La caja', title: 'Gira el fondo', text: 'Cada dedo que baja mueve el rodaje.' },
-  { k: 0.46, kicker: 'Dentro', title: 'Estás en el movimiento', text: 'Puentes, rubíes, el rotor y el volante.' },
-  { k: 0.74, kicker: 'El libro', title: 'Firma y entra', text: 'Tu nombre guarda el tiempo y el reloj a medias.' }
+  { k: 0, kicker: 'Maison LA FORY', title: 'ZARUMEI', text: 'Desliza despacio. El calibre se abre contigo.' },
+  { k: 0.12, kicker: 'La caja', title: 'Gira el fondo', text: 'El fondo se desenrosca. Sigue bajando.' },
+  { k: 0.28, kicker: 'Dentro', title: 'El rodaje', text: 'Ruedas, rubíes y el rotor. Quédate en este tramo.' },
+  { k: 0.46, kicker: 'El latido', title: 'El volante', text: 'Late. Cada diente del escape empuja el siguiente.' },
+  { k: 0.62, kicker: 'La colección', title: 'Entran las cajas', text: 'Cada reloj llega de un lado, con su caja abierta.' },
+  { k: 0.9, kicker: 'El libro', title: 'Firma y entra', text: 'Tu nombre guarda el tiempo y el reloj a medias.' }
 ];
 const SPIN_IDS = ['rotor', 'escapeWheel', 'secondWheel', 'thirdWheel', 'fourthWheel', 'interWheel', 'centerWheel'];
 function clamp01(x) { return Math.min(1, Math.max(0, x)); }
@@ -178,6 +181,8 @@ function restoreLandingPose() {
   }
   spinHome = null;
   if (T) { T.tg.visible = T.holder.visible = T.tray.visible = true; }
+  if (G) G.root.visible = true;
+  if (parade) parade.visible = false;
   camera.near = 1; camera.updateProjectionMatrix();
 }
 function paintBeat(k) {
@@ -190,8 +195,8 @@ function paintBeat(k) {
     $('#landTitle').textContent = b.title;
     $('#landText').textContent = b.text;
   }
-  $('#landCopy').classList.toggle('off', k > 0.82);
-  $('#landChevron').style.display = k > 0.08 ? 'none' : '';
+  $('#landCopy').classList.toggle('off', k > 0.92);
+  $('#landChevron').style.display = k > 0.05 ? 'none' : '';
   const bar = $('#landBar'); if (bar) bar.style.height = (k * 100).toFixed(1) + '%';
 }
 function paintLandingAuth() {
@@ -228,30 +233,90 @@ function closeLanding() {
 }
 function driveLanding(t) {
   if (!G) return;
-  landKs += (landK - landKs) * 0.075;
+  landKs += (landK - landKs) * 0.055;
   const k = landKs;
-  const flip = ramp(0.28, 0.52, k);
-  const open = ramp(0.52, 0.74, k);
+  const flip = ramp(0.12, 0.24, k);
+  const open = ramp(0.22, 0.36, k);
+  G.root.visible = k < 0.6;
   G.root.rotation.x = landTilt.y * (1 - flip);
-  G.root.rotation.y = landTilt.x + k * 0.7;
+  G.root.rotation.y = landTilt.x + k * 0.35;
   G.root.rotation.z = flip * Math.PI;
   G.root.position.y = G.CS.dims.yFront + (G.CS.dims.yBack - G.CS.dims.yFront) * flip;
   const cb = G.parts.caseback, h = G.home.caseback;
   if (cb && h) {
     cb.position.copy(h.pos);
-    cb.position.y = h.pos.y - open * 20;
+    cb.position.y = h.pos.y - open * 22;
     cb.rotation.z = 0; cb.rotation.x = 0;
-    cb.rotation.y = open * Math.PI * 3;
+    cb.rotation.y = open * Math.PI * 4;
   }
-  const s = t * 0.55 + k * 18;
+  const inside = ramp(0.3, 0.38, k) * (1 - ramp(0.54, 0.62, k));
+  const s = t * (0.7 + inside * 2.4);
   const turn = (id, spd) => { if (G.parts[id]) G.parts[id].rotation.y = s * spd; };
-  turn('rotor', 0.22); turn('centerWheel', 0.15); turn('thirdWheel', 0.45); turn('secondWheel', -0.7); turn('fourthWheel', 0.55); turn('interWheel', -0.35); turn('escapeWheel', 1.4);
-  if (G.MV.wheel) G.MV.wheel.rotation.y = Math.sin((t + k * 6) * Math.PI * 5) * (0.22 + k * 0.45);
-  const cam = along(k, 'cam'), look = along(k, 'look');
+  turn('rotor', 0.35); turn('centerWheel', 0.2); turn('thirdWheel', 0.55); turn('secondWheel', -0.9); turn('fourthWheel', 0.7); turn('interWheel', -0.4); turn('escapeWheel', 2.1);
+  if (G.MV.wheel) G.MV.wheel.rotation.y = Math.sin(t * Math.PI * (4 + inside * 4)) * (0.2 + inside * 0.85);
+  if (k > 0.52) ensureParade();
+  let cam = along(Math.min(k, 0.58), 'cam'), look = along(Math.min(k, 0.58), 'look');
+  if (parade) {
+    parade.visible = k > 0.55;
+    const rows = parade.userData.rows, focus = ramp(0.58, 0.9, k) * Math.max(0, rows - 1);
+    for (const slot of parade.userData.items) {
+      const local = clamp01(focus - slot.userData.row + 1.2);
+      const e = local * local * (3 - 2 * local);
+      slot.position.set(slot.userData.side * (230 * (1 - e) + 34 * e), 0, slot.userData.z);
+      slot.rotation.y = slot.userData.side * (1 - e) * 0.55;
+    }
+    if (k > 0.56) {
+      const z = -focus * ROW_Z;
+      const blend = ramp(0.56, 0.66, k);
+      cam = cam.clone().lerp(new THREE.Vector3(0, 54, z + 52), blend);
+      look = look.clone().lerp(new THREE.Vector3(0, 10, z), blend);
+    }
+  }
   camera.position.copy(cam);
   controls.target.copy(look);
   camera.lookAt(look);
   paintBeat(landK);
+}
+const PARADE_IDS = ['miami', 'ancla', 'cuba', 'octava', 'rose', 'lira', 'recta', 'astralMiami', 'astralCuba', 'diablo', 'espina', 'ala', 'orbital'];
+const ROW_Z = 88;
+let parade = null;
+function makeParadeBox() {
+  const g = new THREE.Group();
+  const wood = new THREE.MeshStandardMaterial({ color: 0x2a2118, roughness: 0.74, metalness: 0.06 });
+  const rim = new THREE.MeshStandardMaterial({ color: 0xc6a15a, metalness: 1, roughness: 0.3 });
+  const base = new THREE.Mesh(new THREE.BoxGeometry(54, 7, 42), wood); base.position.y = 3.5; g.add(base);
+  const edge = new THREE.Mesh(new THREE.BoxGeometry(54.8, 1.1, 42.8), rim); edge.position.y = 6.7; g.add(edge);
+  const lid = new THREE.Mesh(new THREE.BoxGeometry(54, 3.4, 42), wood); lid.position.set(0, 20, -24); lid.rotation.x = -0.85; g.add(lid);
+  const cush = new THREE.Mesh(new THREE.CylinderGeometry(15, 16, 2.2, 24), new THREE.MeshStandardMaterial({ color: 0x14281f, roughness: 1 }));
+  cush.position.y = 8.1; g.add(cush);
+  return g;
+}
+function ensureParade() {
+  if (parade || !M || !images) return;
+  parade = new THREE.Group(); parade.userData.items = []; scene.add(parade);
+  PARADE_IDS.forEach((id, i) => {
+    try {
+    const W = WATCHES[id];
+    const movR = W.caliber === 'ZQ11' ? 11.65 : 12.8;
+    const ys = W.grand ? { dial: 1.42, hour: 2.05, min: 2.32, sec: 2.58 } : W.caliber === 'ZQ11' ? { dial: 1.0, hour: 1.25, min: 1.45, sec: 1.65 } : { dial: 1.4, hour: 1.95, min: 2.2, sec: 2.45 };
+    const CS = buildCase(M, W, movR); mergeStatic(CS.body);
+    const watch = new THREE.Group(); watch.add(CS.body, CS.caseback);
+    if (W.caliber !== 'ZT18') {
+      const dial = buildDial(M, images, W, ys);
+      const hands = buildHands(M, W, ys);
+      const setA = (hnd, f) => { const r = hnd.getObjectByName('rot'); if (r) r.rotation.y = -f * Math.PI * 2; };
+      setA(hands.hour, 10 / 12); setA(hands.min, 10 / 60); setA(hands.sec, 0.2);
+      watch.add(dial, hands.hour, hands.min, hands.sec);
+    }
+    watch.position.y = (CS.dims.yFront || 6) + 8;
+    const slot = new THREE.Group(); slot.add(makeParadeBox(), watch);
+    const row = Math.floor(i / 2);
+    slot.userData.row = row; slot.userData.side = i % 2 === 0 ? -1 : 1; slot.userData.z = -row * ROW_Z;
+    parade.add(slot); parade.userData.items.push(slot);
+    } catch (err) { console.warn('desfile', id, err); }
+  });
+  parade.userData.rows = Math.ceil(PARADE_IDS.length / 2);
+  parade.visible = false;
 }
 
 function resize() {
@@ -902,11 +967,11 @@ function renderMenu() {
     b.onclick = () => { if (locked) { b.classList.add('shake'); setTimeout(() => b.classList.remove('shake'), 400); return; } startStory(c.id); }; list.appendChild(b);
   });
   const wl = $('#watchList'); wl.innerHTML = '';
-  document.querySelectorAll('#astralList [data-go], #grandList [data-go]').forEach(b => {
+  document.querySelectorAll('#astralList [data-go], #grandList [data-go], #maisonList [data-go]').forEach(b => {
     b.classList.toggle('on', b.dataset.go === playWatch);
     b.onclick = () => { playWatch = b.dataset.go; renderMenu(); };
   });
-  Object.values(WATCHES).filter(w => w.caliber !== 'ZT18' && !w.grand).forEach(w => { const b = document.createElement('button'); b.className = 'wcard' + (playWatch === w.id ? ' on' : ''); b.dataset.watch = w.id; b.innerHTML = `<b>${w.name}</b><span>${w.blurb}</span><small>${CALIBERS[w.caliber].name} · ${CALIBERS[w.caliber].desc}</small>`; b.onclick = () => { playWatch = w.id; renderMenu(); }; wl.appendChild(b); });
+  Object.values(WATCHES).filter(w => w.caliber !== 'ZT18' && !w.grand && !w.maison).forEach(w => { const b = document.createElement('button'); b.className = 'wcard' + (playWatch === w.id ? ' on' : ''); b.dataset.watch = w.id; b.innerHTML = `<b>${w.name}</b><span>${w.blurb}</span><small>${CALIBERS[w.caliber].name} · ${CALIBERS[w.caliber].desc}</small>`; b.onclick = () => { playWatch = w.id; renderMenu(); }; wl.appendChild(b); });
   const fl = $('#faultList'); fl.innerHTML = ''; const type = CALIBERS[WATCHES[playWatch].caliber].type;
   if (!FAULTS[playFault].calibers.includes(type)) playFault = 'sinFalla';
   Object.values(FAULTS).filter(f => f.calibers.includes(type)).forEach(f => { const b = document.createElement('button'); b.className = 'fchip' + (playFault === f.id ? ' on' : ''); b.dataset.fault = f.id; b.textContent = f.name; b.onclick = () => { playFault = f.id; renderMenu(); }; fl.appendChild(b); });

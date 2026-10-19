@@ -144,7 +144,7 @@ body.land #stage::before{background:linear-gradient(180deg,rgba(0,0,0,.28),trans
 @keyframes landBob{50%{transform:translateY(7px) rotate(45deg)}}
 .landMeter{position:fixed;left:0;top:18%;bottom:18%;width:2px;z-index:26;background:rgba(217,180,94,.18);pointer-events:none}
 .landMeter i{display:block;width:100%;height:0;background:var(--foil);background-size:100% 200%}
-.landSpacer{height:280vh}
+.landSpacer{height:1100vh}
 .landDock{min-height:100vh;display:flex;align-items:flex-end;justify-content:center;padding:12px 14px calc(env(safe-area-inset-bottom) + 16px)}
 .landDock .card{width:min(440px,100%)}
 .row{display:flex;gap:8px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap}
@@ -292,9 +292,16 @@ body.land #stage::before{background:linear-gradient(180deg,rgba(0,0,0,.28),trans
         <button type="button" class="wcard" data-go="astralMiami"><b><em class="nuevo">Nuevo</em>ZARUMEI Astral «Miami»</b><span>Turbillón de oro 18 k, nebulosa violeta, diamante y el oso Miami.</span><small>ZT-18 · cuerda manual</small></button>
         <button type="button" class="wcard" data-go="astralCuba"><b><em class="nuevo">Nuevo</em>ZARUMEI Astral «Cuba»</b><span>Turbillón de oro, cielo azul, jaula de volante, diamante y el oso Cuba.</span><small>ZT-18 · cuerda manual</small></button>
       </div>
-      <p class="cinzel" style="margin-top:12px">III · Los de siempre</p>
+      <p class="cinzel" style="margin-top:12px">III · La casa</p>
+      <div id="maisonList">
+        <button type="button" class="wcard" data-go="ancla"><b><em class="nuevo">Nuevo</em>ZARUMEI Ancla</b><span>Oro y azul marino. Mismos tornillos que el Miami.</span><small>ZR-28 · automático</small></button>
+        <button type="button" class="wcard" data-go="octava"><b><em class="nuevo">Nuevo</em>ZARUMEI Octava</b><span>Bisel de ocho lados y brazalete integrado. Mismo ZR-28.</span><small>ZR-28 · automático</small></button>
+        <button type="button" class="wcard" data-go="lira"><b><em class="nuevo">Nuevo</em>ZARUMEI Lira</b><span>Vestir de oro, esfera crema. Mismos tornillos que el Rosé.</span><small>ZQ-11 · cuarzo</small></button>
+        <button type="button" class="wcard" data-go="recta"><b><em class="nuevo">Nuevo</em>ZARUMEI Recta</b><span>Rectángulo de oro, romanos y cabujón. Mismo ZQ-11.</span><small>ZQ-11 · cuarzo</small></button>
+      </div>
+      <p class="cinzel" style="margin-top:12px">IV · Los de siempre</p>
       <div id="watchList"></div>
-      <p class="cinzel" style="margin-top:14px">IV · La falla <span class="small" style="text-transform:none;letter-spacing:0">(o «sin falla» para desarmar libremente)</span></p>
+      <p class="cinzel" style="margin-top:14px">V · La falla <span class="small" style="text-transform:none;letter-spacing:0">(o «sin falla» para desarmar libremente)</span></p>
       <div id="faultList"></div>
       <div class="row"><button class="lux primary" id="playBtn">Empezar</button></div>
     </div>
@@ -360,7 +367,7 @@ body.land #stage::before{background:linear-gradient(180deg,rgba(0,0,0,.28),trans
   <div id="bqDetail" hidden><button class="lux" id="bqBack">← Volver</button><div id="bqStage"></div><div id="bqInfo"></div></div>
 </div>
 
-<script src="game.js?v=land1"></script>
+<script src="game.js?v=casa1"></script>
 <script>
 setInterval(function(){var g=window.__game;if(!g||!g.started)return;var el=document.getElementById('timer');if(!el._t0)el._t0=Date.now();if(document.getElementById('endOverlay').hidden){var e=Math.floor((Date.now()-el._t0)/1000);el.textContent=Math.floor(e/60)+':'+String(e%60).padStart(2,'0');}},500);
 document.getElementById('menuTop').onclick=function(){ if (window.__game && __game.openMenu) __game.openMenu(); else document.getElementById('intro').hidden=false; };

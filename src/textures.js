@@ -113,6 +113,52 @@ export function dialTexture(kind, images, day) {
     minuteTrack(x, R, '#e8eef8', 0.995, 0.955, 0.935); dateWindow(x, R, day, '#c9d3e3');
     x.textAlign = 'center'; x.fillStyle = '#ffffff'; x.font = `900 ${R * 0.075}px Helvetica, Arial`; x.fillText('ZARUMEI', 0, -R * 0.6);
     x.font = `bold ${R * 0.04}px Helvetica, Arial`; x.fillStyle = '#ff5a4f'; x.fillText('CUBA AZUL · 200 M', 0, R * 0.63);
+  } else if (kind === 'ancla') {
+    const g = x.createRadialGradient(0, -R * 0.1, R * 0.04, 0, 0, R); g.addColorStop(0, '#1e568f'); g.addColorStop(0.55, '#0c2c52'); g.addColorStop(1, '#061422');
+    x.fillStyle = g; x.beginPath(); x.arc(0, 0, R, 0, Math.PI * 2); x.fill();
+    for (let i = 0; i < 280; i++) { x.strokeStyle = i % 2 ? 'rgba(255,255,255,.045)' : 'rgba(0,0,0,.05)'; x.lineWidth = 2; x.beginPath(); x.moveTo(0, 0); const [px, py] = P(R, i * (360 / 280)); x.lineTo(px, py); x.stroke(); }
+    x.strokeStyle = '#e8c878'; x.fillStyle = '#e8c878'; x.lineWidth = R * 0.012; x.lineCap = 'round';
+    x.beginPath(); x.moveTo(0, -R * 0.28); x.lineTo(0, R * 0.22); x.stroke();
+    x.beginPath(); x.moveTo(-R * 0.09, -R * 0.2); x.lineTo(R * 0.09, -R * 0.2); x.lineTo(0, -R * 0.32); x.closePath(); x.fill();
+    x.beginPath(); x.arc(-R * 0.07, R * 0.16, R * 0.09, 0.4, Math.PI - 0.2); x.stroke();
+    x.beginPath(); x.arc(R * 0.07, R * 0.16, R * 0.09, 0.2, Math.PI - 0.4); x.stroke();
+    minuteTrack(x, R, '#f3e6c4'); dateWindow(x, R, day, '#e6c36a');
+    x.textAlign = 'center'; x.fillStyle = '#f6ead0'; x.font = `600 ${R * 0.07}px Georgia, serif`; x.fillText('ZARUMEI', 0, -R * 0.52);
+    x.font = `600 ${R * 0.034}px Helvetica, Arial`; x.fillStyle = '#d7e6f6'; x.fillText('ANCLA · 100 M', 0, R * 0.6);
+  } else if (kind === 'octava') {
+    const g = x.createRadialGradient(-R * 0.2, -R * 0.25, R * 0.04, 0, 0, R); g.addColorStop(0, '#2a62a4'); g.addColorStop(1, '#071018');
+    x.fillStyle = g; x.beginPath(); x.arc(0, 0, R, 0, Math.PI * 2); x.fill();
+    x.save(); x.beginPath(); x.arc(0, 0, R * 0.9, 0, Math.PI * 2); x.clip();
+    for (let j = -9; j <= 9; j++) for (let i = -9; i <= 9; i++) {
+      const cx = i * R * 0.105, cy = j * R * 0.105;
+      const gg = x.createRadialGradient(cx - 8, cy - 8, 1, cx, cy, R * 0.05);
+      gg.addColorStop(0, 'rgba(255,255,255,.22)'); gg.addColorStop(1, 'rgba(0,0,0,.28)');
+      x.fillStyle = gg; x.beginPath(); x.moveTo(cx, cy - R * 0.042); x.lineTo(cx + R * 0.042, cy); x.lineTo(cx, cy + R * 0.042); x.lineTo(cx - R * 0.042, cy); x.closePath(); x.fill();
+    }
+    x.restore();
+    minuteTrack(x, R, '#e7eef8', 0.99, 0.955, 0.94); dateWindow(x, R, day, '#c5d4ea');
+    x.textAlign = 'center'; x.fillStyle = '#f3e7c4'; x.font = `600 ${R * 0.055}px Georgia, serif`; x.fillText('ZARUMEI', 0, -R * 0.38);
+    x.font = `500 ${R * 0.03}px Helvetica, Arial`; x.fillStyle = '#d5e2f2'; x.fillText('AUTOMATIC', 0, R * 0.48);
+  } else if (kind === 'lira') {
+    const g = x.createRadialGradient(-R * 0.15, -R * 0.2, R * 0.05, 0, 0, R); g.addColorStop(0, '#fbf6ec'); g.addColorStop(1, '#e6d3b0');
+    x.fillStyle = g; x.beginPath(); x.arc(0, 0, R, 0, Math.PI * 2); x.fill();
+    x.strokeStyle = '#8d6b3c'; x.lineWidth = 2;
+    x.beginPath(); x.arc(0, 0, R * 0.97, 0, Math.PI * 2); x.stroke();
+    x.beginPath(); x.arc(0, 0, R * 0.9, 0, Math.PI * 2); x.stroke();
+    for (let i = 0; i < 60; i++) { const [x1, y1] = P(R * 0.955, i * 6), [x2, y2] = P(R * (i % 5 ? 0.93 : 0.905), i * 6); x.lineWidth = i % 5 ? 1.4 : 3; x.beginPath(); x.moveTo(x1, y1); x.lineTo(x2, y2); x.stroke(); }
+    x.fillStyle = '#6b522e'; x.textAlign = 'center'; x.font = `500 ${R * 0.05}px Georgia, serif`; x.fillText('ZARUMEI', 0, -R * 0.22);
+    x.font = `400 ${R * 0.028}px Helvetica, Arial`; x.fillText('QUARTZ', 0, R * 0.46);
+  } else if (kind === 'recta') {
+    x.setTransform(1, 0, 0, 1, 0, 0);
+    const g = x.createLinearGradient(0, 0, S, S); g.addColorStop(0, '#fbfaf6'); g.addColorStop(1, '#e5dfd4');
+    x.fillStyle = g; x.fillRect(0, 0, S, S);
+    x.strokeStyle = '#1c1c1c'; x.lineWidth = 3;
+    const romans = ['XII', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI'];
+    x.fillStyle = '#161616'; x.font = `500 ${S * 0.052}px Georgia, serif`; x.textAlign = 'center'; x.textBaseline = 'middle';
+    romans.forEach((t, i) => { const a = (i / 12) * Math.PI * 2 - Math.PI / 2; x.fillText(t, S / 2 + Math.cos(a) * S * 0.3, S / 2 + Math.sin(a) * S * 0.2); });
+    for (let i = 0; i < 60; i++) { const a = i / 60 * Math.PI * 2 - Math.PI / 2; const r1 = S * (i % 5 ? 0.355 : 0.34), r2 = S * 0.375; x.lineWidth = i % 5 ? 2 : 4; x.beginPath(); x.moveTo(S / 2 + Math.cos(a) * r1, S / 2 + Math.sin(a) * r1); x.lineTo(S / 2 + Math.cos(a) * r2, S / 2 + Math.sin(a) * r2); x.stroke(); }
+    x.fillStyle = '#1a1a1a'; x.font = `500 ${S * 0.042}px Georgia, serif`; x.fillText('ZARUMEI', S / 2, S * 0.46);
+    x.font = `400 ${S * 0.02}px Helvetica, Arial`; x.fillStyle = '#6d675f'; x.fillText('QUARTZ', S / 2, S * 0.53);
   } else if (kind === 'diablo' || kind === 'espina' || kind === 'ala' || kind === 'orbital') {
     grandDial(x, R, kind);
   } else { // rose: laca blanca + arte del oso ZARUMEI neón
