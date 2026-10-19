@@ -132,6 +132,128 @@ async function setView(v, instant = false) {
   controls.enabled = true; positionFloatingTool();
 }
 function workView() { if (!G) return 'front'; return G.E.flags.mvLoc === 'holder' ? 'holder' : (G.E.flags.flipped ? 'back' : 'front'); }
+
+let landingOn = false, landK = 0, landKs = 0, landBeat = -1, spinHome = null;
+const landTilt = { x: 0, y: 0 };
+const LAND_CAM = [
+  { t: 0, cam: [0, 48, 58], look: [0, 7, 0] },
+  { t: 0.24, cam: [14, 26, 30], look: [0, 8, 0] },
+  { t: 0.46, cam: [16, 14, -10], look: [0, 6, 0] },
+  { t: 0.66, cam: [2, 22, 4], look: [0, 7, 0] },
+  { t: 0.84, cam: [6, 14, 5], look: [0, 6, 0] },
+  { t: 1, cam: [0, 19, 16], look: [0, 8, 0] }
+].map(p => ({ t: p.t, cam: new THREE.Vector3(...p.cam), look: new THREE.Vector3(...p.look) }));
+const LAND_BEATS = [
+  { k: 0, kicker: 'Maison LA FORY', title: 'ZARUMEI', text: 'Desliza. El calibre se abre contigo.' },
+  { k: 0.2, kicker: 'La caja', title: 'Gira el fondo', text: 'Cada dedo que baja mueve el rodaje.' },
+  { k: 0.46, kicker: 'Dentro', title: 'Estás en el movimiento', text: 'Puentes, rubíes, el rotor y el volante.' },
+  { k: 0.74, kicker: 'El libro', title: 'Firma y entra', text: 'Tu nombre guarda el tiempo y el reloj a medias.' }
+];
+const SPIN_IDS = ['rotor', 'escapeWheel', 'secondWheel', 'thirdWheel', 'fourthWheel', 'interWheel', 'centerWheel'];
+function clamp01(x) { return Math.min(1, Math.max(0, x)); }
+function ramp(a, b, k) { const t = clamp01((k - a) / Math.max(0.0001, b - a)); return t * t * (3 - 2 * t); }
+function along(k, key) {
+  let i = 0;
+  while (i < LAND_CAM.length - 2 && k > LAND_CAM[i + 1].t) i++;
+  const a = LAND_CAM[i], b = LAND_CAM[Math.min(i + 1, LAND_CAM.length - 1)];
+  const u = a.t === b.t ? 1 : clamp01((k - a.t) / (b.t - a.t));
+  const s = u * u * (3 - 2 * u);
+  return a[key].clone().lerp(b[key], s);
+}
+function captureSpin() {
+  if (!G || spinHome) return;
+  spinHome = {};
+  for (const id of SPIN_IDS) if (G.parts[id]) spinHome[id] = G.parts[id].rotation.y;
+  if (G.MV.wheel) spinHome.wheel = G.MV.wheel.rotation.y;
+}
+function restoreLandingPose() {
+  if (!G) return;
+  const cb = G.parts.caseback, h = G.home.caseback;
+  if (cb && h) { cb.position.copy(h.pos); cb.quaternion.copy(h.quat); cb.scale.copy(h.scale); }
+  G.root.rotation.set(0, 0, 0);
+  G.root.position.y = G.CS.dims.yFront;
+  if (spinHome) {
+    for (const id of SPIN_IDS) if (G.parts[id] && id in spinHome) G.parts[id].rotation.y = spinHome[id];
+    if (G.MV.wheel && 'wheel' in spinHome) G.MV.wheel.rotation.y = spinHome.wheel;
+  }
+  spinHome = null;
+  if (T) { T.tg.visible = T.holder.visible = T.tray.visible = true; }
+  camera.near = 1; camera.updateProjectionMatrix();
+}
+function paintBeat(k) {
+  let i = 0;
+  for (let n = 0; n < LAND_BEATS.length; n++) if (k >= LAND_BEATS[n].k) i = n;
+  if (i !== landBeat) {
+    landBeat = i;
+    const b = LAND_BEATS[i];
+    $('#landKicker').textContent = b.kicker;
+    $('#landTitle').textContent = b.title;
+    $('#landText').textContent = b.text;
+  }
+  $('#landCopy').classList.toggle('off', k > 0.82);
+  $('#landChevron').style.display = k > 0.08 ? 'none' : '';
+  const bar = $('#landBar'); if (bar) bar.style.height = (k * 100).toFixed(1) + '%';
+}
+function paintLandingAuth() {
+  const u = book.current();
+  const hello = $('#landHello'), form = $('#landForm');
+  if (!hello || !form) return;
+  hello.hidden = !u; form.hidden = !!u;
+  if (u) $('#landWho').textContent = u.name;
+  const err = $('#gateErr'); if (err) err.textContent = '';
+}
+function openLanding() {
+  if (!G) return;
+  captureSpin();
+  landingOn = true; landBeat = -1;
+  document.body.classList.add('land');
+  $('#landing').hidden = false;
+  $('#intro').hidden = true;
+  $('#profile').hidden = true;
+  if (T) { T.tg.visible = T.holder.visible = T.tray.visible = false; }
+  controls.enabled = false;
+  camera.near = 0.35; camera.updateProjectionMatrix();
+  paintLandingAuth();
+  resize();
+}
+function closeLanding() {
+  landingOn = false; landK = landKs = 0;
+  document.body.classList.remove('land');
+  $('#landing').hidden = true;
+  restoreLandingPose();
+  controls.enabled = true;
+  resize();
+  setView('front', true);
+  enterApp();
+}
+function driveLanding(t) {
+  if (!G) return;
+  landKs += (landK - landKs) * 0.075;
+  const k = landKs;
+  const flip = ramp(0.28, 0.52, k);
+  const open = ramp(0.52, 0.74, k);
+  G.root.rotation.x = landTilt.y * (1 - flip);
+  G.root.rotation.y = landTilt.x + k * 0.7;
+  G.root.rotation.z = flip * Math.PI;
+  G.root.position.y = G.CS.dims.yFront + (G.CS.dims.yBack - G.CS.dims.yFront) * flip;
+  const cb = G.parts.caseback, h = G.home.caseback;
+  if (cb && h) {
+    cb.position.copy(h.pos);
+    cb.position.y = h.pos.y - open * 20;
+    cb.rotation.z = 0; cb.rotation.x = 0;
+    cb.rotation.y = open * Math.PI * 3;
+  }
+  const s = t * 0.55 + k * 18;
+  const turn = (id, spd) => { if (G.parts[id]) G.parts[id].rotation.y = s * spd; };
+  turn('rotor', 0.22); turn('centerWheel', 0.15); turn('thirdWheel', 0.45); turn('secondWheel', -0.7); turn('fourthWheel', 0.55); turn('interWheel', -0.35); turn('escapeWheel', 1.4);
+  if (G.MV.wheel) G.MV.wheel.rotation.y = Math.sin((t + k * 6) * Math.PI * 5) * (0.22 + k * 0.45);
+  const cam = along(k, 'cam'), look = along(k, 'look');
+  camera.position.copy(cam);
+  controls.target.copy(look);
+  camera.lookAt(look);
+  paintBeat(landK);
+}
+
 function resize() {
   const r = stage.getBoundingClientRect(); applyDPR(r.width, r.height); renderer.setSize(r.width, r.height, false);
   renderer.domElement.style.width = r.width + 'px'; renderer.domElement.style.height = r.height + 'px';
@@ -760,11 +882,12 @@ function openProfile() {
   $('#profileCard').querySelectorAll('[data-del]').forEach(b => b.onclick = () => { const r = book.removeUser(b.dataset.del); if (r.err) say(r.err); else openProfile(); });
 }
 function showGate() {
-  $('#gateErr').textContent = '';
-  $('#gate').hidden = false; $('#intro').hidden = true; $('#profile').hidden = true;
+  openLanding();
+  const el = $('#landing');
+  requestAnimationFrame(() => { el.scrollTop = el.scrollHeight; landK = 1; });
 }
 function enterApp() {
-  $('#gate').hidden = true; $('#profile').hidden = true; $('#intro').hidden = false; renderMenu();
+  $('#profile').hidden = true; $('#intro').hidden = false; renderMenu();
 }
 function renderMenu() {
   paintWho(); renderSaves(); renderLive();
@@ -794,11 +917,22 @@ $('#playBtn').onclick = () => startPlay(playWatch, playFault);
 $('#saveBtn').onclick = () => saveGame();
 $('#whoProfile').onclick = () => openProfile();
 $('#whoOut').onclick = () => { book.logout(); sessionLive = false; $('#saveBtn').hidden = true; showGate(); };
-$('#gateIn').onclick = () => { const r = book.login($('#gateName').value, $('#gatePass').value); if (r.err) { $('#gateErr').textContent = r.err; return; } enterApp(); };
-$('#gateNew').onclick = () => { const r = book.register($('#gateName').value, $('#gatePass').value); if (r.err) { $('#gateErr').textContent = r.err; return; } enterApp(); };
-$('#gateGuest').onclick = () => { book.enterGuest(); enterApp(); };
+$('#gateIn').onclick = () => { const r = book.login($('#gateName').value, $('#gatePass').value); if (r.err) { $('#gateErr').textContent = r.err; return; } closeLanding(); };
+$('#gateNew').onclick = () => { const r = book.register($('#gateName').value, $('#gatePass').value); if (r.err) { $('#gateErr').textContent = r.err; return; } closeLanding(); };
+$('#gateGuest').onclick = () => { book.enterGuest(); closeLanding(); };
 $('#gatePass').addEventListener('keydown', e => { if (e.key === 'Enter') $('#gateIn').click(); });
 $('#gateName').addEventListener('keydown', e => { if (e.key === 'Enter') $('#gatePass').focus(); });
+$('#landing').addEventListener('scroll', () => {
+  const el = $('#landing'), max = el.scrollHeight - el.clientHeight;
+  landK = max > 0 ? el.scrollTop / max : 0;
+}, { passive: true });
+$('#landing').addEventListener('pointermove', e => {
+  landTilt.x = (e.clientX / window.innerWidth - 0.5) * 0.2;
+  landTilt.y = (e.clientY / window.innerHeight - 0.5) * 0.1;
+});
+$('#landSkip').onclick = () => { const el = $('#landing'); el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' }); };
+$('#landContinue').onclick = () => closeLanding();
+$('#landSwitch').onclick = () => { book.logout(); paintLandingAuth(); const el = $('#landing'); el.scrollTop = el.scrollHeight; };
 async function begin(watchId, faultId, story) {
   buildWorld(watchId, faultId, story); G.active = true; sessionLive = true;
   sel = null; selectTool(null); started = true; busy = false; stampTimer(0);
@@ -829,8 +963,9 @@ async function init() {
   buildWorld('miami', 'aceiteSeco', null); setSize(1.0); setSeatMode(seatMode, false); setHQ(hq, false);
   if (navigator.webdriver && !book.current()) book.enterGuest();
   renderMenu(); resize(); await setView('front', true);
+  if (navigator.webdriver) { landingOn = false; $('#landing').hidden = true; document.body.classList.remove('land'); }
+  else openLanding();
   $('#loading').hidden = true;
-  if (!book.current()) showGate();
   requestAnimationFrame(loop);
 }
 
@@ -859,8 +994,9 @@ function loop(now) {
   }
   if (floatingTool && floatingTool.userData.base && !tweens.length && !hold) { floatingTool.rotation.y = t * 0.6; floatingTool.position.y = floatingTool.userData.base.y + Math.sin(t * 2) * 0.4; }
   if (seatRing) { faceSeat(); seatRing.scale.setScalar(1 + Math.sin(t * 5) * 0.05); }
-  controls.update();
-  if (hq && view === 'loupe' && loupeTarget) {
+  if (landingOn) driveLanding(t);
+  else controls.update();
+  if (!landingOn && hq && view === 'loupe' && loupeTarget) {
     ensureDof();
     const dist = camera.position.distanceTo(controls.target);
     bokehPass.uniforms.focus.value = dist;
@@ -878,7 +1014,7 @@ window.__game = {
   get started() { return started; }, get busy() { return busy || !!tweens.length; }, get view() { return view; }, get fps() { return fps; },
   get state() { if (!G) return null; const E = G.E; return { watch: E.W.id, fault: E.F.id, score: E.score, finished: E.finished, goal: E.goal(), flags: { ...E.flags }, stats: { ...E.stats }, out: Object.keys(E.st).filter(k => E.st[k] === 'out'), screwsOut: Object.values(E.screws).filter(s => s.state !== 'in').length, fstep: E.fstep }; },
   get info() { const i = renderer.info.render; return { calls: i.calls, triangles: i.triangles, geometries: renderer.info.memory.geometries, textures: renderer.info.memory.textures }; },
-  startStory, startPlay, openMenu, setSpeed: (s) => (SPEED = s), setView: (v) => setView(v),
+  startStory, startPlay, openMenu, openLanding, closeLanding, setSpeed: (s) => (SPEED = s), setView: (v) => setView(v),
   selectTool: (id) => selectTool(id), setSize,
   suggest: () => G.E.suggest(), describe: (a) => G.E.describe(a),
   // ejecuta una acción como la haría el jugador (misma ruta de código que los toques)
