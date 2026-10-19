@@ -1055,7 +1055,8 @@ function paintPortrait(id, shot) {
     if (shot.face && face) { face.src = shot.face; face.classList.add('in'); }
     if (shot.box && box) { box.src = shot.box; box.classList.add('in'); }
     const card = p.closest('.arrive');
-    if (!card) return;
+    if (!card || card.dataset.shown) return;
+    card.dataset.shown = '1';
     const to = arrivalOf(card);
     card.style.setProperty('--in', '0');
     if (face) void face.offsetWidth;
@@ -1103,17 +1104,31 @@ function renderMenu() {
   document.querySelectorAll('#astralList [data-go], #grandList [data-go], #maisonList [data-go]').forEach(b => {
     dressCard(b, b.dataset.go);
     b.classList.toggle('on', b.dataset.go === playWatch);
-    b.onclick = () => { playWatch = b.dataset.go; renderMenu(); };
+    b.onclick = () => pickWatch(b.dataset.go);
   });
-  Object.values(WATCHES).filter(w => w.caliber !== 'ZT18' && !w.grand && !w.maison).forEach(w => { const b = document.createElement('button'); b.className = 'wcard' + (playWatch === w.id ? ' on' : ''); b.dataset.watch = w.id; b.innerHTML = `<div><b>${w.name}</b><span>${w.blurb}</span><small>${CALIBERS[w.caliber].name} · ${CALIBERS[w.caliber].desc}</small></div>`; dressCard(b, w.id); b.onclick = () => { playWatch = w.id; renderMenu(); }; wl.appendChild(b); });
-  const fl = $('#faultList'); fl.innerHTML = ''; const type = CALIBERS[WATCHES[playWatch].caliber].type;
-  if (!FAULTS[playFault].calibers.includes(type)) playFault = 'sinFalla';
-  Object.values(FAULTS).filter(f => f.calibers.includes(type)).forEach(f => { const b = document.createElement('button'); b.className = 'fchip' + (playFault === f.id ? ' on' : ''); b.dataset.fault = f.id; b.textContent = f.name; b.onclick = () => { playFault = f.id; renderMenu(); }; fl.appendChild(b); });
+  Object.values(WATCHES).filter(w => w.caliber !== 'ZT18' && !w.grand && !w.maison).forEach(w => { const b = document.createElement('button'); b.className = 'wcard' + (playWatch === w.id ? ' on' : ''); b.dataset.watch = w.id; b.innerHTML = `<div><b>${w.name}</b><span>${w.blurb}</span><small>${CALIBERS[w.caliber].name} · ${CALIBERS[w.caliber].desc}</small></div>`; dressCard(b, w.id); b.onclick = () => pickWatch(w.id); wl.appendChild(b); });
+  renderFaults();
   if (portraitsWanted) {
     const ids = [...new Set([...STORY.map(c => c.watch), ...Object.keys(WATCHES)])];
     queuePortraits(ids, paintPortrait);
   }
   requestAnimationFrame(placeArrivals);
+}
+function renderFaults() {
+  const fl = $('#faultList'); if (!fl) return;
+  fl.innerHTML = '';
+  const type = CALIBERS[WATCHES[playWatch].caliber].type;
+  if (!FAULTS[playFault].calibers.includes(type)) playFault = 'sinFalla';
+  Object.values(FAULTS).filter(f => f.calibers.includes(type)).forEach(f => {
+    const b = document.createElement('button'); b.className = 'fchip' + (playFault === f.id ? ' on' : ''); b.dataset.fault = f.id; b.textContent = f.name;
+    b.onclick = () => { playFault = f.id; renderFaults(); };
+    fl.appendChild(b);
+  });
+}
+function pickWatch(id) {
+  playWatch = id;
+  document.querySelectorAll('#playPane .wcard').forEach(b => b.classList.toggle('on', (b.dataset.go || b.dataset.watch) === id));
+  renderFaults();
 }
 let playWatch = 'miami', playFault = 'sinFalla', portraitsWanted = false;
 document.querySelectorAll('.tab').forEach(t => t.onclick = () => { document.querySelectorAll('.tab').forEach(x => x.classList.toggle('on', x === t)); $('#storyPane').hidden = t.dataset.tab !== 'story'; $('#playPane').hidden = t.dataset.tab !== 'play'; requestAnimationFrame(placeArrivals); });

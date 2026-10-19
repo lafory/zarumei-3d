@@ -112,14 +112,16 @@ button:disabled{opacity:.45}
 .face,.boxshot{position:absolute;top:0;bottom:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
 .face{left:0;right:32%}
 .boxshot{right:0;width:36%}
-.face img,.boxshot img{width:100%;height:100%;object-fit:contain;opacity:0;transition:transform .9s cubic-bezier(.16,.84,.22,1),opacity .4s}
+.face img,.boxshot img{width:100%;height:100%;object-fit:contain;opacity:0;pointer-events:none;transition:transform .9s cubic-bezier(.16,.84,.22,1),opacity .4s}
 .face img{transform:translate3d(calc((1 - var(--in, 0)) * -110vw),0,0)}
 .boxshot img{transform:translate3d(calc((1 - var(--in, 0)) * 110vw),0,0)}
 .face img.in,.boxshot img.in{opacity:1}
 .ticket{background:none;color:var(--ivory);border:0;box-shadow:none;padding:2px 0 0;font-family:var(--serif);font-size:15px;line-height:1.35}
 .wcard{display:flex;flex-direction:column;align-items:stretch;gap:2px;width:100%;text-align:left;background:none;border:0;box-shadow:none;padding:0 0 8px;margin-top:22px;color:var(--ink);cursor:pointer}
 .wcard.on{background:none;box-shadow:none}
-.wcard.on b{color:#fff6d2}
+.wcard.on b{color:#fff}
+.wcard.on::after{content:'Elegido';display:block;padding:2px 10px 6px;font-family:var(--caps);letter-spacing:.22em;font-size:11px;color:var(--gold)}
+#playPane > .row{position:sticky;bottom:0;z-index:3;background:#050505;padding:12px 0 6px}
 .wcard > :not(.pair){padding:0 10px}
 .wcard b{font-family:var(--serif);font-size:18px;color:var(--gold-hi);display:block;line-height:1.2}.wcard span{font-size:12px;display:block}.wcard small{font-size:10.5px;color:var(--muted)}
 .wcard .nuevo{font-family:var(--caps);font-style:normal;font-size:9px;letter-spacing:.14em;text-transform:uppercase;background:none;color:var(--gold);padding:0;margin-right:6px;vertical-align:2px}
@@ -392,7 +394,7 @@ body:not(.land) #landScroll{display:none!important}
   <div id="bqDetail" hidden><button class="lux" id="bqBack">← Volver</button><div id="bqStage"></div><div id="bqInfo"></div></div>
 </div>
 
-<script src="game.js?v=flota7"></script>
+<script src="game.js?v=flota8"></script>
 <script>
 setInterval(function(){var g=window.__game;if(!g||!g.started)return;var el=document.getElementById('timer');if(!el._t0)el._t0=Date.now();if(document.getElementById('endOverlay').hidden){var e=Math.floor((Date.now()-el._t0)/1000);el.textContent=Math.floor(e/60)+':'+String(e%60).padStart(2,'0');}},500);
 document.getElementById('menuTop').onclick=function(){ if (window.__game && __game.openMenu) __game.openMenu(); else document.getElementById('intro').hidden=false; };
