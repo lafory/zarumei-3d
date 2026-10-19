@@ -144,9 +144,15 @@ body.land #app{max-width:none;padding:0;height:100%}
 body.land header,body.land #stepbar,body.land #progress,body.land #msg,body.land #toolhead,body.land #tools,body.land .kbd,body.land #bottom,body.land #intro,body.land #a2hs{display:none!important}
 body.land #stage{position:fixed;inset:0;z-index:1;margin:0;height:100%;min-height:100%;border-radius:0;box-shadow:none}
 body.land #stage::before{background:linear-gradient(180deg,rgba(0,0,0,.42),transparent 14% 82%,rgba(0,0,0,.45))}
-#landing{position:fixed;inset:0;z-index:25;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;touch-action:pan-y;background:transparent}
+html.land,html.land body{height:auto!important;overflow:auto!important;overflow-x:hidden!important;-webkit-overflow-scrolling:touch}
+#landScroll{position:relative;z-index:24;height:auto}
+body:not(.land) #landScroll{display:none!important}
+.landSpacer{height:420vh}
+.landDock{min-height:100vh;display:flex;align-items:flex-end;justify-content:center;padding:12px 14px calc(env(safe-area-inset-bottom) + 16px);position:relative;z-index:27}
+.landDock .card{width:min(440px,100%);pointer-events:auto}
+#landing{position:fixed;inset:0;z-index:26;overflow:visible;pointer-events:none;background:transparent}
 #landing[hidden]{display:none!important}
-.landTop{position:fixed;top:0;left:0;right:0;z-index:27;display:flex;justify-content:flex-end;align-items:flex-start;padding:calc(env(safe-area-inset-top) + 10px) 14px 0;pointer-events:none}
+.landTop{position:fixed;top:0;left:0;right:0;z-index:28;display:flex;justify-content:flex-end;align-items:flex-start;padding:calc(env(safe-area-inset-top) + 10px) 14px 0;pointer-events:none}
 .landTop button{pointer-events:auto}
 .landCopy{position:fixed;left:0;right:0;top:calc(env(safe-area-inset-top) + 18px);z-index:26;text-align:center;padding:0 96px;pointer-events:none;transition:opacity .4s}
 .landCopy.off{opacity:0}
@@ -161,9 +167,6 @@ body.land #stage::before{background:linear-gradient(180deg,rgba(0,0,0,.42),trans
   .landCopy h1{font-size:28px}
   .landCopy p{font-size:15px;max-width:260px}
 }
-.landSpacer{height:640vh}
-.landDock{min-height:100vh;display:flex;align-items:flex-end;justify-content:center;padding:12px 14px calc(env(safe-area-inset-bottom) + 16px)}
-.landDock .card{width:min(440px,100%)}
 .row{display:flex;gap:8px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap}
 .price{font-family:var(--serif);font-weight:600;color:var(--gold-hi);letter-spacing:.03em}.price.big{font-size:24px;display:block}
 .cert{text-align:center}.cert ul{text-align:left}.cert .stars{font-size:26px;letter-spacing:.2em;color:var(--gold);text-shadow:0 0 12px rgba(217,180,94,.6)}.cert .stars i{font-style:normal;opacity:.2}
@@ -337,40 +340,40 @@ body.land #stage::before{background:linear-gradient(180deg,rgba(0,0,0,.42),trans
 <div id="a2hs" hidden><button id="a2hsClose" aria-label="Cerrar">✕</button><span class="cinzel">Pantalla completa en iPad</span>Safari no permite pantalla completa dentro de la página. Toca <b>Compartir</b> → <b>Agregar a pantalla de inicio</b> y abre ZARUMEI 3D desde el icono: se abrirá a pantalla completa.</div>
 <div class="overlay" id="endOverlay" hidden><div class="card" id="endCard"></div></div>
 
+<div id="landScroll" hidden>
+  <div class="landSpacer"></div>
+  <div class="landDock">
+    <div class="card gate">
+      <div id="landHello" hidden>
+        <div class="cinzel">El libro te reconoce</div>
+        <h2 class="foil" style="font-family:var(--serif);font-weight:500;font-size:32px;margin:6px 0">Hola, <span id="landWho"></span></h2>
+        <p class="small" style="text-align:center">Tu tiempo, tus relojes y el punto guardado siguen aquí.</p>
+        <div class="row"><button class="lux primary" id="landContinue" type="button">Entrar a la bóveda</button><button class="lux" id="landSwitch" type="button">Otra cuenta</button></div>
+      </div>
+      <div id="landForm">
+        <div class="cinzel">Libro del taller</div>
+        <h2 class="foil" style="font-family:var(--serif);font-weight:500;font-size:32px;margin:6px 0 4px">Entra a la bóveda</h2>
+        <p class="small" style="text-align:center">El viaje termina aquí. Entra, crea tu nombre, o pasa como invitado.</p>
+        <label class="field" for="gateName">Nombre</label>
+        <input id="gateName" autocomplete="username" maxlength="18" enterkeyhint="next">
+        <label class="field" for="gatePass">Clave</label>
+        <input id="gatePass" type="password" autocomplete="current-password" enterkeyhint="go">
+        <p id="gateErr" class="small"></p>
+        <div class="row"><button class="lux primary" id="gateIn" type="button">Entrar</button><button class="lux" id="gateNew" type="button">Crear cuenta</button></div>
+        <button class="lux" id="gateGuest" type="button" style="width:100%;margin-top:8px">Entrar como invitado</button>
+      </div>
+    </div>
+  </div>
+</div>
 <div id="landing" hidden>
   <div class="landTop"><button class="lux slim" id="landSkip" type="button">Entrar</button></div>
   <div class="landCopy" id="landCopy">
     <div class="cinzel" id="landKicker">ZARUMEI 3D</div>
     <h1 class="foil" id="landTitle">La bóveda</h1>
-    <p id="landText">Desliza. La cámara entra en la máquina.</p>
+    <p id="landText">Desliza. La cámara entra en el reloj.</p>
     <div class="landChevron" id="landChevron"></div>
   </div>
   <div class="landMeter"><i id="landBar"></i></div>
-  <div id="landTrack">
-    <div class="landSpacer"></div>
-    <div class="landDock">
-      <div class="card gate">
-        <div id="landHello" hidden>
-          <div class="cinzel">El libro te reconoce</div>
-          <h2 class="foil" style="font-family:var(--serif);font-weight:500;font-size:32px;margin:6px 0">Hola, <span id="landWho"></span></h2>
-          <p class="small" style="text-align:center">Tu tiempo, tus relojes y el punto guardado siguen aquí.</p>
-          <div class="row"><button class="lux primary" id="landContinue" type="button">Entrar a la bóveda</button><button class="lux" id="landSwitch" type="button">Otra cuenta</button></div>
-        </div>
-        <div id="landForm">
-          <div class="cinzel">Libro del taller</div>
-          <h2 class="foil" style="font-family:var(--serif);font-weight:500;font-size:32px;margin:6px 0 4px">Entra a la bóveda</h2>
-          <p class="small" style="text-align:center">El viaje termina aquí. Entra, crea tu nombre, o pasa como invitado.</p>
-          <label class="field" for="gateName">Nombre</label>
-          <input id="gateName" autocomplete="username" maxlength="18" enterkeyhint="next">
-          <label class="field" for="gatePass">Clave</label>
-          <input id="gatePass" type="password" autocomplete="current-password" enterkeyhint="go">
-          <p id="gateErr" class="small"></p>
-          <div class="row"><button class="lux primary" id="gateIn" type="button">Entrar</button><button class="lux" id="gateNew" type="button">Crear cuenta</button></div>
-          <button class="lux" id="gateGuest" type="button" style="width:100%;margin-top:8px">Entrar como invitado</button>
-        </div>
-      </div>
-    </div>
-  </div>
 </div>
 <div class="overlay" id="profile" hidden><div class="card" id="profileCard"></div></div>
 
@@ -385,7 +388,7 @@ body.land #stage::before{background:linear-gradient(180deg,rgba(0,0,0,.42),trans
   <div id="bqDetail" hidden><button class="lux" id="bqBack">← Volver</button><div id="bqStage"></div><div id="bqInfo"></div></div>
 </div>
 
-<script src="game.js?v=flota3"></script>
+<script src="game.js?v=flota4"></script>
 <script>
 setInterval(function(){var g=window.__game;if(!g||!g.started)return;var el=document.getElementById('timer');if(!el._t0)el._t0=Date.now();if(document.getElementById('endOverlay').hidden){var e=Math.floor((Date.now()-el._t0)/1000);el.textContent=Math.floor(e/60)+':'+String(e%60).padStart(2,'0');}},500);
 document.getElementById('menuTop').onclick=function(){ if (window.__game && __game.openMenu) __game.openMenu(); else document.getElementById('intro').hidden=false; };

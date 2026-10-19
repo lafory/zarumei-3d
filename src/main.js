@@ -252,7 +252,9 @@ function openLanding() {
   if (!G) return;
   captureSpin();
   landingOn = true; landBeat = -1;
+  document.documentElement.classList.add('land');
   document.body.classList.add('land');
+  $('#landScroll').hidden = false;
   $('#landing').hidden = false;
   $('#intro').hidden = true;
   $('#profile').hidden = true;
@@ -271,8 +273,11 @@ function openLanding() {
 }
 function closeLanding() {
   landingOn = false; landK = landKs = 0;
+  document.documentElement.classList.remove('land');
   document.body.classList.remove('land');
   $('#landing').hidden = true;
+  $('#landScroll').hidden = true;
+  window.scrollTo(0, 0);
   try { restoreLandingPose(); } catch (err) { console.warn(err); }
   controls.enabled = true;
   renderer.toneMappingExposure = hq ? 0.98 : 0.92;
@@ -324,6 +329,8 @@ function poseFloat(t) {
 }
 function driveLanding(t) {
   if (!G) return;
+  const max = document.documentElement.scrollHeight - window.innerHeight;
+  if (max > 0) landK = window.scrollY / max;
   landKs += (landK - landKs) * 0.18;
   const k = landKs;
   const insideU = clamp01(k / INSIDE_END);
@@ -1025,8 +1032,7 @@ function openProfile() {
 }
 function showGate() {
   openLanding();
-  const el = $('#landing');
-  requestAnimationFrame(() => { el.scrollTop = el.scrollHeight; landK = 1; });
+  requestAnimationFrame(() => { window.scrollTo(0, document.documentElement.scrollHeight); landK = 1; });
 }
 function enterApp() {
   portraitsWanted = true;
@@ -1128,7 +1134,7 @@ $('#landing').addEventListener('pointermove', e => {
 });
 $('#landSkip').onclick = () => closeLanding();
 $('#landContinue').onclick = () => closeLanding();
-$('#landSwitch').onclick = () => { book.logout(); paintLandingAuth(); const el = $('#landing'); el.scrollTop = el.scrollHeight; };
+$('#landSwitch').onclick = () => { book.logout(); paintLandingAuth(); window.scrollTo(0, document.documentElement.scrollHeight); };
 async function begin(watchId, faultId, story) {
   buildWorld(watchId, faultId, story); G.active = true; sessionLive = true;
   sel = null; selectTool(null); started = true; busy = false; stampTimer(0);
@@ -1161,7 +1167,7 @@ async function init() {
   if (navigator.webdriver && !book.current()) book.enterGuest();
   portraitsWanted = !!navigator.webdriver;
   renderMenu(); resize(); await setView('front', true);
-  if (navigator.webdriver) { landingOn = false; $('#landing').hidden = true; document.body.classList.remove('land'); }
+  if (navigator.webdriver) { landingOn = false; $('#landing').hidden = true; $('#landScroll').hidden = true; document.documentElement.classList.remove('land'); document.body.classList.remove('land'); }
   else openLanding();
   $('#loading').hidden = true;
   requestAnimationFrame(loop);
