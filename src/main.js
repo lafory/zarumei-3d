@@ -134,7 +134,7 @@ const VIEWS = {
 };
 const VIEW_NAMES = { front: 'esfera', back: 'fondo / movimiento', holder: 'movimiento en el soporte', mat: 'alfombrilla de inspección', tray: 'bandeja de piezas', loupe: 'lupa x10', tg: 'timegrapher', libre: 'libre' };
 function fitDistance(sz) { const v = THREE.MathUtils.degToRad(camera.fov) / 2; return Math.max((sz / 2) / Math.tan(v), (sz / 2) / (Math.tan(v) * camera.aspect)) * 1.05; }
-let fly = null, fovFade = 0;
+let fly = null, fovFade = 0, libreFrom = null;
 const FLY_SPEED = 90;
 function flyLook() {
   camera.rotation.order = 'YXZ';
@@ -142,6 +142,7 @@ function flyLook() {
 }
 function startLibre() {
   if (landingOn || view === 'libre') return;
+  libreFrom = view;
   const dir = new THREE.Vector3();
   camera.getWorldDirection(dir);
   fly = {
@@ -239,6 +240,10 @@ async function setView(v, instant = false) {
   controls.enabled = true; positionFloatingTool();
 }
 function workView() { if (!G) return 'front'; return G.E.flags.mvLoc === 'holder' ? 'holder' : (G.E.flags.flipped ? 'back' : 'front'); }
+function viewBeforeLibre() {
+  if (libreFrom === 'loupe' && !loupeTarget) return workView();
+  return libreFrom && VIEWS[libreFrom] ? libreFrom : workView();
+}
 
 let landingOn = false, landK = 0, landKs = 0, landBeat = -1, spinHome = null;
 const landTilt = { x: 0, y: 0 };
@@ -1100,7 +1105,7 @@ $('#partsList').onclick = async (e) => {
 };
 $('#actionBtn').onclick = async () => { if (!busy && G) await act(G.E.button('wind')); };
 $('#flipBtn').onclick = async () => { if (busy || !G) return; await act(G.E.button(view === 'holder' ? 'flipHolder' : 'flipWatch'), { keepView: true }); };
-document.querySelectorAll('.vbtn[data-view]').forEach(b => b.onclick = () => { if (busy || !G) return; const v = b.dataset.view; setView(v === 'watch' ? (G.E.flags.flipped ? 'back' : 'front') : v); });
+document.querySelectorAll('.vbtn[data-view]').forEach(b => b.onclick = () => { if (busy || !G) return; const v = b.dataset.view; if (v === 'libre' && view === 'libre') { setView(viewBeforeLibre()); return; } setView(v === 'watch' ? (G.E.flags.flipped ? 'back' : 'front') : v); });
 $('#seatBtn').onclick = () => { if (busy) return; setSeatMode(!seatMode, true); };
 $('#hqBtn').onclick = () => { if (busy) return; setHQ(!hq, true); };
 function syncMute() { const b = $('#muteBtn'); if (!b) return; b.classList.toggle('on', !isMuted()); b.textContent = isMuted() ? 'MUTE' : 'SON'; }
