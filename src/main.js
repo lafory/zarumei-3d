@@ -132,9 +132,100 @@ const VIEWS = {
   loupe: () => ({ target: loupeTarget.c, size: Math.max(7, loupeTarget.r * 2.1), dir: new THREE.Vector3(0, 1, 0.42) }),
   tg: () => { const c = new THREE.Vector3(), n = new THREE.Vector3(0, 0, 1); T.screen.getWorldPosition(c); n.applyQuaternion(T.screen.getWorldQuaternion(new THREE.Quaternion())); return { target: c.add(new THREE.Vector3(-6, -2, 0)), size: 62, dir: n.add(new THREE.Vector3(0, 0.35, 0)) }; }
 };
-const VIEW_NAMES = { front: 'esfera', back: 'fondo / movimiento', holder: 'movimiento en el soporte', mat: 'alfombrilla de inspección', tray: 'bandeja de piezas', loupe: 'lupa x10', tg: 'timegrapher' };
+const VIEW_NAMES = { front: 'esfera', back: 'fondo / movimiento', holder: 'movimiento en el soporte', mat: 'alfombrilla de inspección', tray: 'bandeja de piezas', loupe: 'lupa x10', tg: 'timegrapher', libre: 'libre' };
 function fitDistance(sz) { const v = THREE.MathUtils.degToRad(camera.fov) / 2; return Math.max((sz / 2) / Math.tan(v), (sz / 2) / (Math.tan(v) * camera.aspect)) * 1.05; }
+let fly = null, fovFade = 0;
+const FLY_SPEED = 90;
+function flyLook() {
+  camera.rotation.order = 'YXZ';
+  camera.rotation.set(fly.pitch, fly.yaw, 0);
+}
+function startLibre() {
+  if (landingOn || view === 'libre') return;
+  const dir = new THREE.Vector3();
+  camera.getWorldDirection(dir);
+  fly = {
+    yaw: Math.atan2(-dir.x, -dir.z),
+    pitch: Math.asin(THREE.MathUtils.clamp(dir.y, -1, 1)),
+    keys: new Set(),
+    pad: { f: 0, b: 0, l: 0, r: 0 },
+    lookId: null,
+    lx: 0,
+    ly: 0
+  };
+  view = 'libre';
+  controls.enabled = false;
+  camera.near = 0.35;
+  camera.fov = 23;
+  camera.updateProjectionMatrix();
+  flyLook();
+  const pad = $('#flyPad'), slider = $('#fovSlider');
+  if (pad) pad.hidden = false;
+  if (slider) { slider.hidden = false; slider.value = '23'; pokeFov(); }
+  const g = document.querySelector('#stage .gesture');
+  if (g) g.textContent = 'libre: 1 dedo mira · cruceta mueve · zoom en la barra';
+  $('#viewtag').textContent = 'Vista: libre';
+  stage.classList.remove('loupe');
+  document.querySelectorAll('.vbtn[data-view]').forEach(b => b.classList.toggle('on', b.dataset.view === 'libre'));
+  updateFlipBtn();
+}
+function stopLibre() {
+  fly = null;
+  const pad = $('#flyPad'), slider = $('#fovSlider');
+  if (pad) pad.hidden = true;
+  if (slider) slider.hidden = true;
+  camera.near = 1;
+  camera.fov = 23;
+  camera.updateProjectionMatrix();
+  controls.enabled = true;
+  const g = document.querySelector('#stage .gesture');
+  if (g) g.textContent = 'girar: 1 dedo · zoom: 2 · tornillo: mantener';
+}
+function pokeFov() {
+  const s = $('#fovSlider'); if (!s) return;
+  s.classList.remove('idle');
+  clearTimeout(fovFade);
+  fovFade = setTimeout(() => s.classList.add('idle'), 2000);
+}
+const fovSlider = $('#fovSlider');
+if (fovSlider) {
+  const applyFov = () => {
+    if (view !== 'libre') return;
+    const n = Math.max(20, Math.min(90, Math.round(+fovSlider.value || 23)));
+    camera.fov = n;
+    camera.updateProjectionMatrix();
+    pokeFov();
+  };
+  fovSlider.addEventListener('input', applyFov);
+  fovSlider.addEventListener('pointerdown', (e) => { e.stopPropagation(); pokeFov(); });
+}
+const flyPadEl = $('#flyPad');
+if (flyPadEl) flyPadEl.querySelectorAll('[data-fly]').forEach((b) => {
+  const on = (v) => { if (fly) fly.pad[b.dataset.fly] = v; };
+  b.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); on(1); try { b.setPointerCapture(e.pointerId); } catch { /* sin captura */ } });
+  b.addEventListener('pointerup', () => on(0));
+  b.addEventListener('pointercancel', () => on(0));
+});
+function stepFly(now) {
+  if (!fly) return;
+  const dt = Math.min(0.05, fly.then ? (now - fly.then) / 1000 : 0.016);
+  fly.then = now;
+  const k = fly.keys, p = fly.pad;
+  let fx = (p.r || k.has('d') || k.has('arrowright') ? 1 : 0) - (p.l || k.has('a') || k.has('arrowleft') ? 1 : 0);
+  let fz = (p.f || k.has('w') || k.has('arrowup') ? 1 : 0) - (p.b || k.has('s') || k.has('arrowdown') ? 1 : 0);
+  if (!fx && !fz) return;
+  const len = Math.hypot(fx, fz);
+  fx /= len; fz /= len;
+  const forward = new THREE.Vector3();
+  camera.getWorldDirection(forward);
+  const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
+  const next = camera.position.clone().addScaledVector(forward, fz * FLY_SPEED * dt).addScaledVector(right, fx * FLY_SPEED * dt);
+  if (next.length() < 560) camera.position.copy(next);
+}
 async function setView(v, instant = false) {
+  if (v === 'libre') { startLibre(); return; }
+  if (view === 'libre') stopLibre();
+  if (!VIEWS[v]) v = 'front';
   view = v; const cfg = VIEWS[v](), dist = fitDistance(cfg.size);
   const toPos = cfg.target.clone().add(cfg.dir.clone().normalize().multiplyScalar(dist));
   controls.minDistance = dist * 0.3; controls.maxDistance = dist * 2.4;
@@ -971,6 +1062,12 @@ window.addEventListener('keydown', (e) => {
   if (e.target && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
   if (e.key === 'Escape') { if (!$('#bqDetail').hidden) $('#bqBack').click(); else if (!$('#boutique').hidden) $('#bqClose').click(); else if (!$('#partsPanel').hidden) closeParts(); else if (!$('#tgPanel').hidden) { if (!$('#tgClose').disabled) $('#tgClose').click(); } else if (started) openMenu(); else if (G && G.active && $('#endOverlay').hidden) { $('#intro').hidden = true; started = true; } return; }
   if (!started || !G) return;
+  if (view === 'libre' && fly) {
+    const k = e.key.toLowerCase();
+    if (k === 'w' || k === 'a' || k === 's' || k === 'd' || k === 'arrowup' || k === 'arrowdown' || k === 'arrowleft' || k === 'arrowright') {
+      fly.keys.add(k); e.preventDefault(); return;
+    }
+  }
   if (e.shiftKey && (e.key === 'F' || e.key === 'f')) { toggleFullscreen(); e.preventDefault(); return; }
   if (e.key === 'f' || e.key === 'F') { if (!$('#flipBtn').hidden) $('#flipBtn').click(); return; }
   if (e.key === 'h' || e.key === 'H') { $('#hintBtn').click(); return; }
@@ -978,8 +1075,9 @@ window.addEventListener('keydown', (e) => {
   if (/^[1-9]$/.test(e.key)) { const t = TOOLS[+e.key - 1 + (e.altKey ? 9 : 0)]; if (t) selectTool(sel === t.id ? null : t.id, true); return; }
   if (e.key === '0') { const t = TOOLS[9]; if (t) selectTool(sel === t.id ? null : t.id, true); return; }
   if ((e.key === '+' || e.key === ']' || e.key === '-' || e.key === '[') && sel === 'screwdriver') { const i = SCREWDRIVER_SIZES.indexOf(size) + (e.key === '+' || e.key === ']' ? 1 : -1); if (SCREWDRIVER_SIZES[i]) setSize(SCREWDRIVER_SIZES[i]); return; }
-  const vk = { r: 'watch', s: 'holder', b: 'tray', a: 'mat' }[e.key.toLowerCase()]; if (vk) document.querySelector(`.vbtn[data-view="${vk}"]`).click();
+  const vk = { r: 'watch', s: 'holder', b: 'tray', a: 'mat' }[e.key.toLowerCase()]; if (vk && view !== 'libre') document.querySelector(`.vbtn[data-view="${vk}"]`).click();
 });
+window.addEventListener('keyup', (e) => { if (fly) fly.keys.delete(e.key.toLowerCase()); });
 // ── pantalla completa (Fullscreen API con prefijos webkit; en iPad Safari → PWA «Agregar a pantalla de inicio») ──
 const fsEl = document.documentElement;
 const fsSupported = !!(fsEl.requestFullscreen || fsEl.webkitRequestFullscreen);
@@ -1071,7 +1169,7 @@ renderer.domElement.addEventListener('pointerdown', (e) => {
   if (e.button > 0) return; // botón derecho/central = desplazar con OrbitControls
   clearHover();
   down = { x: e.clientX, y: e.clientY, t: performance.now() };
-  if (started && !busy && G && sel === 'screwdriver') {
+  if (view !== 'libre' && started && !busy && G && sel === 'screwdriver') {
     const h = pick(e.clientX, e.clientY); const sid = h.screw || h.ghost;
     if (sid) { controls.enabled = false; hold = { sid, turned: 0, timer: setTimeout(function loopTurn() { if (!hold) return; turnScrew(sid, 0.34).then(r => { if (!hold) return; hold.turned++; if (r.kind === 'turn') hold.timer = setTimeout(loopTurn, 60); else { hold.done = true; } }); }, 280) }; }
   }
@@ -1095,10 +1193,29 @@ function hoverAt(x, y) {
 renderer.domElement.addEventListener('pointerleave', clearHover);
 renderer.domElement.addEventListener('pointermove', (e) => { if (e.pointerType === 'mouse' && !down && e.buttons === 0) { const n = performance.now(); if (n - hoverT > 90) { hoverT = n; hoverAt(e.clientX, e.clientY); } } });
 renderer.domElement.addEventListener('pointermove', (e) => { if (hold && down && Math.hypot(e.clientX - down.x, e.clientY - down.y) > 14) { clearTimeout(hold.timer); hold = null; controls.enabled = true; } });
+renderer.domElement.addEventListener('pointerdown', (e) => {
+  if (view !== 'libre' || !fly || e.button > 0) return;
+  fly.ptrs = fly.ptrs || new Set();
+  fly.ptrs.add(e.pointerId);
+  if (fly.ptrs.size > 1) { fly.lookId = null; return; }
+  fly.lookId = e.pointerId; fly.lx = e.clientX; fly.ly = e.clientY;
+});
+renderer.domElement.addEventListener('pointermove', (e) => {
+  if (view !== 'libre' || !fly || e.pointerId !== fly.lookId || (fly.ptrs && fly.ptrs.size > 1)) return;
+  const dx = e.clientX - fly.lx, dy = e.clientY - fly.ly;
+  fly.lx = e.clientX; fly.ly = e.clientY;
+  if (!dx && !dy) return;
+  fly.yaw -= dx * 0.0048;
+  fly.pitch = THREE.MathUtils.clamp(fly.pitch - dy * 0.0048, -1.45, 1.45);
+  flyLook();
+  if (down && Math.hypot(dx, dy) > 1) down.moved = (down.moved || 0) + Math.hypot(dx, dy);
+});
+renderer.domElement.addEventListener('pointerup', (e) => { if (fly && fly.ptrs) { fly.ptrs.delete(e.pointerId); if (e.pointerId === fly.lookId) fly.lookId = null; } });
+renderer.domElement.addEventListener('pointercancel', (e) => { if (fly && fly.ptrs) { fly.ptrs.delete(e.pointerId); if (e.pointerId === fly.lookId) fly.lookId = null; } });
 renderer.domElement.addEventListener('pointerup', (e) => {
   if (hold) { const h = hold; hold = null; clearTimeout(h.timer); controls.enabled = true; if (!h.turned && !h.done) handleTap({ screw: h.sid }); down = null; return; }
-  if (!down) return; const d = Math.hypot(e.clientX - down.x, e.clientY - down.y), dt = performance.now() - down.t; down = null;
-  if (d > 10 || dt > 650) return; handleTap(pick(e.clientX, e.clientY));
+  if (!down) return; const moved = down.moved || 0; const d = Math.hypot(e.clientX - down.x, e.clientY - down.y), dt = performance.now() - down.t; down = null;
+  if (d > 10 || moved > 8 || dt > 650) return; handleTap(pick(e.clientX, e.clientY));
 });
 
 // ───────── fin ─────────
@@ -1565,7 +1682,8 @@ if (dealPanel) dealPanel.addEventListener('click', (e) => {
   if (e.target.closest('[data-deal="host"]')) {
     const stock = localStock();
     const item = stock[dealPick];
-    const price = Math.round(+($('#dealPrice') && $('#dealPrice').value));
+    const el = document.querySelector('#dealPrice');
+    const price = Math.round(+(el && el.value));
     if (!item) { say('Elige un reloj.'); return; }
     if (!(price >= 50 && price <= 500000)) { say('El precio va de 50 a 500.000.'); return; }
     dealPrice = price;
@@ -1709,6 +1827,7 @@ function loop(now) {
   if (floatingTool && floatingTool.userData.base && !tweens.length && !hold) { floatingTool.rotation.y = t * 0.6; floatingTool.position.y = floatingTool.userData.base.y + Math.sin(t * 2) * 0.4; }
   if (seatRing) { faceSeat(); seatRing.scale.setScalar(1 + Math.sin(t * 5) * 0.05); }
   if (landingOn) driveLanding(t);
+  else if (view === 'libre') stepFly(now);
   else controls.update();
   if (!landingOn && hq && view === 'loupe' && loupeTarget) {
     ensureDof();
@@ -1726,6 +1845,7 @@ function loop(now) {
 function screenOfObj(o, dy = 0) { const p = new THREE.Vector3(); let hp = null; o.traverse(c => { if (!hp && c.userData.isHit && visibleChain(c)) hp = c; }); (hp || o).getWorldPosition(p); p.y += dy; p.project(camera); const r = renderer.domElement.getBoundingClientRect(); return { x: r.left + (p.x + 1) / 2 * r.width, y: r.top + (1 - p.y) / 2 * r.height }; }
 window.__game = {
   get started() { return started; }, get busy() { return busy || !!tweens.length; }, get view() { return view; }, get fps() { return fps; },
+  get fov() { return camera.fov; }, get flying() { return view === 'libre'; },
   get peri() { return peri ? { phase: peri.phase, found: [...peri.found], verdict: peri.verdict, offer: peri.offer.id, round: peri.round } : null; },
   get state() { if (!G) return null; const E = G.E; return { watch: E.W.id, fault: E.F.id, score: E.score, finished: E.finished, goal: E.goal(), flags: { ...E.flags }, stats: { ...E.stats }, out: Object.keys(E.st).filter(k => E.st[k] === 'out'), screwsOut: Object.values(E.screws).filter(s => s.state !== 'in').length, fstep: E.fstep }; },
   get info() { const i = renderer.info.render; return { calls: i.calls, triangles: i.triangles, geometries: renderer.info.memory.geometries, textures: renderer.info.memory.textures }; },

@@ -210,7 +210,7 @@ function mqttOpen(url, clientId) {
       close() { clearTimeout(timer); try { ws.close(); } catch { /* cerrado */ } }
     };
     ws.onopen = () => { try { ws.send(connectPkt(clientId)); } catch (e) { clearTimeout(timer); reject(e); } };
-    ws.onerror = () => { clearTimeout(timer); reject(new Error('ws')); };
+    ws.onerror = () => { clearTimeout(timer); try { ws.close(); } catch { /* cerrado */ } reject(new Error('ws')); };
     ws.onmessage = (ev) => {
       const u = new Uint8Array(ev.data);
       const type = u[0] >> 4;
@@ -267,6 +267,12 @@ export function openRoom({ role, code, card, ask, holdId, onState }) {
         state = { ...state, phrase: 'Trato cerrado.', result: applyTransfer(state) };
         emit();
       }
+      return;
+    }
+    if (ev && ev.t === 'walk') {
+      state = dealReduce(state, ev);
+      emit();
+      if (state.status !== 'done') shutdown();
       return;
     }
     const prev = state.status;
@@ -373,26 +379,37 @@ export function openRoom({ role, code, card, ask, holdId, onState }) {
 
   idle = setTimeout(() => fail('La sala se cerró por espera. Nada cambió.'), 180000);
   emit();
+  let opened = null;
   mqttAny(me).then(async (api) => {
-    if (dead) { api.close(); return; }
+    opened = api;
     link = api;
-    api.onDrop = () => {
-      if (!dc || dc.readyState !== 'open') fail('Sin sala ahora mismo. El reloj sigue en este teléfono.');
-    };
-    ping = setInterval(() => { try { api.publish(topic, { t: 'ping', from: me }); } catch { /* sigue el ping */ } }, 20000);
-    api.listen((_t, text) => {
-      let msg; try { msg = JSON.parse(text); } catch { return; }
-      if (!msg || msg.from === me || msg.t === 'ping') return;
-      if (msg.t === 'full') { fail('Sala llena.'); return; }
-      if (msg.t === 'hello') onHello(msg).catch(() => fail('No se pudo conectar. Nada cambió.'));
-      else if (msg.t === 'sdp') onSdp(msg).catch(() => fail('No se pudo conectar. Nada cambió.'));
-      else if (msg.t === 'ice') addIce(msg.c);
-    });
-    await api.subscribe(topic);
-    const hi = () => { if (!dead && !pc) signal({ t: 'hello', role }); };
-    hi();
-    hello = setInterval(hi, 2000);
-  }).catch(() => fail('Sin sala ahora mismo. El reloj sigue en este teléfono.'));
+    try {
+      if (dead) { api.close(); return; }
+      api.onDrop = () => {
+        if (!dc || dc.readyState !== 'open') fail('Sin sala ahora mismo. El reloj sigue en este teléfono.');
+      };
+      ping = setInterval(() => { try { api.publish(topic, { t: 'ping', from: me }); } catch { /* sigue el ping */ } }, 20000);
+      api.listen((_t, text) => {
+        let msg; try { msg = JSON.parse(text); } catch { return; }
+        if (!msg || msg.from === me || msg.t === 'ping') return;
+        if (msg.t === 'full') { fail('Sala llena.'); return; }
+        if (msg.t === 'hello') onHello(msg).catch(() => fail('No se pudo conectar. Nada cambió.'));
+        else if (msg.t === 'sdp') onSdp(msg).catch(() => fail('No se pudo conectar. Nada cambió.'));
+        else if (msg.t === 'ice') addIce(msg.c);
+      });
+      await api.subscribe(topic);
+      if (dead) return;
+      const hi = () => { if (!dead && !pc) signal({ t: 'hello', role }); };
+      hi();
+      hello = setInterval(hi, 2000);
+    } catch {
+      try { api.close(); } catch { /* ya cerrado */ }
+      fail('Sin sala ahora mismo. El reloj sigue en este teléfono.');
+    }
+  }).catch(() => {
+    try { if (opened) opened.close(); } catch { /* ya cerrado */ }
+    fail('Sin sala ahora mismo. El reloj sigue en este teléfono.');
+  });
 
   return {
     get state() { return state; },

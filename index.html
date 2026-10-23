@@ -77,6 +77,11 @@ header{display:flex;align-items:center;justify-content:space-between;padding:8px
 #sizes::before{content:'Punta';font-family:var(--caps);font-size:9px;letter-spacing:.14em;color:var(--gold);align-self:center;padding:0 4px}
 .size{background:#15130f;color:var(--ink);border:1px solid rgba(217,180,94,.3);border-radius:2px;font-size:12px;padding:5px 7px;cursor:pointer;font-family:var(--sans)}.size.on{background:var(--foil);color:#1c1406;border-color:var(--gold);font-weight:600}
 #views{position:absolute;top:32px;left:7px;z-index:2;display:flex;flex-direction:column;gap:4px}
+#flyPad{position:absolute;left:8px;bottom:8px;z-index:4;display:flex;flex-direction:column;align-items:center;gap:3px;touch-action:none}
+#flyPad .row{display:flex;gap:3px}
+#flyPad button{width:34px;height:34px;padding:0;font-size:13px;line-height:1;background:rgba(10,9,8,.55);color:var(--gold-hi);border:1px solid var(--hair);border-radius:2px}
+#fovSlider{position:absolute;right:4px;top:50%;width:132px;height:28px;margin:0;z-index:4;transform:translateY(-50%) rotate(-90deg);transform-origin:center;opacity:.82;transition:opacity .5s;accent-color:#e0c36a;touch-action:none}
+#fovSlider.idle{opacity:.16}
 .vbtn{background:rgba(10,9,8,.6);color:var(--ink);border:1px solid var(--hair);border-radius:2px;font-size:15px;padding:4px 6px;line-height:1;cursor:pointer;filter:grayscale(.3)}.vbtn.on{border-color:var(--gold);box-shadow:0 0 8px rgba(217,180,94,.45);filter:none}
 .vbtn.mode{font-family:var(--caps);font-size:8px;letter-spacing:.06em;padding:6px 4px;min-width:28px}
 #stage.loupe::after{content:'';position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at 50% 50%,transparent 0,transparent 41%,rgba(217,180,94,.55) 41.6%,rgba(10,9,8,.95) 43%);z-index:1}
@@ -306,7 +311,12 @@ body:not(.land) #landScroll{display:none!important}
   <div id="stage">
     <span class="viewtag" id="viewtag">Vista: esfera</span>
     <button class="lux" id="flipBtn">↻ Voltear</button>
-    <div id="views"><button class="vbtn" data-view="watch" title="Reloj">⌚</button><button class="vbtn" data-view="holder" title="Soporte">🛠</button><button class="vbtn" data-view="tray" title="Bandeja">🗃</button><button class="vbtn" data-view="mat" title="Alfombrilla">🔍</button><button class="vbtn mode on" id="seatBtn" title="Montaje: buscar el sitio">SITIO</button><button class="vbtn mode" id="hqBtn" title="Calidad foto: más nítido y desenfoque en la lupa">8K</button><button class="vbtn mode on" id="muteBtn" title="Sonido del taller">SON</button></div>
+    <div id="views"><button class="vbtn" data-view="watch" title="Reloj">⌚</button><button class="vbtn" data-view="holder" title="Soporte">🛠</button><button class="vbtn" data-view="tray" title="Bandeja">🗃</button><button class="vbtn" data-view="mat" title="Alfombrilla">🔍</button><button class="vbtn mode" data-view="libre" title="Cámara libre">LIBRE</button><button class="vbtn mode on" id="seatBtn" title="Montaje: buscar el sitio">SITIO</button><button class="vbtn mode" id="hqBtn" title="Calidad foto: más nítido y desenfoque en la lupa">8K</button><button class="vbtn mode on" id="muteBtn" title="Sonido del taller">SON</button></div>
+    <div id="flyPad" hidden>
+      <button type="button" data-fly="f" aria-label="Adelante">▲</button>
+      <div class="row"><button type="button" data-fly="l" aria-label="Izquierda">◀</button><button type="button" data-fly="b" aria-label="Atrás">▼</button><button type="button" data-fly="r" aria-label="Derecha">▶</button></div>
+    </div>
+    <input id="fovSlider" type="range" min="20" max="90" step="1" value="23" hidden aria-label="Zoom">
     <div id="sizes" hidden></div>
     <div id="label3d" hidden></div>
     <span class="gesture">girar: 1 dedo · zoom: 2 · tornillo: mantener</span>
@@ -476,7 +486,7 @@ body:not(.land) #landScroll{display:none!important}
   <div id="bqDetail" hidden><button class="lux" id="bqBack">← Volver</button><div id="bqStage"></div><div id="bqInfo"></div></div>
 </div>
 
-<script src="game.js?v=deal1"></script>
+<script src="game.js?v=fly1"></script>
 <script>
 setInterval(function(){var g=window.__game;if(!g||!g.started)return;var el=document.getElementById('timer');if(!el._t0)el._t0=Date.now();if(document.getElementById('endOverlay').hidden){var e=Math.floor((Date.now()-el._t0)/1000);el.textContent=Math.floor(e/60)+':'+String(e%60).padStart(2,'0');}},500);
 document.getElementById('menuTop').onclick=function(){ if (window.__game && __game.openMenu) __game.openMenu(); else document.getElementById('intro').hidden=false; };
