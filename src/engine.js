@@ -11,7 +11,7 @@ const SUB = { watch: 'el reloj', jewel: 'el rubí del amortiguador', spring: 'el
 const toolName = (id) => (TOOLS.find(t => t.id === id) || { name: id }).name;
 const mm = (s) => String(s).replace('.', ',') + ' mm';
 
-export function createEngine({ watchId, faultId, story = null }) {
+export function createEngine({ watchId, faultId, story = null, empty = false }) {
   const W = WATCHES[watchId], C = CALIBERS[W.caliber], F = FAULTS[faultId];
   const quartz = C.type === 'quartz';
   const P = {}; C.parts.forEach(p => (P[p.id] = p));
@@ -21,10 +21,19 @@ export function createEngine({ watchId, faultId, story = null }) {
   const flags = { letdown: false, protector: false, flipped: false, mvLoc: 'case', holderSide: 'bridge' };
   const oiled = new Set(), removedOnce = new Set(), diagDone = new Set(), history = [], replaced = new Set();
   const stats = { errors: 0, wrongTool: 0, wrongOrder: 0, slips: 0, lost: 0, wrongScrews: 0, spares: 0, hints: 0, oilMissed: 0 };
-  let fstep = 0, score = 100, armed = null, finished = false, revealed = false;
+  let fstep = 0, score = 100, armed = null, finished = false, revealed = false, freeDone = false;
   const diagList = story ? story.diag.slice() : [];
   const name = (id) => (P[id] && P[id].name) || SUB[id] || id;
   const cap = (t) => t.charAt(0).toUpperCase() + t.slice(1);
+  // Build: ninguna pieza nace montada. history sigue el orden del calibre (de fuera hacia dentro)
+  // para que la pista monte al revés, con las mismas reglas de coveredBy, aceite y tornillos.
+  if (empty) {
+    for (const p of C.parts) { st[p.id] = 'out'; history.push(p.id); removedOnce.add(p.id); }
+    for (const s of Object.values(screws)) s.state = 'out';
+    flags.mvLoc = 'holder';
+    flags.holderSide = 'bridge';
+    freeDone = true;
+  }
   const faultFixed = () => fstep >= F.steps.length;
   const screwsOf = (id) => Object.values(screws).filter(s => s.part === id);
   const screwsIn = (id) => screwsOf(id).filter(s => s.state === 'in');
@@ -448,7 +457,6 @@ export function createEngine({ watchId, faultId, story = null }) {
     if (allIn()) { if (!quartz && flags.letdown) return { button: 'wind' }; return { tool: 'timegrapher', target: { part: 'watch' } }; }
     return null;
   }
-  let freeDone = false;
   function describe(a) {
     if (!a) return 'Nada pendiente.';
     if (a.replace) return `Abre <b>Piezas</b> y cambia ${name(a.replace)} por una <b>nueva</b>.`;
@@ -470,6 +478,7 @@ export function createEngine({ watchId, faultId, story = null }) {
   function progress() {
     const total = C.parts.length + Object.keys(screws).length;
     const inN = C.parts.filter(p => st[p.id] === 'in').length + Object.values(screws).filter(x => x.state === 'in').length;
+    if (empty) return Math.min(1, (inN / total) * 0.9 + (finished ? 0.1 : 0));
     const fs = F.steps.length ? fstep / F.steps.length : 1;
     const dis = removedOnce.size ? 1 : 0;
     return Math.min(1, 0.15 * (diagList.length ? diagList.filter(t => diagDone.has(t)).length / diagList.length : 1) + 0.35 * fs * (F.free ? dis : 1) + 0.4 * (removedOnce.size ? inN / total : 0) + (finished ? 0.1 : 0));

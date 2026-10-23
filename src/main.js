@@ -26,6 +26,7 @@ import { makeTools } from './tools3d.js';
 import { ICONS } from './icons.js';
 import { unlock as unlockAudio, play as playSfx, pulse as pulseSfx, setMuted, isMuted } from './audio.js';
 import * as book from './accounts.js';
+import { BUILD_OPTS, DRAFT_ID, watchFromSpec, loadBuilds, rememberBuild, markBuildReady, isBuildReady, forgetBuild, cleanName, suggestedName, dialFits } from './build.js';
 
 const $ = (s) => document.querySelector(s);
 const stage = $('#stage');
@@ -460,7 +461,7 @@ function buildMovement(M, images, W, cal) {
   if (W.grand) return buildGrand(M, images, W, cal);
   return buildZR28(M, images, W, cal);
 }
-function buildWorld(watchId, faultId, story) {
+function buildWorld(watchId, faultId, story, opts = {}) {
   disposeWorld();
   const W = WATCHES[watchId], cal = CALIBERS[W.caliber];
   const MV = buildMovement(M, images, W, cal);
@@ -478,10 +479,11 @@ function buildWorld(watchId, faultId, story) {
   scene.updateMatrixWorld(true);
   for (const [id, o] of Object.entries(parts)) home[id] = { parent: o.parent, pos: o.position.clone(), quat: o.quaternion.clone(), scale: o.scale.clone() };
   for (const [sid, s] of Object.entries(MV.screws)) home[sid] = { parent: s.obj.parent, pos: s.obj.position.clone(), quat: s.obj.quaternion.clone(), scale: s.obj.scale.clone() };
-  const E = createEngine({ watchId, faultId, story });
+  const E = createEngine({ watchId, faultId, story, empty: !!opts.empty });
   G = { W, cal, MV, CS, root, mvMount, mvObj: MV.mv, parts, home, E, slots: {}, nextSlot: 0, extra: [], amp: 0 };
   initFaultVisuals();
-  refreshGhosts();
+  if (opts.empty) layoutFromState();
+  else refreshGhosts();
 }
 function initFaultVisuals() {
   const f = G.E.F.id, S = G.MV.sub;
@@ -640,7 +642,7 @@ function saveGame() {
 async function resumeSave(key) {
   const s = book.saves().find(x => x.key === key);
   if (!s || !WATCHES[s.watch] || !FAULTS[s.fault]) { say('Ese punto ya no se puede abrir.'); return; }
-  mode = s.mode === 'story' ? 'story' : 'play';
+  mode = s.mode === 'story' ? 'story' : s.mode === 'build' ? 'build' : 'play';
   storyCase = s.story ? (STORY.find(c => c.id === s.story) || null) : null;
   if (mode === 'story' && !storyCase) mode = 'play';
   buildWorld(s.watch, s.fault, storyCase);
@@ -1090,12 +1092,14 @@ function finish() {
   const nS = score >= 90 ? 3 : score >= 70 ? 2 : 1, stars = '★'.repeat(nS) + '<i>' + '★'.repeat(3 - nS) + '</i>';
   if (mode === 'story' && storyCase) { const i = STORY.findIndex(c => c.id === storyCase.id); book.setStory(i + 1); }
   book.recordRun({ watch: E.W.id, fault: E.F.id, mode, story: storyCase ? storyCase.id : '', ms: e * 1000, score });
+  if (mode === 'build') markBuildReady(E.W.id);
   sessionLive = false; $('#saveBtn').hidden = true;
   const next = mode === 'story' && storyCase ? STORY[STORY.findIndex(c => c.id === storyCase.id) + 1] : null;
+  const built = mode === 'build';
   const pay = E.F.free ? 150 + score * 2 : 400 + score * 8; wallet.add(pay);
   $('#endCard').innerHTML = `<div class="cert"><small class="cinzel">Maison LA FORY · Certificado de servicio</small>
-  <h2 class="foil">${E.F.free ? 'Práctica completada' : 'Reloj reparado'}</h2><div class="stars">${stars}</div>
-  <p class="serif"><b>${E.W.name}</b><br><i>${E.F.name}</i></p><hr class="goldrule">
+  <h2 class="foil">${built ? 'Reloj creado' : E.F.free ? 'Práctica completada' : 'Reloj reparado'}</h2><div class="stars">${stars}</div>
+  <p class="serif"><b>${E.W.name}</b><br><i>${built ? 'Ensamblado desde la bandeja. Queda en Modo libre.' : E.F.name}</i></p><hr class="goldrule">
   <div class="kv"><span>Puntos</span><b>${score}</b><span>Tiempo</span><b>${Math.floor(e / 60)}:${String(e % 60).padStart(2, '0')}</b><span>Errores</span><b>${s.errors}</b><span>Orden / herramienta</span><b>${s.wrongOrder} / ${s.wrongTool}</b><span>Tornillos dañados · perdidos</span><b>${s.slips} · ${s.lost}</b><span>Tornillos equivocados · repuestos</span><b>${s.wrongScrews} · ${s.spares}</b><span>Pistas</span><b>${s.hints}</b></div>
   <hr class="goldrule"><p class="cinzel small">Lo que aprendiste</p><ul>${E.F.lessons.map(l => `<li>${l}</li>`).join('')}</ul>
   <div class="shop"><img src="${images.logo.src}" alt="LA FORY"><div><small class="cinzel">Honorarios cobrados</small><b class="price big">${fmtPrice(pay)}</b><span class="small">Saldo del taller: ${fmtPrice(wallet.balance)}</span></div></div>
@@ -1107,7 +1111,7 @@ function finish() {
 }
 
 // ───────── menú: Historia / Libre ─────────
-function openMenu() { started = false; closeParts(); $('#intro').hidden = false; renderMenu(); }
+function openMenu() { started = false; closeParts(); $('#intro').hidden = false; renderMenu(); if (document.querySelector('.tab.on') && document.querySelector('.tab.on').dataset.tab === 'build') showTab('build'); }
 function paintWho() {
   const u = book.current(), bar = $('#whoBar'); if (!bar) return;
   if (!u) { bar.hidden = true; return; }
@@ -1236,10 +1240,11 @@ function renderMenu() {
     b.classList.toggle('on', b.dataset.go === playWatch);
     b.onclick = () => pickWatch(b.dataset.go);
   });
-  Object.values(WATCHES).filter(w => w.caliber !== 'ZT18' && !w.grand && !w.maison && !w.opera).forEach(w => { const b = document.createElement('button'); b.className = 'wcard' + (playWatch === w.id ? ' on' : ''); b.dataset.watch = w.id; b.innerHTML = `<div><b>${w.name}</b><span>${w.blurb}</span><small>${CALIBERS[w.caliber].name} · ${CALIBERS[w.caliber].desc}</small></div>`; dressCard(b, w.id); b.onclick = () => pickWatch(w.id); wl.appendChild(b); });
+  Object.values(WATCHES).filter(w => !w.custom && w.caliber !== 'ZT18' && !w.grand && !w.maison && !w.opera).forEach(w => { const b = document.createElement('button'); b.className = 'wcard' + (playWatch === w.id ? ' on' : ''); b.dataset.watch = w.id; b.innerHTML = `<div><b>${w.name}</b><span>${w.blurb}</span><small>${CALIBERS[w.caliber].name} · ${CALIBERS[w.caliber].desc}</small></div>`; dressCard(b, w.id); b.onclick = () => pickWatch(w.id); wl.appendChild(b); });
+  renderCustoms();
   renderFaults();
   if (portraitsWanted) {
-    const ids = [...new Set([...STORY.map(c => c.watch), ...Object.keys(WATCHES)])];
+    const ids = [...new Set([...STORY.map(c => c.watch), ...Object.keys(WATCHES).filter(id => !WATCHES[id].custom)])];
     queuePortraits(ids, paintPortrait);
   }
   requestAnimationFrame(placeArrivals);
@@ -1247,6 +1252,7 @@ function renderMenu() {
 function renderFaults() {
   const fl = $('#faultList'); if (!fl) return;
   fl.innerHTML = '';
+  if (!WATCHES[playWatch]) playWatch = 'miami';
   const type = CALIBERS[WATCHES[playWatch].caliber].type;
   if (!FAULTS[playFault].calibers.includes(type)) playFault = 'sinFalla';
   Object.values(FAULTS).filter(f => f.calibers.includes(type)).forEach(f => {
@@ -1256,13 +1262,98 @@ function renderFaults() {
   });
 }
 function pickWatch(id) {
+  if (!WATCHES[id] || id === DRAFT_ID) return;
   playWatch = id;
   document.querySelectorAll('#playPane .wcard').forEach(b => b.classList.toggle('on', (b.dataset.go || b.dataset.watch) === id));
   renderFaults();
 }
+// ── Modo Build: configurador, vista previa en la escena y montaje desde la bandeja ──
+const buildSpec = { case: 'diver', metal: 'steel', dial: 'cuba', hands: 'baton', caliber: 'ZR28' };
+let buildNameEdited = false, previewTimer = 0, previewGen = 0;
+function buildNameValue() {
+  const input = $('#buildName');
+  return cleanName(buildNameEdited && input ? input.value : suggestedName(buildSpec));
+}
+function renderCustoms() {
+  const box = $('#customList'); if (!box) return;
+  const mine = Object.values(WATCHES).filter(w => w.custom && w.id !== DRAFT_ID && isBuildReady(w.id));
+  if (!mine.length) { box.hidden = true; box.innerHTML = ''; return; }
+  box.hidden = false;
+  box.innerHTML = `<p class="cinzel" style="margin-top:12px">Tus relojes</p>` + mine.map(w => `<button type="button" class="wcard${playWatch === w.id ? ' on' : ''}" data-watch="${w.id}"><b>${esc(w.name)}</b><span>${esc(w.blurb)}</span><small>${CALIBERS[w.caliber].name}</small></button>`).join('');
+  box.querySelectorAll('.wcard').forEach(b => b.onclick = () => pickWatch(b.dataset.watch));
+  const del = document.createElement('div');
+  del.className = 'optrow';
+  mine.forEach(w => {
+    const x = document.createElement('button');
+    x.type = 'button'; x.className = 'fchip'; x.textContent = 'Borrar ' + w.name;
+    x.onclick = () => { forgetBuild(w.id); if (playWatch === w.id) playWatch = 'miami'; renderMenu(); };
+    del.appendChild(x);
+  });
+  box.appendChild(del);
+}
+function renderBuild() {
+  const host = $('#buildOpts'); if (!host || host.childElementCount) { syncBuildChips(); return; }
+  const groups = [['case', 'Caja'], ['metal', 'Metal'], ['dial', 'Esfera'], ['hands', 'Agujas'], ['caliber', 'Movimiento']];
+  host.innerHTML = groups.map(([k, title]) => `<p class="cinzel">${title}</p><div class="optrow" data-group="${k}">${BUILD_OPTS[k].map(o => `<button type="button" class="fchip" data-k="${k}" data-v="${o.id}">${o.label}${o.hint ? `<small>${o.hint}</small>` : ''}</button>`).join('')}</div>`).join('');
+  host.querySelectorAll('.fchip').forEach(b => b.onclick = () => { buildSpec[b.dataset.k] = b.dataset.v; if (!buildNameEdited && $('#buildName')) $('#buildName').value = suggestedName(buildSpec); syncBuildChips(); schedulePreview(); });
+  syncBuildChips();
+}
+function syncBuildChips() {
+  if (!dialFits(buildSpec.caliber, buildSpec.dial)) {
+    const next = BUILD_OPTS.dial.find(d => dialFits(buildSpec.caliber, d.id));
+    if (next) buildSpec.dial = next.id;
+  }
+  document.querySelectorAll('#buildOpts .fchip').forEach(b => {
+    const hide = b.dataset.k === 'dial' && !dialFits(buildSpec.caliber, b.dataset.v);
+    b.hidden = hide;
+    b.classList.toggle('on', !hide && buildSpec[b.dataset.k] === b.dataset.v);
+  });
+  const note = $('#buildNote');
+  if (note) note.textContent = sessionLive && G && !G.E.finished ? 'Hay un reloj en el banco. Montar empieza uno nuevo.' : 'Arriba ves el reloj terminado. Al montar, esa misma pieza nace desarmada.';
+}
+function benchBusy() { return !!(sessionLive && G && !G.E.finished); }
+function schedulePreview() {
+  const gen = ++previewGen;
+  clearTimeout(previewTimer);
+  previewTimer = setTimeout(() => runPreview(gen), 180);
+}
+async function runPreview(gen) {
+  if (gen !== previewGen || benchBusy() || !M) return;
+  const w = watchFromSpec(DRAFT_ID, buildSpec, buildNameValue());
+  if (!w) return;
+  WATCHES[DRAFT_ID] = w;
+  buildWorld(DRAFT_ID, 'sinFalla', null);
+  if (gen !== previewGen) return;
+  await setView('front', true);
+}
+function showTab(tab) {
+  document.querySelectorAll('.tab').forEach(x => x.classList.toggle('on', x.dataset.tab === tab));
+  $('#storyPane').hidden = tab !== 'story';
+  $('#playPane').hidden = tab !== 'play';
+  const build = $('#buildPane'); if (build) build.hidden = tab !== 'build';
+  const peek = tab === 'build' && !benchBusy();
+  document.body.classList.toggle('buildpeek', peek);
+  if (tab === 'build') { renderBuild(); syncBuildChips(); if (peek) schedulePreview(); }
+  requestAnimationFrame(placeArrivals);
+}
+function startBuild() {
+  const id = 'b' + Date.now().toString(36) + Math.floor(Math.random() * 36).toString(36);
+  const w = rememberBuild(id, buildSpec, buildNameValue());
+  if (!w) { say('Esa combinación no se puede construir.'); return; }
+  clearTimeout(previewTimer); previewGen++;
+  document.body.classList.remove('buildpeek');
+  mode = 'build'; storyCase = null;
+  return begin(id, 'sinFalla', null, { empty: true });
+}
 let playWatch = 'miami', playFault = 'sinFalla', portraitsWanted = false;
-document.querySelectorAll('.tab').forEach(t => t.onclick = () => { document.querySelectorAll('.tab').forEach(x => x.classList.toggle('on', x === t)); $('#storyPane').hidden = t.dataset.tab !== 'story'; $('#playPane').hidden = t.dataset.tab !== 'play'; requestAnimationFrame(placeArrivals); });
+document.querySelectorAll('.tab').forEach(t => t.onclick = () => showTab(t.dataset.tab));
 $('#playBtn').onclick = () => startPlay(playWatch, playFault);
+const buildBtn = $('#buildBtn'); if (buildBtn) buildBtn.onclick = () => startBuild();
+const buildNameInput = $('#buildName');
+if (buildNameInput) {
+  buildNameInput.value = suggestedName(buildSpec);
+  buildNameInput.addEventListener('input', () => { buildNameEdited = true; schedulePreview(); });
+}
 $('#saveBtn').onclick = () => saveGame();
 $('#whoProfile').onclick = () => openProfile();
 $('#whoOut').onclick = () => { book.logout(); sessionLive = false; $('#saveBtn').hidden = true; showGate(); };
@@ -1304,19 +1395,23 @@ $('#landing').addEventListener('pointermove', e => {
 $('#landSkip').onclick = () => closeLanding();
 $('#landContinue').onclick = () => closeLanding();
 $('#landSwitch').onclick = () => { book.logout(); paintLandingAuth(); window.scrollTo(0, document.documentElement.scrollHeight); };
-async function begin(watchId, faultId, story) {
-  buildWorld(watchId, faultId, story); G.active = true; sessionLive = true;
+async function begin(watchId, faultId, story, opts = {}) {
+  buildWorld(watchId, faultId, story, opts); G.active = true; sessionLive = true;
   sel = null; selectTool(null); started = true; busy = false; stampTimer(0);
-  $('#saveBtn').hidden = false; $('#partsBtn').hidden = false; closeParts(); $('#intro').hidden = true; $('#endOverlay').hidden = true; resize(); await setView('front', true); refresh();
+  $('#saveBtn').hidden = false; $('#partsBtn').hidden = false; closeParts(); $('#intro').hidden = true; $('#endOverlay').hidden = true; resize();
+  await setView(opts.empty ? 'tray' : 'front', true); refresh();
   const W = WATCHES[watchId], F = FAULTS[faultId];
   const seatNote = seatMode ? ' Al montar, toca la pieza y luego el anillo dorado.' : '';
-  say(story ? `<b>${story.title}</b> — ${W.name}. ${story.intro}${seatNote}` : `<b>Modo libre</b> — ${W.name} · ${F.name}. ${F.free ? 'Desarma lo que quieras y vuelve a montarlo todo.' : 'Diagnostica, repara, monta y prueba.'}${seatNote}`);
+  say(story ? `<b>${story.title}</b> — ${W.name}. ${story.intro}${seatNote}` : mode === 'build'
+    ? `<b>Build</b> — ${W.name}. La caja está vacía. El movimiento está en el soporte y el resto espera en la bandeja. La pista dice el siguiente paso.${seatNote}`
+    : `<b>Modo libre</b> — ${W.name} · ${F.name}. ${F.free ? 'Desarma lo que quieras y vuelve a montarlo todo.' : 'Diagnostica, repara, monta y prueba.'}${seatNote}`);
 }
 function startStory(id) { mode = 'story'; storyCase = STORY.find(c => c.id === id); return begin(storyCase.watch, storyCase.fault, storyCase); }
 function startPlay(w, f) { mode = 'play'; storyCase = null; return begin(w, f, null); }
 
 async function init() {
   book.boot();
+  loadBuilds();
   images = await loadAllImages(); M = makeMaterials(); initBoutique({ M, images });
   document.querySelectorAll('[data-open="boutique"]').forEach(b => b.onclick = () => openBoutique());
   try { await Promise.all(['600 20px Cinzel', '500 20px "Cormorant Garamond"', '400 14px Jost'].map(f => document.fonts.load(f))); } catch (e) { /* fuentes de reserva */ }

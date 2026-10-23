@@ -125,7 +125,9 @@ export function buildCase(M, watch, movR) {
     const bz = new THREE.Mesh(new THREE.LatheGeometry(V2([[15.2, 1.3], [18.6, 1.3], [18.5, 1.8], [17.6, 2.2], [15.2, 2.25]], k), 128), metal.clone()); bz.material.side = THREE.DoubleSide; body.add(bz);
     for (const s of [-1, 1]) for (const xx of [-7.6, 7.6]) { const lug = new THREE.Mesh(new THREE.BoxGeometry(2.6, 2.6, 5.2), metal); lug.position.set(xx, -0.4, s * 19.4 * k); lug.rotation.x = s * 0.18; body.add(lug); }
     const crystal = new THREE.Mesh(new THREE.SphereGeometry(40, 64, 8, 0, Math.PI * 2, 0, Math.asin(15.3 * k / 40)), M.crystal); crystal.position.y = 2.25 - 40; crystal.renderOrder = 5; body.add(crystal);
-    bracelet(body, M, watch, k, -0.9, 19.4 * k + 3.6, 6.6);
+    // La Lira (y Build · Vestir) piden correa. bracelet() no conoce el aligátor y la pintaba de eslabones.
+    if (watch.bracelet && watch.bracelet.style === 'alligator') alligator(body, -0.9, 19.4 * k + 3.6, watch.bracelet.dye);
+    else bracelet(body, M, watch, k, -0.9, 19.4 * k + 3.6, 6.6);
     dims = { cbY: -3.3, yFront: 3.7, yBack: 2.35 };
   }
   // fondo

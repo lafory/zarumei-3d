@@ -98,7 +98,7 @@ button:disabled{opacity:.45}
 .brandhero .small{font-family:var(--serif);font-style:italic;font-size:14px}
 .title{text-align:center;font-family:var(--serif);font-weight:500;font-size:27px;margin:8px 0 2px}
 .subtitle{text-align:center;font-family:var(--caps);font-size:9.5px;letter-spacing:.3em;color:var(--muted);text-transform:uppercase}
-.tabs{display:flex;gap:6px;margin:14px 0 4px}.tab{flex:1;position:relative;overflow:hidden;font-family:var(--caps);font-size:11px;letter-spacing:.2em;text-transform:uppercase;background:transparent;border:0;border-bottom:1px solid var(--hair);color:var(--muted);padding:9px 4px;cursor:pointer}
+.tabs{display:flex;gap:6px;margin:14px 0 4px}.tab{flex:1;position:relative;overflow:hidden;font-family:var(--caps);font-size:10px;letter-spacing:.08em;text-transform:uppercase;background:transparent;border:0;border-bottom:1px solid var(--hair);color:var(--muted);padding:9px 2px;cursor:pointer}
 .tab.on{color:var(--gold-hi);border-bottom:2px solid var(--gold)}
 #intro{background:#050505}
 #intro .card{border:0;outline:0;box-shadow:none;background:#050505}
@@ -121,7 +121,14 @@ button:disabled{opacity:.45}
 .wcard.on{background:none;box-shadow:none}
 .wcard.on b{color:#fff}
 .wcard.on::after{content:'Elegido';display:block;padding:2px 10px 6px;font-family:var(--caps);letter-spacing:.22em;font-size:11px;color:var(--gold)}
-#playPane > .row{position:sticky;bottom:0;z-index:3;background:#050505;padding:12px 0 6px}
+#playPane > .row,#buildPane > .row{position:sticky;bottom:0;z-index:3;background:#050505;padding:12px 0 6px}
+.optrow{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0 12px}
+#buildName{width:100%;background:#100e0c;color:var(--ink);border:1px solid var(--hair);border-radius:2px;padding:11px 12px;font:16px var(--sans);margin:0 0 8px}
+#buildOpts .fchip{display:flex;flex-direction:column;align-items:flex-start;gap:1px;border-radius:2px;text-align:left}
+#buildOpts .fchip small{display:block;font-size:10px;color:var(--muted);letter-spacing:0;text-transform:none}
+#buildOpts .fchip.on small{color:#3d3114}
+body.buildpeek #intro{background:linear-gradient(180deg,rgba(5,5,5,0) 0 36%,rgba(5,5,5,.45) 46%,#050505 56%);align-items:flex-end;padding:0 0 env(safe-area-inset-bottom);pointer-events:none}
+body.buildpeek #intro .card{max-height:58dvh;pointer-events:auto;border-top:1px solid rgba(224,195,106,.45)}
 .wcard > :not(.pair){padding:0 10px}
 .wcard b{font-family:var(--serif);font-size:18px;color:var(--gold-hi);display:block;line-height:1.2}.wcard span{font-size:12px;display:block}.wcard small{font-size:10.5px;color:var(--muted)}
 .wcard .nuevo{font-family:var(--caps);font-style:normal;font-size:9px;letter-spacing:.14em;text-transform:uppercase;background:none;color:var(--gold);padding:0;margin-right:6px;vertical-align:2px}
@@ -326,9 +333,10 @@ body:not(.land) #landScroll{display:none!important}
     <div id="liveBox" hidden></div>
     <div id="saveList" hidden></div>
     <p class="small" style="text-align:center">Elige la herramienta y toca la pieza. Para volver a montar, toca la pieza y luego el anillo dorado en su sitio (o pasa a AUTO). Los tornillos salen uno a uno. Una pieza gastada —la pila, si está agotada— se cambia en <b>Piezas</b>.</p>
-    <div class="tabs"><button class="tab on" data-tab="story">Historia</button><button class="tab" data-tab="play">Modo libre</button></div>
+    <div class="tabs"><button class="tab on" data-tab="story">Historia</button><button class="tab" data-tab="play">Modo libre</button><button class="tab" data-tab="build">Build</button></div>
     <div id="storyPane"><div id="caseList"></div></div>
     <div id="playPane" hidden>
+      <div id="customList" hidden></div>
       <p class="cinzel" style="margin-top:12px">I · La más complicada</p>
       <div id="habanaList">
         <button type="button" class="wcard" data-go="nacar"><b><em class="nuevo">Nuevo</em>ZARUMEI Nácar</b><span>Acero, cerámica negra y nácar. Turbillón, oso, diamante y autómatas.</span><small>ZX-60 · 60 piezas</small></button>
@@ -359,6 +367,15 @@ body:not(.land) #landScroll{display:none!important}
       <p class="cinzel" style="margin-top:14px">VI · La falla <span class="small" style="text-transform:none;letter-spacing:0">(o «sin falla» para desarmar libremente)</span></p>
       <div id="faultList"></div>
       <div class="row"><button class="lux primary" id="playBtn">Empezar</button></div>
+    </div>
+    <div id="buildPane" hidden>
+      <p class="cinzel" style="margin-top:12px">Desde cero</p>
+      <p class="small">Elige la caja, el metal, la esfera y el calibre. La vista de arriba es el reloj terminado. Al confirmar, ninguna pieza va montada: se arma desde la bandeja, con las mismas herramientas.</p>
+      <label class="field" for="buildName">Nombre</label>
+      <input id="buildName" maxlength="28" autocomplete="off" enterkeyhint="done">
+      <div id="buildOpts"></div>
+      <p class="small" id="buildNote"></p>
+      <div class="row"><button class="lux primary" id="buildBtn" type="button">Montar</button></div>
     </div>
     <button class="menuShop" data-open="boutique" id="shopBtn"><span style="font-size:22px;color:var(--gold)">◆</span><span><small class="cinzel">Maison LA FORY</small><b>Visitar la boutique</b><small>Relojes · Herramientas · Joyería</small></span></button>
   </div>
@@ -429,7 +446,7 @@ body:not(.land) #landScroll{display:none!important}
   <div id="bqDetail" hidden><button class="lux" id="bqBack">← Volver</button><div id="bqStage"></div><div id="bqInfo"></div></div>
 </div>
 
-<script src="game.js?v=flota10"></script>
+<script src="game.js?v=build1"></script>
 <script>
 setInterval(function(){var g=window.__game;if(!g||!g.started)return;var el=document.getElementById('timer');if(!el._t0)el._t0=Date.now();if(document.getElementById('endOverlay').hidden){var e=Math.floor((Date.now()-el._t0)/1000);el.textContent=Math.floor(e/60)+':'+String(e%60).padStart(2,'0');}},500);
 document.getElementById('menuTop').onclick=function(){ if (window.__game && __game.openMenu) __game.openMenu(); else document.getElementById('intro').hidden=false; };
