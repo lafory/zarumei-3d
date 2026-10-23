@@ -22,8 +22,8 @@ export function buildCase(M, watch, movR) {
     if (C.crownGuards) for (const s of [-1, 1]) { const sh = new THREE.Mesh(new THREE.BoxGeometry(3.4, 4.4, 2.6), metal); sh.position.set(20.6 * k, -0.9, s * 4.6); body.add(sh); }
     const bz = new THREE.Mesh(new THREE.LatheGeometry(V2([[16.0, 2.2], [19.6, 2.2], [19.9, 2.8], [19.4, 3.6], [16.0, 3.7]], k), 128), metal); bz.material = metal.clone(); bz.material.side = THREE.DoubleSide; body.add(bz);
     const topMat = C.lacquer != null ? metal : (C.bezel === 'ceramicBlue' || C.bezel === 'ceramicBlack')
-      ? new THREE.MeshPhysicalMaterial({ map: C.bezel === 'ceramicBlack' ? TX.ceramicBlackBezel() : TX.ceramicBezelTexture(), roughness: 0.12, metalness: 0.05, clearcoat: 1, clearcoatRoughness: 0.05 })
-      : new THREE.MeshStandardMaterial({ color: metal.color, metalness: 1, roughness: 0.36, map: TX.bezelTexture(), envMapIntensity: 0.6 });
+      ? new THREE.MeshPhysicalMaterial({ map: C.bezel === 'ceramicBlack' ? TX.ceramicBlackBezel() : TX.ceramicBezelTexture(), roughness: 0.22, metalness: 0.02, clearcoat: 0.4, clearcoatRoughness: 0.28, envMapIntensity: 0.38 })
+      : new THREE.MeshPhysicalMaterial({ color: metal.color, metalness: 1, roughness: 0.28, map: TX.bezelTexture(), envMapIntensity: 1.05, clearcoat: 0.25, clearcoatRoughness: 0.22 });
     const R1 = 19.3 * k, top = new THREE.Mesh(new THREE.RingGeometry(16.1 * k, R1, 128, 1).rotateX(-Math.PI / 2), topMat); top.position.y = 3.72; body.add(top);
     { const uv = top.geometry.attributes.uv, pos = top.geometry.attributes.position; for (let i = 0; i < uv.count; i++) uv.setXY(i, pos.getX(i) / (2 * R1) + 0.5, -pos.getZ(i) / (2 * R1) + 0.5); }
     if (C.bezel === 'ceramicBlack') {
@@ -130,7 +130,7 @@ export function buildCase(M, watch, movR) {
   }
   // fondo
   const cb = tag(new THREE.Group(), 'caseback');
-  const cbMat = new THREE.MeshStandardMaterial({ color: metal.color, metalness: 1, roughness: 0.38, map: TX.casebackTexture(C.backText, C.backMono), envMapIntensity: 0.55 });
+  const cbMat = new THREE.MeshPhysicalMaterial({ color: metal.color, metalness: 1, roughness: 0.32, map: TX.casebackTexture(C.backText, C.backMono), envMapIntensity: 0.95, clearcoat: 0.12, clearcoatRoughness: 0.35 });
   if (C.style === 'astral') {
     const kk = C.r / 20;
     cb.add(new THREE.Mesh(new THREE.TorusGeometry(14.2 * kk, 1.15, 12, 80).rotateX(Math.PI / 2), metal));
@@ -161,8 +161,8 @@ export function buildCase(M, watch, movR) {
 function alligator(body, y, z0, dye) {
   const map = TX.gatorColor();
   const leather = dye
-    ? new THREE.MeshStandardMaterial({ color: dye, roughness: 0.62, metalness: 0.06, bumpMap: map, bumpScale: 0.35 })
-    : new THREE.MeshStandardMaterial({ map, color: 0x3a2e24, roughness: 0.92, metalness: 0 });
+    ? new THREE.MeshPhysicalMaterial({ color: dye, roughness: 0.58, metalness: 0.04, bumpMap: map, bumpScale: 0.42, sheen: 0.55, sheenRoughness: 0.4, sheenColor: new THREE.Color(dye).multiplyScalar(0.45), clearcoat: 0.12, clearcoatRoughness: 0.55 })
+    : new THREE.MeshPhysicalMaterial({ map, color: 0x6a5644, roughness: 0.7, metalness: 0.02, sheen: 0.4, sheenRoughness: 0.5 });
   const edge = new THREE.MeshStandardMaterial({ color: 0x0c0b09, roughness: 0.8 });
   for (const s of [-1, 1]) {
     const strap = new THREE.Mesh(new THREE.BoxGeometry(15.5, 2.4, 46), leather);

@@ -236,22 +236,40 @@ export function casebackTexture(txt = 'ZARUMEI · AUTOMATIC · 28.800 A/h · WAT
 export function cotesTexture() {
   const c = canvas(256), x = c.getContext('2d');
   for (let i = 0; i < 256; i++) {
-    const t = (i % 64) / 64, v = 200 + Math.round(40 * Math.sin(t * Math.PI));
-    x.fillStyle = `rgb(${v},${v + 3},${v + 8})`; x.fillRect(i, 0, 1, 256);
+    const t = (i % 48) / 48, v = 236 + Math.round(16 * Math.sin(t * Math.PI));
+    x.fillStyle = `rgb(${v},${v},${Math.min(255, v + 2)})`; x.fillRect(i, 0, 1, 256);
   }
   const t = tex(c, { repeat: 1 }); t.rotation = 0.45; return t;
 }
-// Perlage para la platina
+export function cotesRough() {
+  const c = canvas(256), x = c.getContext('2d');
+  for (let i = 0; i < 256; i++) {
+    const t = (i % 48) / 48, v = t < 0.62 ? 46 : 210;
+    x.fillStyle = `rgb(${v},${v},${v})`; x.fillRect(i, 0, 1, 256);
+  }
+  const t = tex(c, { srgb: false, repeat: 1 }); t.rotation = 0.45; return t;
+}
 export function perlageTexture() {
   const c = canvas(256), x = c.getContext('2d');
-  x.fillStyle = '#bfc4cb'; x.fillRect(0, 0, 256, 256);
+  x.fillStyle = '#f3f1ec'; x.fillRect(0, 0, 256, 256);
   for (let j = 0; j < 9; j++) for (let i = 0; i < 9; i++) {
     const cx = i * 32 + (j % 2) * 16, cy = j * 30;
-    const g = x.createRadialGradient(cx - 5, cy - 5, 2, cx, cy, 18);
-    g.addColorStop(0, '#eef0f3'); g.addColorStop(1, '#a9afb7');
-    x.fillStyle = g; x.beginPath(); x.arc(cx, cy, 17, 0, Math.PI * 2); x.fill();
+    const g = x.createRadialGradient(cx - 4, cy - 4, 1, cx, cy, 16);
+    g.addColorStop(0, '#ffffff'); g.addColorStop(1, '#e4e0d8');
+    x.fillStyle = g; x.beginPath(); x.arc(cx, cy, 15, 0, Math.PI * 2); x.fill();
   }
   return tex(c, { repeat: 1 });
+}
+export function perlageRough() {
+  const c = canvas(256), x = c.getContext('2d');
+  x.fillStyle = '#8a8a8a'; x.fillRect(0, 0, 256, 256);
+  for (let j = 0; j < 9; j++) for (let i = 0; i < 9; i++) {
+    const cx = i * 32 + (j % 2) * 16, cy = j * 30;
+    const g = x.createRadialGradient(cx, cy, 1, cx, cy, 15);
+    g.addColorStop(0, '#e4e4e4'); g.addColorStop(0.65, '#5a5a5a'); g.addColorStop(1, '#9a9a9a');
+    x.fillStyle = g; x.beginPath(); x.arc(cx, cy, 15, 0, Math.PI * 2); x.fill();
+  }
+  return tex(c, { srgb: false, repeat: 1 });
 }
 // Rotor: côtes + texto (flipY=false porque se aplica sobre UVs de ExtrudeGeometry en mm)
 export function rotorTexture(R, txt = 'ZARUMEI · MIAMI') {
@@ -364,8 +382,9 @@ export function metalGrain() {
   for (let y = 0; y < S; y++) {
     const dy = lines[y] - lines[(y - 1 + S) % S];
     for (let x = 0; x < S; x++) {
-      const nick = Math.random() < 0.003 ? 0.18 : 0;
-      const r = Math.min(1, Math.max(0.35, lines[y] + (Math.random() - 0.5) * 0.04 - nick));
+      const nick = Math.random() < 0.0025 ? 0.22 : 0;
+      const scratch = (y % 97 === 0 && x % 3 !== 0) ? 0.12 : 0;
+      const r = Math.min(1, Math.max(0.28, lines[y] + (Math.random() - 0.5) * 0.035 - nick - scratch));
       const i = (y * S + x) * 4;
       const g = (r * 255) | 0;
       roughPx.data[i] = roughPx.data[i + 1] = roughPx.data[i + 2] = g; roughPx.data[i + 3] = 255;

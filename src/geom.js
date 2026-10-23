@@ -20,7 +20,7 @@ export function gearShape(r, teeth, hole = 0.4, spokes = 0) {
   }
   return s;
 }
-export function gearMesh(r, teeth, depth, mat, spokes = 4) { return new THREE.Mesh(extrudeShape(gearShape(r, teeth, 0.35, spokes), depth, 0.02, 12), mat); }
+export function gearMesh(r, teeth, depth, mat, spokes = 4) { return new THREE.Mesh(extrudeShape(gearShape(r, teeth, 0.35, spokes), depth, Math.min(0.04, depth * 0.22), 14), mat); }
 export function ringShape(r0, r1, a0 = 0, a1 = Math.PI * 2) { const s = new THREE.Shape(); s.absarc(0, 0, r1, a0, a1, false); s.absarc(0, 0, r0, a1, a0, true); s.closePath(); return s; }
 export function hitProxy(M, r, h, y = 0) { const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, 12), M.hit); m.position.y = y; m.userData.isHit = true; return m; }
 export function boxHit(M, w, h, d) { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), M.hit); m.userData.isHit = true; return m; }

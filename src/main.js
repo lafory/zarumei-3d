@@ -52,41 +52,50 @@ function applyDPR(w, h) {
   renderer.setPixelRatio(Math.min(dpr, cap));
 }
 applyDPR(window.innerWidth, window.innerHeight);
-renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 0.92;
+renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.02;
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 stage.prepend(renderer.domElement);
-const scene = new THREE.Scene(); scene.background = new THREE.Color(0x070605);
-const baseFog = new THREE.Fog(0x070605, 520, 1100);
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0x0a0908);
+const baseFog = new THREE.Fog(0x0a0908, 640, 1400);
 scene.fog = baseFog;
 scene.environment = studioEnvMap();
-scene.environmentIntensity = 0.62;
-const camera = new THREE.PerspectiveCamera(27, 1, 1, 1500);
+scene.environmentIntensity = 1.05;
+const camera = new THREE.PerspectiveCamera(23, 1, 1, 1500);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true; controls.dampingFactor = 0.08; controls.enablePan = true; controls.screenSpacePanning = true; controls.panSpeed = 0.55;
 controls.maxPolarAngle = 1.25; controls.minPolarAngle = 0.08; controls.rotateSpeed = 0.55; controls.zoomSpeed = 0.65;
-scene.add(new THREE.HemisphereLight(0xf3efe6, 0x0a0908, 0.14));
-// Un softbox cae sobre el banco y se apaga con la distancia. El interior no queda plano.
-const spot = new THREE.SpotLight(0xfff0dc, 22000, 640, 0.48, 1, 2); spot.position.set(36, 220, 80); spot.target.position.set(0, 4, 6); scene.add(spot, spot.target);
-const sun = new THREE.DirectionalLight(0xfff3e4, 1.65); sun.position.set(80, 180, 70); sun.castShadow = true; sun.shadow.mapSize.set(1024, 1024); sun.shadow.radius = 2.6;
-Object.assign(sun.shadow.camera, { left: -140, right: 140, top: 140, bottom: -140, near: 20, far: 420 }); sun.shadow.bias = -0.00035; sun.shadow.normalBias = 0.035; scene.add(sun);
-const lamp = new THREE.PointLight(0xffd8b0, 1600, 260, 2); lamp.position.set(-36, 64, 42); scene.add(lamp);
-const rim = new THREE.DirectionalLight(0xb7c4d6, 0.22); rim.position.set(-100, 36, -70); scene.add(rim);
+scene.add(new THREE.HemisphereLight(0xf4efe6, 0x16120e, 0.08));
+// La forma del metal la da el entorno. Estas luces solo modelan y proyectan la sombra de contacto.
+const spot = new THREE.SpotLight(0xfff4e6, 4200, 520, 0.62, 1, 2); spot.position.set(28, 160, 54); spot.target.position.set(0, 4, 4); scene.add(spot, spot.target);
+const sun = new THREE.DirectionalLight(0xfff6ee, 0.46); sun.position.set(48, 140, 36); sun.castShadow = true; sun.shadow.mapSize.set(1024, 1024); sun.shadow.radius = 3.2;
+Object.assign(sun.shadow.camera, { left: -140, right: 140, top: 140, bottom: -140, near: 20, far: 420 }); sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.04; scene.add(sun);
+const lamp = new THREE.PointLight(0xffe6c8, 180, 220, 2); lamp.position.set(-28, 48, 30); scene.add(lamp);
+const rim = new THREE.DirectionalLight(0xc5d2e4, 0.38); rim.position.set(-90, 28, -80); scene.add(rim);
 
 function studioEnvMap() {
   const env = new THREE.Scene();
   const geo = new THREE.BoxGeometry(); geo.deleteAttribute('uv');
-  const room = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: 0x2c2824, roughness: 1, metalness: 0, side: THREE.BackSide }));
-  room.scale.set(30, 18, 30); room.position.y = 2; env.add(room);
-  const area = (intensity, x, y, z, sx, sy, sz) => {
-    const m = new THREE.MeshBasicMaterial(); m.color.setScalar(intensity);
-    const mesh = new THREE.Mesh(geo, m); mesh.position.set(x, y, z); mesh.scale.set(sx, sy, sz); env.add(mesh);
+  const room = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: 0x161310, side: THREE.BackSide }));
+  room.scale.set(48, 26, 48); room.position.y = 1; env.add(room);
+  const floor = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: 0x090807 }));
+  floor.position.set(0, -8, 0); floor.scale.set(40, 0.4, 40); env.add(floor);
+  const panel = (hex, gain, x, y, z, sx, sy, sz) => {
+    const m = new THREE.MeshBasicMaterial();
+    m.color.setHex(hex).multiplyScalar(gain);
+    const mesh = new THREE.Mesh(geo, m);
+    mesh.position.set(x, y, z); mesh.scale.set(sx, sy, sz); env.add(mesh);
   };
-  area(12, 0, 13, 2, 14, 0.18, 5); // tira cenital
-  area(8, 11, 6, 7, 0.22, 5, 8); // softbox cálido
-  area(3.5, -10, 5, 5, 0.22, 6, 4); // relleno
+  panel(0xfff6ec, 1.0, 0, 13, 2, 26, 0.28, 18);
+  panel(0xfffaf4, 2.4, 1.2, 9.2, 4.2, 8, 0.1, 2.2);
+  panel(0xfff1df, 2.5, 10, 6.5, 8, 0.16, 9, 5.5);
+  panel(0xd5e2f2, 1.25, -12, 5, 2, 0.16, 6, 4);
+  panel(0xe7eef8, 1.5, 0, 5.2, -14, 9, 2.4, 0.12);
+  const prev = renderer.toneMapping;
+  renderer.toneMapping = THREE.NoToneMapping;
   const pmrem = new THREE.PMREMGenerator(renderer);
-  const map = pmrem.fromScene(env, 0.02).texture;
+  const map = pmrem.fromScene(env, 0.012).texture;
   pmrem.dispose();
+  renderer.toneMapping = prev;
   return map;
 }
 
@@ -224,9 +233,9 @@ function restoreLandingPose() {
   if (gallery) gallery.visible = false;
   if (benchDress) benchDress.visible = true;
   if (benchPlane) benchPlane.visible = true;
-  camera.near = 1; camera.fov = 27; camera.updateProjectionMatrix();
-  renderer.toneMappingExposure = 0.92;
-  scene.environmentIntensity = 0.62;
+  camera.near = 1; camera.fov = 23; camera.updateProjectionMatrix();
+  renderer.toneMappingExposure = 1.02;
+  scene.environmentIntensity = 1.05;
   scene.fog = baseFog;
 }
 function paintBeat(k) {
@@ -268,8 +277,8 @@ function openLanding() {
   if (benchPlane) benchPlane.visible = false;
   controls.enabled = false;
   camera.near = 0.4; camera.fov = 36; camera.updateProjectionMatrix();
-  renderer.toneMappingExposure = 1.62;
-  scene.environmentIntensity = 1.35;
+  renderer.toneMappingExposure = 1.22;
+  scene.environmentIntensity = 1.2;
   scene.fog = new THREE.Fog(0x07060a, 1400, 2400);
   paintLandingAuth();
   resize();
@@ -283,8 +292,8 @@ function closeLanding() {
   window.scrollTo(0, 0);
   try { restoreLandingPose(); } catch (err) { console.warn(err); }
   controls.enabled = true;
-  renderer.toneMappingExposure = hq ? 0.98 : 0.92;
-  scene.environmentIntensity = 0.62;
+  renderer.toneMappingExposure = hq ? 1.08 : 1.02;
+  scene.environmentIntensity = hq ? 1.15 : 1.05;
   scene.fog = baseFog;
   resize();
   try { setView('front', true); } catch (err) { console.warn(err); }
@@ -682,10 +691,10 @@ function faceSeat() {
   seatRing.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
 }
 function applyQuality() {
-  renderer.toneMappingExposure = hq ? 0.98 : 0.92;
-  scene.environmentIntensity = hq ? 0.74 : 0.62;
+  renderer.toneMappingExposure = hq ? 1.08 : 1.02;
+  scene.environmentIntensity = hq ? 1.15 : 1.05;
   scene.fog = hq ? null : baseFog;
-  spot.intensity = hq ? 26000 : 22000; rim.intensity = hq ? 0.28 : 0.22;
+  spot.intensity = hq ? 5200 : 4200; rim.intensity = hq ? 0.48 : 0.38;
   sun.shadow.radius = hq ? 1.4 : 2.6;
   const sz = hq ? 2048 : 1024;
   if (sun.shadow.mapSize.x !== sz) {
@@ -1312,9 +1321,9 @@ async function init() {
   document.querySelectorAll('[data-open="boutique"]').forEach(b => b.onclick = () => openBoutique());
   try { await Promise.all(['600 20px Cinzel', '500 20px "Cormorant Garamond"', '400 14px Jost'].map(f => document.fonts.load(f))); } catch (e) { /* fuentes de reserva */ }
   // banco de ónix, tapete de cuero con pespunte dorado y alfombrilla de terciopelo verde
-  benchPlane = new THREE.Mesh(new THREE.PlaneGeometry(900, 900), new THREE.MeshStandardMaterial({ map: onyxTexture(), roughness: 0.32, metalness: 0.1 })); benchPlane.rotation.x = -Math.PI / 2; benchPlane.position.y = -0.2; benchPlane.receiveShadow = true; scene.add(benchPlane);
+  benchPlane = new THREE.Mesh(new THREE.PlaneGeometry(900, 900), new THREE.MeshPhysicalMaterial({ map: onyxTexture(), roughness: 0.2, metalness: 0.22, clearcoat: 0.4, clearcoatRoughness: 0.35, envMapIntensity: 0.55 })); benchPlane.rotation.x = -Math.PI / 2; benchPlane.position.y = -0.2; benchPlane.receiveShadow = true; scene.add(benchPlane);
   benchDress = new THREE.Group(); scene.add(benchDress);
-  const mat = new THREE.Mesh(new THREE.BoxGeometry(220, 1.2, 170), [0, 0, 1, 0, 0, 0].map(i => i ? new THREE.MeshStandardMaterial({ map: leatherTexture(images.logo), roughness: 0.62, metalness: 0.05 }) : new THREE.MeshStandardMaterial({ color: 0x120c08, roughness: 0.7 }))); mat.position.set(-6, -0.6, 6); mat.receiveShadow = true; benchDress.add(mat);
+  const mat = new THREE.Mesh(new THREE.BoxGeometry(220, 1.2, 170), [0, 0, 1, 0, 0, 0].map(i => i ? new THREE.MeshPhysicalMaterial({ map: leatherTexture(images.logo), roughness: 0.72, metalness: 0.02, sheen: 0.45, sheenRoughness: 0.55, sheenColor: new THREE.Color(0x3a2a18) }) : new THREE.MeshStandardMaterial({ color: 0x120c08, roughness: 0.7 }))); mat.position.set(-6, -0.6, 6); mat.receiveShadow = true; benchDress.add(mat);
   const rim = new THREE.Mesh(new THREE.BoxGeometry(222, 0.6, 172), new THREE.MeshStandardMaterial({ color: 0xc9a24b, metalness: 1, roughness: 0.28 })); rim.position.set(-6, -0.9, 6); benchDress.add(rim);
   const insp = new THREE.Mesh(new THREE.CylinderGeometry(9, 9, 0.5, 40), new THREE.MeshStandardMaterial({ map: velvetTexture('#0e2a21'), roughness: 1 })); insp.position.copy(INSPECT_POS).add(new THREE.Vector3(0, -0.3, 0)); insp.receiveShadow = true; benchDress.add(insp);
   const cloth = new THREE.Mesh(new THREE.PlaneGeometry(168, 122), new THREE.MeshStandardMaterial({ map: clothTexture(), roughness: 0.92, metalness: 0 }));

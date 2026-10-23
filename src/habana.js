@@ -33,7 +33,7 @@ function tinyHand(M, id, len, w, y) {
   g.position.y = y; return g;
 }
 function groundMat(kind) {
-  if (kind === 'nacre') return new THREE.MeshPhysicalMaterial({ map: TX.nacreTexture(), roughness: 0.22, metalness: 0.06, clearcoat: 0.65, clearcoatRoughness: 0.18 });
+  if (kind === 'nacre') return new THREE.MeshPhysicalMaterial({ map: TX.nacreTexture(), roughness: 0.26, metalness: 0.04, clearcoat: 1, clearcoatRoughness: 0.1, iridescence: 0.55, iridescenceIOR: 1.3, iridescenceThicknessRange: [160, 520], envMapIntensity: 0.85 });
   if (kind === 'tropic') return new THREE.MeshStandardMaterial({ map: TX.tropicTexture(), roughness: 0.48, metalness: 0.02 });
   return new THREE.MeshStandardMaterial({ map: TX.galaxyTexture('blue'), roughness: 0.9, metalness: 0.02, emissive: new THREE.Color(0x061433), emissiveIntensity: 0.16 });
 }
