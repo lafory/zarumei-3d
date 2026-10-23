@@ -23,7 +23,7 @@ export function buildDial(M, images, watch, ys) {
   }
   if (watch.grand) {
     const face = new THREE.Mesh(new THREE.CircleGeometry(r, 96).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ map: TX.dialTexture(kind, images, 1), transparent: true, alphaTest: 0.45, roughness: kind === 'espina' ? 0.28 : 0.48, metalness: kind === 'espina' ? 0.35 : 0.04 }));
-    face.position.y = ys.dial; dial.add(face);
+    face.position.y = ys.dial; face.renderOrder = 1; dial.add(face);
     const edge = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 0.28, 80, 1, true), M.darkSteel); edge.position.y = ys.dial - 0.14; dial.add(edge);
     dial.add(hitProxy(M, r, 0.5, ys.dial));
     return dial;

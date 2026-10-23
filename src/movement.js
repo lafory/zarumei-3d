@@ -18,6 +18,7 @@ export function screwsFor(M, cal, parts) {
     const gh = hitProxy(M, Math.max(2.2, s.s * 1.7), 1.8, 0.45); gh.userData.screwGhost = sid; ghost.add(gh);
     for (const o of [g, ghost]) {
       o.position.set(...s.p);
+      if (s.face) o.scale.setScalar(1.7);
       if (s.radial) {
         const d = new THREE.Vector3(s.p[0], 0, s.p[2]);
         if (d.lengthSq() > 1e-8) {
@@ -27,6 +28,12 @@ export function screwsFor(M, cal, parts) {
         }
       } else o.rotation.y += (i * 1.7) % 3;
       host.add(o);
+    }
+    if (s.face) {
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(s.s * 1.15, 0.16, 6, 20).rotateX(Math.PI / 2), M.goldChaton);
+      ring.position.y = 0.02;
+      g.add(ring);
+      g.traverse(o => { if (o.isMesh && !o.userData.isHit) o.renderOrder = 6; });
     }
     out[sid] = { obj: g, ghost, host };
   });

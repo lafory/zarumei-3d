@@ -157,7 +157,7 @@ function grandCaliber(id, name, desc, opt) {
     { id: 'hourHand', name: 'la aguja de horas', side: 'dial', coveredBy: ['minHand'], tool: 'handLevers', placeTool: 'handPress', requires: ['protector'], placeRequires: ['protector'] },
     { id: 'depthHand', name: 'la aguja del profundímetro', side: 'dial', coveredBy: [], tool: 'handLevers', placeTool: 'handPress', requires: ['protector'], placeRequires: ['protector'] },
     { id: 'emblem', name: opt.emblem === 'diablo' ? 'la máscara del diablo' : opt.emblem === 'espina' ? 'el cabujón de púas' : opt.emblem === 'ala' ? 'las alas de esmalte' : 'la jaula calada', side: 'dial', coveredBy: ['hourHand'], tool: 'tweezers', screws: [{ s: 0.8, k: 'emblem', p: [2.1, 0.45, 1.4] }, { s: 0.8, k: 'emblem', p: [-2.1, 0.45, 1.4] }] },
-    { id: 'dial', name: 'la esfera', side: 'dial', coveredBy: dialCover, tool: 'tweezers', screws: [{ s: 0.8, k: 'dial', p: [-8.6, 0.15, -8.6] }, { s: 0.8, k: 'dial', p: [8.6, 0.15, 8.6] }] },
+    { id: 'dial', name: 'la esfera', side: 'dial', coveredBy: dialCover, tool: 'tweezers', screws: [{ s: 0.8, k: 'dial', face: true, p: [-12.5, 1.48, 7.2] }, { s: 0.8, k: 'dial', face: true, p: [12.5, 1.48, -7.2] }] },
     { id: 'calendarPlate', name: 'el puente de calendario', side: 'dial', coveredBy: ['dial'], tool: 'tweezers', screws: [{ s: 1.0, k: 'date', p: [8.4, 0.28, 0] }, { s: 1.0, k: 'date', p: [-8.2, 0.28, 2.2] }, { s: 1.0, k: 'date', p: [0, 0.28, 9.2] }] },
     { id: 'dayDisc', name: 'el disco de los días', side: 'dial', coveredBy: ['calendarPlate'], tool: 'tweezers' },
     { id: 'monthDisc', name: 'el disco de los meses', side: 'dial', coveredBy: ['calendarPlate'], tool: 'tweezers' },
