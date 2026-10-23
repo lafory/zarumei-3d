@@ -98,7 +98,7 @@ button:disabled{opacity:.45}
 .brandhero .small{font-family:var(--serif);font-style:italic;font-size:14px}
 .title{text-align:center;font-family:var(--serif);font-weight:500;font-size:27px;margin:8px 0 2px}
 .subtitle{text-align:center;font-family:var(--caps);font-size:9.5px;letter-spacing:.3em;color:var(--muted);text-transform:uppercase}
-.tabs{display:flex;gap:6px;margin:14px 0 4px}.tab{flex:1;position:relative;overflow:hidden;font-family:var(--caps);font-size:10px;letter-spacing:.08em;text-transform:uppercase;background:transparent;border:0;border-bottom:1px solid var(--hair);color:var(--muted);padding:9px 2px;cursor:pointer}
+.tabs{display:flex;gap:2px;margin:14px 0 4px}.tab{flex:1;position:relative;overflow:hidden;font-family:var(--caps);font-size:9px;letter-spacing:.02em;text-transform:uppercase;background:transparent;border:0;border-bottom:1px solid var(--hair);color:var(--muted);padding:9px 0;cursor:pointer}
 .tab.on{color:var(--gold-hi);border-bottom:2px solid var(--gold)}
 #intro{background:#050505}
 #intro .card{border:0;outline:0;box-shadow:none;background:#050505}
@@ -140,8 +140,13 @@ body.buildpeek #intro .card{max-height:58dvh;pointer-events:auto;border-top:1px 
 .tgvals b{display:block;font-size:16px;color:#fff6d2}.tgvals .warn b{color:#ffb35b}
 #tgNote{font-size:13px;line-height:1.4;margin:8px 0}
 #partsPanel{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 8px);width:min(540px,calc(100% - 16px));max-height:min(72dvh,560px);z-index:16;display:flex;flex-direction:column;background:var(--marble),linear-gradient(180deg,#14120e,#070707);border:1px solid var(--hair);outline:1px solid rgba(224,195,106,.18);outline-offset:-5px;border-radius:2px;padding:12px 12px 10px;animation:rise .45s}
-#partsPanel h3{margin:0;font-family:var(--caps);font-weight:500;letter-spacing:.16em;color:var(--gold);font-size:11px;text-transform:uppercase}
+#partsPanel h3,#periPanel h3{margin:0;font-family:var(--caps);font-weight:500;letter-spacing:.16em;color:var(--gold);font-size:11px;text-transform:uppercase}
 #partsPanel .lead{margin:6px 0 0}
+#periPanel{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 8px);width:min(540px,calc(100% - 16px));max-height:min(70dvh,520px);overflow:auto;z-index:17;background:var(--marble),linear-gradient(180deg,#14120e,#070707);border:1px solid var(--hair);outline:1px solid rgba(224,195,106,.18);outline-offset:-5px;border-radius:2px;padding:12px 12px 10px;animation:rise .45s}
+.periLine{font-size:14px;line-height:1.4;margin:6px 0}
+.periClue{font-size:13px;line-height:1.35;margin:6px 0;padding:4px 8px;border-left:2px solid var(--gold)}
+#periList .ticket{display:block}
+#periList .casecard{padding-bottom:18px}
 #partsList{overflow:auto;min-height:0;display:flex;flex-direction:column;gap:6px;margin:8px 0}
 #partsList .cinzel{margin:6px 0 0}
 .partrow{display:flex;gap:8px;align-items:center;justify-content:space-between;border:1px solid var(--hair);padding:8px;background:rgba(0,0,0,.28)}
@@ -281,7 +286,7 @@ body:not(.land) #landScroll{display:none!important}
   #tray::before{content:'Bandeja de piezas';flex-basis:100%;font-family:var(--caps);font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold)}
   #bottom .lux{width:100%}
   #tgPanel{left:auto;right:max(16px,env(safe-area-inset-right));transform:none;width:min(440px,29vw)}
-  #partsPanel{left:auto;right:max(16px,env(safe-area-inset-right));transform:none;width:min(440px,29vw)}
+  #partsPanel,#periPanel{left:auto;right:max(16px,env(safe-area-inset-right));transform:none;width:min(440px,29vw)}
   #bqDetail{flex-direction:row}#bqStage{flex:1 1 60%}#bqInfo{flex:0 0 min(460px,40%);border-top:0;border-left:1px solid var(--hair);padding:calc(env(safe-area-inset-top) + 70px) 26px 26px}
   .vitrines{grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
 }
@@ -314,6 +319,7 @@ body:not(.land) #landScroll{display:none!important}
     <div id="tray"></div>
     <button class="lux slim" id="partsBtn" hidden>Piezas</button>
     <button class="lux" id="hintBtn">✦ Pista</button>
+    <button class="lux" id="periBtn" type="button" hidden>Veredicto</button>
     <button class="lux slim" id="saveBtn" hidden>Guardar</button>
     <button class="lux primary" id="actionBtn" hidden>Dar cuerda</button>
   </div>
@@ -333,9 +339,10 @@ body:not(.land) #landScroll{display:none!important}
     <div id="liveBox" hidden></div>
     <div id="saveList" hidden></div>
     <p class="small" style="text-align:center">Elige la herramienta y toca la pieza. Para volver a montar, toca la pieza y luego el anillo dorado en su sitio (o pasa a AUTO). Los tornillos salen uno a uno. Una pieza gastada —la pila, si está agotada— se cambia en <b>Piezas</b>.</p>
-    <div class="tabs"><button class="tab on" data-tab="story">Historia</button><button class="tab" data-tab="play">Modo libre</button><button class="tab" data-tab="build">Build</button></div>
+    <div class="tabs"><button class="tab on" data-tab="story">Historia</button><button class="tab" data-tab="play">Modo libre</button><button class="tab" data-tab="build">Build</button><button class="tab" data-tab="peri">Peritaje</button></div>
     <div id="storyPane"><div id="caseList"></div></div>
     <div id="playPane" hidden>
+      <div id="periOwn" hidden></div>
       <div id="customList" hidden></div>
       <p class="cinzel" style="margin-top:12px">I · La más complicada</p>
       <div id="habanaList">
@@ -377,6 +384,12 @@ body:not(.land) #landScroll{display:none!important}
       <p class="small" id="buildNote"></p>
       <div class="row"><button class="lux primary" id="buildBtn" type="button">Montar</button></div>
     </div>
+    <div id="periPane" hidden>
+      <p class="cinzel" style="margin-top:12px">Mesa de peritaje</p>
+      <p class="small">Te dejan un reloj y un cuento. Lo miras en el banco con la lupa, el timegrapher y el fondo. Luego das el veredicto y, si quieres, cierras el precio. El saldo y lo que compras quedan en este teléfono.</p>
+      <p class="small" id="periRep"></p>
+      <div id="periList"></div>
+    </div>
     <button class="menuShop" data-open="boutique" id="shopBtn"><span style="font-size:22px;color:var(--gold)">◆</span><span><small class="cinzel">Maison LA FORY</small><b>Visitar la boutique</b><small>Relojes · Herramientas · Joyería</small></span></button>
   </div>
 </div>
@@ -393,6 +406,12 @@ body:not(.land) #landScroll{display:none!important}
   <p class="small lead">Saca la pieza vieja. Aquí la cambias por una nueva y la montas como siempre. La pila agotada no se recarga.</p>
   <div id="partsList"></div>
   <button class="lux" id="partsClose" type="button">Cerrar</button>
+</div>
+
+<div id="periPanel" hidden>
+  <h3>Peritaje</h3>
+  <div id="periBody"></div>
+  <div class="row"><button class="lux" type="button" data-peri-back>Seguir mirando</button><button class="lux" type="button" data-peri-menu>Menú</button></div>
 </div>
 
 <div id="a2hs" hidden><button id="a2hsClose" aria-label="Cerrar">✕</button><span class="cinzel">Pantalla completa en iPad</span>Safari no permite pantalla completa dentro de la página. Toca <b>Compartir</b> → <b>Agregar a pantalla de inicio</b> y abre ZARUMEI 3D desde el icono: se abrirá a pantalla completa.</div>
@@ -446,7 +465,7 @@ body:not(.land) #landScroll{display:none!important}
   <div id="bqDetail" hidden><button class="lux" id="bqBack">← Volver</button><div id="bqStage"></div><div id="bqInfo"></div></div>
 </div>
 
-<script src="game.js?v=build1"></script>
+<script src="game.js?v=peri1"></script>
 <script>
 setInterval(function(){var g=window.__game;if(!g||!g.started)return;var el=document.getElementById('timer');if(!el._t0)el._t0=Date.now();if(document.getElementById('endOverlay').hidden){var e=Math.floor((Date.now()-el._t0)/1000);el.textContent=Math.floor(e/60)+':'+String(e%60).padStart(2,'0');}},500);
 document.getElementById('menuTop').onclick=function(){ if (window.__game && __game.openMenu) __game.openMenu(); else document.getElementById('intro').hidden=false; };

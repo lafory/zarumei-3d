@@ -27,6 +27,7 @@ import { ICONS } from './icons.js';
 import { unlock as unlockAudio, play as playSfx, pulse as pulseSfx, setMuted, isMuted } from './audio.js';
 import * as book from './accounts.js';
 import { BUILD_OPTS, DRAFT_ID, watchFromSpec, loadBuilds, rememberBuild, markBuildReady, isBuildReady, forgetBuild, cleanName, suggestedName, dialFits } from './build.js';
+import { OFFERS, VERDICTS, TRUTH_LABEL, offerById, periState, isClosed, inventory, nextLook, takeLooks, quotes, answer, recordDeal } from './peritaje.js';
 
 const $ = (s) => document.querySelector(s);
 const stage = $('#stage');
@@ -631,6 +632,7 @@ async function replayFaults() {
 function stampTimer(elapsed = 0) { t0 = Date.now() - elapsed; const el = $('#timer'); if (el) el._t0 = t0; }
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&', '<': '<', '>': '>', '"': '"', "'": '&#39;' }[c]));
 function saveGame() {
+  if (mode === 'peritaje') { say('El peritaje no se guarda a medias. El veredicto y la compra quedan en este teléfono al cerrar.'); return; }
   if (!G || !sessionLive || G.E.finished) { say('No hay un reloj a medias para guardar.'); return; }
   if (busy) { say('Espera a que la pieza termine de moverse.'); return; }
   if (!book.current()) { say('Entra con tu nombre para guardar el punto.'); return; }
@@ -803,7 +805,7 @@ async function runFx(list) {
     else if (f.fx === 'compass') { if (floatingTool) { const n = floatingTool.getObjectByName('needle'); if (n) { const r0 = n.rotation.y; await tween(D(900), (k) => (n.rotation.y = r0 + (f.mag ? Math.sin(k * 12) * 2.5 : Math.sin(k * 6) * 0.05))); } } }
     else if (f.fx === 'tg') await showTG(f.reading);
     else if (f.fx === 'wind') { sfx('wind'); const r = G.parts.ratchet; if (r && SPEED >= 0.2) { const r0 = r.rotation.y; await tween(D(700), (k) => (r.rotation.y = r0 - k * 4)); } }
-    else if (f.fx === 'finish') { sfx('finish'); finish(); }
+    else if (f.fx === 'finish') { if (mode === 'peritaje') say('El servicio puede esperar. Primero el <b>veredicto</b>.'); else { sfx('finish'); finish(); } }
   }
 }
 
@@ -874,8 +876,16 @@ function openParts() { if (!started || !G) return; $('#partsPanel').hidden = fal
 function closeParts() { const p = $('#partsPanel'); if (p) p.hidden = true; }
 function updateBar() {
   if (!G) return; const g = G.E.goal();
-  $('#steptxt').textContent = G.E.finished ? '¡Trabajo terminado!' : g.text; $('#phase').textContent = g.phase;
-  $('#progress i').style.width = (G.E.progress() * 100).toFixed(0) + '%';
+  if (mode === 'peritaje' && peri) {
+    const n = peri.found.size, t = peri.offer.checks.length;
+    $('#steptxt').textContent = peri.phase === 'inspect' ? 'Peritaje' : 'Negociación';
+    $('#phase').textContent = peri.phase === 'inspect' ? `${n}/${t} miradas` : `ronda ${peri.round + 1}/4`;
+    $('#progress i').style.width = ((peri.phase === 'inspect' ? n / t : 1) * 100).toFixed(0) + '%';
+    periBtnLabel();
+  } else {
+    $('#steptxt').textContent = G.E.finished ? '¡Trabajo terminado!' : g.text; $('#phase').textContent = g.phase;
+    $('#progress i').style.width = (G.E.progress() * 100).toFixed(0) + '%';
+  }
   $('#score').textContent = '★ ' + G.E.score;
   const btn = $('#actionBtn'), E = G.E;
   const canWind = !E.quartz && E.flags.letdown && E.C.parts.filter(p => p.side !== 'case').every(p => E.st[p.id] === 'in');
@@ -902,6 +912,7 @@ async function act(r, opts = {}) {
   try { await runFx(r.fx); } finally { busy = false; }
   refresh();
   if (!opts.keepView && r.fx.some(f => ['remove', 'install', 'flipHolder', 'flipWatch'].includes(f.fx)) && !r.fx.some(f => f.fx === 'remove' && f.inspect)) { const v = workView(); if (view !== v && view !== 'tray') await setView(v); }
+  periObserve(r);
 }
 function resolveTarget(chain) {
   const E = G.E, s = E.F.steps[E.fstep];
@@ -935,6 +946,7 @@ async function handleTap(hit) {
   const E = G.E;
   if (E.P[id] && E.st[id] === 'out') { await chipTap(id); return; }
   if (heldId && seatMode) { await act(E.missSeat(heldId)); return; }
+  periTap = { id, tool: sel };
   await act(E.tapPart(id, sel, size));
 }
 async function chipTap(id, force) {
@@ -997,7 +1009,9 @@ $('#muteBtn').onclick = () => { setMuted(!isMuted()); syncMute(); if (!isMuted()
 syncMute();
 document.addEventListener('pointerdown', () => unlockAudio(), { passive: true });
 $('#hintBtn').onclick = () => {
-  if (!started || busy || !G) return; const h = G.E.hint(); say(h.msg); updateBar(); const a = h.action; if (!a) return;
+  if (!started || busy || !G) return;
+  if (mode === 'peritaje' && peri) { say(peri.phase === 'inspect' ? nextLook(peri.offer, peri.found) : 'La mesa sigue abierta: toca <b>Mesa</b> y di un precio, o levántate.'); return; }
+  const h = G.E.hint(); say(h.msg); updateBar(); const a = h.action; if (!a) return;
   if (a.replace) $('#partsBtn').classList.add('hint');
   if (a.tool) { document.querySelectorAll('.tool').forEach(b => b.classList.toggle('hint', b.dataset.tool === a.tool)); if (a.size) document.querySelectorAll('.size').forEach(b => b.classList.toggle('hint', +b.dataset.size === a.size)); }
   if (a.target && a.target.chip) { const c = document.querySelector(`.chip[data-chip="${a.target.chip}"]`); if (c) c.classList.add('hint'); if (seatMode && a.tool !== 'oiler' && a.tool !== 'screwdriver') say(h.msg + ' Luego toca el <b>anillo dorado</b> donde va.'); }
@@ -1111,7 +1125,13 @@ function finish() {
 }
 
 // ───────── menú: Historia / Libre ─────────
-function openMenu() { started = false; closeParts(); $('#intro').hidden = false; renderMenu(); if (document.querySelector('.tab.on') && document.querySelector('.tab.on').dataset.tab === 'build') showTab('build'); }
+function openMenu() {
+  started = false; peri = null; closeParts(); closePeri();
+  const pb = $('#periBtn'); if (pb) pb.hidden = true;
+  $('#intro').hidden = false; renderMenu();
+  const tab = document.querySelector('.tab.on');
+  if (tab && (tab.dataset.tab === 'build' || tab.dataset.tab === 'peri')) showTab(tab.dataset.tab);
+}
 function paintWho() {
   const u = book.current(), bar = $('#whoBar'); if (!bar) return;
   if (!u) { bar.hidden = true; return; }
@@ -1242,6 +1262,7 @@ function renderMenu() {
   });
   Object.values(WATCHES).filter(w => !w.custom && w.caliber !== 'ZT18' && !w.grand && !w.maison && !w.opera).forEach(w => { const b = document.createElement('button'); b.className = 'wcard' + (playWatch === w.id ? ' on' : ''); b.dataset.watch = w.id; b.innerHTML = `<div><b>${w.name}</b><span>${w.blurb}</span><small>${CALIBERS[w.caliber].name} · ${CALIBERS[w.caliber].desc}</small></div>`; dressCard(b, w.id); b.onclick = () => pickWatch(w.id); wl.appendChild(b); });
   renderCustoms();
+  renderPeriOwn();
   renderFaults();
   if (portraitsWanted) {
     const ids = [...new Set([...STORY.map(c => c.watch), ...Object.keys(WATCHES).filter(id => !WATCHES[id].custom)])];
@@ -1331,9 +1352,11 @@ function showTab(tab) {
   $('#storyPane').hidden = tab !== 'story';
   $('#playPane').hidden = tab !== 'play';
   const build = $('#buildPane'); if (build) build.hidden = tab !== 'build';
+  const periPane = $('#periPane'); if (periPane) periPane.hidden = tab !== 'peri';
   const peek = tab === 'build' && !benchBusy();
   document.body.classList.toggle('buildpeek', peek);
   if (tab === 'build') { renderBuild(); syncBuildChips(); if (peek) schedulePreview(); }
+  if (tab === 'peri') renderPeriMenu();
   requestAnimationFrame(placeArrivals);
 }
 function startBuild() {
@@ -1342,13 +1365,139 @@ function startBuild() {
   if (!w) { say('Esa combinación no se puede construir.'); return; }
   clearTimeout(previewTimer); previewGen++;
   document.body.classList.remove('buildpeek');
-  mode = 'build'; storyCase = null;
+  mode = 'build'; storyCase = null; peri = null; closePeri();
   return begin(id, 'sinFalla', null, { empty: true });
+}
+
+// ── Modo Peritaje: el cuento está en el menú; el reloj del banco es el de verdad ──
+let peri = null, periTap = null;
+function closePeri() { const p = $('#periPanel'); if (p) p.hidden = true; }
+function periBtnLabel() {
+  const b = $('#periBtn'); if (!b) return;
+  const on = mode === 'peritaje' && !!peri && peri.phase !== 'done';
+  b.hidden = !on;
+  if (on) b.textContent = peri.phase === 'inspect' ? 'Veredicto' : 'Mesa';
+}
+function periObserve(r) {
+  const tap = periTap; periTap = null;
+  if (mode !== 'peritaje' || !peri || peri.phase !== 'inspect' || !r) return;
+  const tags = [];
+  for (const f of r.fx || []) {
+    if (f.fx === 'tg') tags.push('tg');
+    if (f.fx === 'zoom' && f.part) tags.push('loupe:' + f.part);
+    if (f.fx === 'remove' && f.part) tags.push('remove:' + f.part);
+  }
+  if (tap && tap.tool === 'meter' && tap.id) tags.push('meter:' + tap.id);
+  const fresh = takeLooks(peri.offer, peri.found, tags);
+  if (fresh.length) say((r.msg ? r.msg + '<br>' : '') + fresh.map(t => `<b>${esc(t)}</b>`).join('<br>'), 'good');
+  updateBar();
+}
+function renderPeriOwn() {
+  const box = $('#periOwn'); if (!box) return;
+  const mine = inventory();
+  if (!mine.length) { box.hidden = true; box.innerHTML = ''; return; }
+  box.hidden = false;
+  box.innerHTML = `<p class="cinzel" style="margin-top:12px">Del peritaje</p>` + mine.map(it => {
+    const w = WATCHES[it.watchId];
+    return `<button type="button" class="wcard${playWatch === it.watchId ? ' on' : ''}" data-watch="${esc(it.watchId)}"><b>${esc(w ? w.name : it.claim)}</b><span>${esc(TRUTH_LABEL[it.truth] || it.truth)} · pagaste ${fmtPrice(it.paid)} · vale ${fmtPrice(it.worth)}</span><small>Te lo vendieron como ${esc(it.claim)}. Ábrelo aquí, en Modo libre.</small></button>`;
+  }).join('');
+  box.querySelectorAll('.wcard').forEach(b => b.onclick = () => pickWatch(b.dataset.watch));
+}
+function renderPeriMenu() {
+  const host = $('#periList'); if (!host) return;
+  const db = periState();
+  const rep = $('#periRep');
+  if (rep) rep.textContent = `Ojo del taller ${db.rep}/100 · saldo ${fmtPrice(wallet.balance)} · en este teléfono`;
+  const open = OFFERS.filter(o => !isClosed(o.id));
+  host.innerHTML = open.length ? open.map(o => `<button type="button" class="casecard" data-offer="${esc(o.id)}"><div><b>${esc(o.claim.title)}</b><span>${esc(o.claim.line)} · pide ${fmtPrice(o.claim.ask)}</span></div><div class="ticket">${esc(o.claim.story)}</div></button>`).join('') : '<p class="small">Hoy no queda nadie en la mesa. Lo que ya compraste está en Modo libre, bajo «Del peritaje».</p>';
+  host.querySelectorAll('[data-offer]').forEach(b => b.onclick = () => startPeritaje(b.dataset.offer));
+}
+function renderPeriPanel() {
+  const body = $('#periBody'); if (!body || !peri) return;
+  const o = peri.offer;
+  const clues = o.checks.filter(c => peri.found.has(c.id)).map(c => `<p class="periClue">${esc(c.text)}</p>`).join('') || '<p class="small">Todavía no anotas nada.</p>';
+  if (peri.phase === 'done') {
+    body.innerHTML = `<p class="periLine">${peri.doneHtml}</p>`;
+    return;
+  }
+  if (peri.phase === 'talk') {
+    const q = quotes(o, peri.verdict);
+    const bid = (id, label, n) => `<button type="button" class="fchip" data-bid="${id}">${label} · ${fmtPrice(n)}</button>`;
+    body.innerHTML = `<p class="cinzel">${esc(o.claim.title)}</p><p class="periLine">${esc(peri.lastLine || '')}</p><p class="small">Saldo ${fmtPrice(wallet.balance)} · ronda ${peri.round + 1} de 4</p>${clues}<div class="optrow">${bid('mid', 'Pago hasta', q.mid)}${bid('low', 'Puedo bajar a', q.low)}${bid('hard', 'Solo puedo pagar', q.hard)}${bid('close', 'Sube un poco y lo cierro', q.close)}<button type="button" class="fchip" data-bid="walk">Me levanto</button></div>`;
+    return;
+  }
+  body.innerHTML = `<p class="cinzel">${esc(o.claim.title)}</p><p class="small">${esc(o.claim.line)} · pide ${fmtPrice(o.claim.ask)}</p><p class="periLine">${esc(o.claim.story)}</p>${clues}<p class="cinzel">Veredicto</p><div class="optrow">${VERDICTS.map(v => `<button type="button" class="fchip${peri.verdict === v.id ? ' on' : ''}" data-verdict="${v.id}">${v.label}</button>`).join('')}</div>`;
+}
+function openPeriPanel() {
+  if (!peri) return;
+  if (peri.phase === 'inspect' && peri.found.size < 2) { say('Antes, dos miradas: timegrapher, lupa o el fondo. La pista te dice la que falta.'); return; }
+  renderPeriPanel();
+  $('#periPanel').hidden = false;
+}
+function finishPeri(paid, walked, line) {
+  if (!peri || peri.phase === 'done' || peri.closing) return;
+  peri.closing = true;
+  const res = recordDeal({ offer: peri.offer, verdict: peri.verdict, paid, walked });
+  if (!walked) wallet.add(-paid);
+  peri.phase = 'done';
+  const truth = TRUTH_LABEL[peri.offer.truth];
+  const yours = VERDICTS.find(v => v.id === peri.verdict).label;
+  peri.doneHtml = `${line} ${res.note} Tú dijiste ${yours}; era ${truth}. Ojo del taller ${res.rep}/100 (${res.delta >= 0 ? '+' : ''}${res.delta}).${walked ? '' : ` Pagaste ${fmtPrice(paid)}. Queda en Modo libre.`}`;
+  periBtnLabel();
+  renderPeriPanel();
+  $('#periPanel').hidden = false;
+  say(peri.doneHtml, res.correct ? 'good' : 'bad');
+}
+function periBid(choice) {
+  if (!peri || peri.phase !== 'talk' || busy) return;
+  if (choice === 'walk') { finishPeri(0, true, 'Te levantas de la mesa.'); return; }
+  const res = answer(peri.offer, peri.verdict, peri.round, choice);
+  if (res.result === 'accept') {
+    if (wallet.balance < res.price) { say(`No te alcanza el saldo del taller (${fmtPrice(wallet.balance)}).`); return; }
+    finishPeri(res.price, false, res.line);
+    return;
+  }
+  if (res.result === 'walk') { finishPeri(0, true, res.line); return; }
+  peri.round += 1;
+  peri.lastLine = res.line;
+  renderPeriPanel();
+  say(res.line);
+}
+function startPeritaje(offerId) {
+  const offer = offerById(offerId);
+  if (!offer || isClosed(offerId)) { say('Ese reloj ya no está en la mesa.'); return; }
+  clearTimeout(previewTimer); previewGen++;
+  document.body.classList.remove('buildpeek');
+  peri = { offer, found: new Set(), phase: 'inspect', verdict: null, round: 0, lastLine: '', doneHtml: '' };
+  mode = 'peritaje'; storyCase = null;
+  return begin(offer.watchId, 'sinFalla', null);
 }
 let playWatch = 'miami', playFault = 'sinFalla', portraitsWanted = false;
 document.querySelectorAll('.tab').forEach(t => t.onclick = () => showTab(t.dataset.tab));
 $('#playBtn').onclick = () => startPlay(playWatch, playFault);
 const buildBtn = $('#buildBtn'); if (buildBtn) buildBtn.onclick = () => startBuild();
+const periBtn = $('#periBtn');
+if (periBtn) periBtn.onclick = () => {
+  if ($('#periPanel') && !$('#periPanel').hidden && peri && peri.phase !== 'done') { closePeri(); return; }
+  openPeriPanel();
+};
+const periPanel = $('#periPanel');
+if (periPanel) periPanel.addEventListener('click', (e) => {
+  const v = e.target.closest('[data-verdict]');
+  const bid = e.target.closest('[data-bid]');
+  if (v && peri && peri.phase === 'inspect') {
+    peri.verdict = v.dataset.verdict;
+    peri.phase = 'talk';
+    peri.round = 0;
+    peri.lastLine = `Pido ${fmtPrice(peri.offer.claim.ask)}. Dime un número.`;
+    periBtnLabel();
+    renderPeriPanel();
+    return;
+  }
+  if (bid) periBid(bid.dataset.bid);
+  if (e.target.closest('[data-peri-back]')) closePeri();
+  if (e.target.closest('[data-peri-menu]')) { closePeri(); openMenu(); }
+});
 const buildNameInput = $('#buildName');
 if (buildNameInput) {
   buildNameInput.value = suggestedName(buildSpec);
@@ -1404,7 +1553,10 @@ async function begin(watchId, faultId, story, opts = {}) {
   const seatNote = seatMode ? ' Al montar, toca la pieza y luego el anillo dorado.' : '';
   say(story ? `<b>${story.title}</b> — ${W.name}. ${story.intro}${seatNote}` : mode === 'build'
     ? `<b>Build</b> — ${W.name}. La caja está vacía. El movimiento está en el soporte y el resto espera en la bandeja. La pista dice el siguiente paso.${seatNote}`
-    : `<b>Modo libre</b> — ${W.name} · ${F.name}. ${F.free ? 'Desarma lo que quieras y vuelve a montarlo todo.' : 'Diagnostica, repara, monta y prueba.'}${seatNote}`);
+    : mode === 'peritaje' && peri
+      ? `<b>Peritaje</b> — ${esc(peri.offer.claim.title)}. ${esc(peri.offer.claim.story)} Pide <b>${fmtPrice(peri.offer.claim.ask)}</b>. No te fíes: timegrapher, lupa y el fondo. Luego <b>Veredicto</b>.`
+      : `<b>Modo libre</b> — ${W.name} · ${F.name}. ${F.free ? 'Desarma lo que quieras y vuelve a montarlo todo.' : 'Diagnostica, repara, monta y prueba.'}${seatNote}`);
+  periBtnLabel();
 }
 function startStory(id) { mode = 'story'; storyCase = STORY.find(c => c.id === id); return begin(storyCase.watch, storyCase.fault, storyCase); }
 function startPlay(w, f) { mode = 'play'; storyCase = null; return begin(w, f, null); }
@@ -1480,6 +1632,7 @@ function loop(now) {
 function screenOfObj(o, dy = 0) { const p = new THREE.Vector3(); let hp = null; o.traverse(c => { if (!hp && c.userData.isHit && visibleChain(c)) hp = c; }); (hp || o).getWorldPosition(p); p.y += dy; p.project(camera); const r = renderer.domElement.getBoundingClientRect(); return { x: r.left + (p.x + 1) / 2 * r.width, y: r.top + (1 - p.y) / 2 * r.height }; }
 window.__game = {
   get started() { return started; }, get busy() { return busy || !!tweens.length; }, get view() { return view; }, get fps() { return fps; },
+  get peri() { return peri ? { phase: peri.phase, found: [...peri.found], verdict: peri.verdict, offer: peri.offer.id, round: peri.round } : null; },
   get state() { if (!G) return null; const E = G.E; return { watch: E.W.id, fault: E.F.id, score: E.score, finished: E.finished, goal: E.goal(), flags: { ...E.flags }, stats: { ...E.stats }, out: Object.keys(E.st).filter(k => E.st[k] === 'out'), screwsOut: Object.values(E.screws).filter(s => s.state !== 'in').length, fstep: E.fstep }; },
   get info() { const i = renderer.info.render; return { calls: i.calls, triangles: i.triangles, geometries: renderer.info.memory.geometries, textures: renderer.info.memory.textures }; },
   startStory, startPlay, openMenu, openLanding, closeLanding, setSpeed: (s) => (SPEED = s), setView: (v) => setView(v),
