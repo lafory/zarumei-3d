@@ -1,7 +1,7 @@
 // Cajas procedurales: 'diver' (oro o acero, fondo roscado, bisel giratorio) y 'slim' (oro rosa, fondo a presión).
 import * as THREE from 'three';
 import * as TX from './textures.js';
-import { tag, hitProxy } from './geom.js';
+import { tag, hitProxy, boxHit } from './geom.js';
 const V2 = (pts, k = 1) => pts.map(([r, y]) => new THREE.Vector2(r * k, y));
 
 export function buildCase(M, watch, movR) {
@@ -92,7 +92,11 @@ export function buildCase(M, watch, movR) {
   } else if (C.style === 'tank') {
     const gold = metal.clone();
     const rail = (w, h, d, x, y, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), gold); m.position.set(x, y, z); body.add(m); };
-    rail(30, 0.9, 22, 0, -3.35, 0);
+    // Marco, no una placa ciega: el calibre se ve al quitar el fondo. La abertura es el hueco interior de los costados.
+    rail(4.4, 0.9, 22, -12.8, -3.35, 0);
+    rail(4.4, 0.9, 22, 12.8, -3.35, 0);
+    rail(21.2, 0.9, 3.8, 0, -3.35, -9.1);
+    rail(21.2, 0.9, 3.8, 0, -3.35, 9.1);
     rail(3.6, 6.2, 22, -13.2, -0.15, 0);
     rail(3.6, 6.2, 22, 13.2, -0.15, 0);
     rail(22.8, 6.2, 3.1, 0, -0.15, -9.45);
@@ -107,7 +111,8 @@ export function buildCase(M, watch, movR) {
     const cab = new THREE.Mesh(new THREE.SphereGeometry(0.55, 14, 10), new THREE.MeshPhysicalMaterial({ color: 0x1a3f86, roughness: 0.08, metalness: 0.15, clearcoat: 1 }));
     cab.position.set(17.15, 0.2, 0); body.add(cab);
     alligator(body, -1.3, 16.2);
-    dims = { cbY: -3.8, yFront: 4.4, yBack: 2.5 };
+    // El dorso exterior del marco está en y = −3,8. El fondo se apoya justo por fuera, sin clavarse en el oro.
+    dims = { cbY: -4.13, yFront: 4.4, yBack: 2.5 };
   } else {
     const prof = V2([[15.4, -3.0], [18.2, -3.0], [18.9, -2.2], [19.0, 0.2], [18.6, 1.3], [15.4, 1.3]], k);
     const cm = new THREE.Mesh(new THREE.LatheGeometry(prof, 128), metal.clone()); cm.material.side = THREE.DoubleSide; body.add(cm);
@@ -130,9 +135,13 @@ export function buildCase(M, watch, movR) {
     for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2; const n = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.45, 0.9), M.darkSteel); n.position.set(Math.cos(a) * 15.6 * kk, -0.2, Math.sin(a) * 15.6 * kk); n.rotation.y = -a; cb.add(n); }
     cb.add(hitProxy(M, 16.4 * kk, 1.2));
   } else if (C.style === 'tank') {
-    cb.add(new THREE.Mesh(new THREE.BoxGeometry(27.2, 0.7, 19.2), [metal, metal, cbMat]));
-    const lip = new THREE.Mesh(new THREE.BoxGeometry(5.2, 0.28, 1.1), M.darkSteel); lip.position.set(0, 0.25, 8.4); cb.add(lip);
-    cb.add(hitProxy(M, 12, 1.0));
+    // La cara de fuera es −Y. Un BoxGeometry pide un material por cara; con tres, el dorso no se dibujaba.
+    const plate = new THREE.Mesh(new THREE.BoxGeometry(22.4, 0.62, 15.4), [metal, metal, metal, cbMat, metal, metal]);
+    cb.add(plate);
+    const notch = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.22, 1.15), M.darkSteel);
+    notch.position.set(0, -0.28, 7.15);
+    cb.add(notch);
+    cb.add(boxHit(M, 22.4, 1.3, 15.4));
   } else if (C.caseback === 'screw') {
     cb.add(new THREE.Mesh(new THREE.CylinderGeometry(17.6 * k, 18.2 * k, 1.1, 96), [metal, metal, cbMat]));
     for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2; const n = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.6, 1.2), M.darkSteel); n.position.set(Math.cos(a) * 17.2 * k, -0.35, Math.sin(a) * 17.2 * k); n.rotation.y = -a; cb.add(n); }
