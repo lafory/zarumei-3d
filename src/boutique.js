@@ -9,6 +9,7 @@ import { CALIBERS } from './data/calibers.js';
 import { buildZR28, buildZQ11 } from './movement.js';
 import { buildZT18 } from './tourbillon.js';
 import { buildGrand } from './grand.js';
+import { buildZX60 } from './habana.js';
 import { buildCase } from './case3d.js';
 import { makeTools } from './tools3d.js';
 import { velvetTexture } from './textures.js';
@@ -90,7 +91,7 @@ function jewel(kind) {
 }
 function watchModel(id) {
   const W = WATCHES[id], cal = CALIBERS[W.caliber], M = ctx.M;
-  const MV = W.caliber === 'ZQ11' ? buildZQ11(M, ctx.images, W, cal) : W.caliber === 'ZT18' ? buildZT18(M, ctx.images, W, cal) : W.grand ? buildGrand(M, ctx.images, W, cal) : buildZR28(M, ctx.images, W, cal);
+  const MV = W.caliber === 'ZQ11' ? buildZQ11(M, ctx.images, W, cal) : W.caliber === 'ZX60' ? buildZX60(M, ctx.images, W, cal) : W.caliber === 'ZT18' ? buildZT18(M, ctx.images, W, cal) : W.grand ? buildGrand(M, ctx.images, W, cal) : buildZR28(M, ctx.images, W, cal);
   const CS = buildCase(M, W, MV.R); const root = new THREE.Group(); root.add(CS.body);
   const mount = new THREE.Group(); mount.rotation.z = Math.PI; mount.add(MV.mv); root.add(mount); root.add(CS.caseback);
   for (const s of Object.values(MV.screws)) s.ghost.visible = false;

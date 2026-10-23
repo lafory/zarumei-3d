@@ -19,6 +19,7 @@ import { makeMaterials } from './materials.js';
 import { buildZR28, buildZQ11 } from './movement.js';
 import { buildZT18 } from './tourbillon.js';
 import { buildGrand } from './grand.js';
+import { buildZX60 } from './habana.js';
 import { buildCase } from './case3d.js';
 import { buildDial, buildHands } from './dialside.js';
 import { makeTools } from './tools3d.js';
@@ -438,6 +439,7 @@ function disposeWorld() {
 }
 function buildMovement(M, images, W, cal) {
   if (W.caliber === 'ZQ11') return buildZQ11(M, images, W, cal);
+  if (W.caliber === 'ZX60') return buildZX60(M, images, W, cal);
   if (W.caliber === 'ZT18') return buildZT18(M, images, W, cal);
   if (W.grand) return buildGrand(M, images, W, cal);
   return buildZR28(M, images, W, cal);
@@ -1191,12 +1193,12 @@ function renderMenu() {
     b.onclick = () => { if (locked) { b.classList.add('shake'); setTimeout(() => b.classList.remove('shake'), 400); return; } startStory(c.id); }; list.appendChild(b);
   });
   const wl = $('#watchList'); wl.innerHTML = '';
-  document.querySelectorAll('#astralList [data-go], #grandList [data-go], #maisonList [data-go]').forEach(b => {
+  document.querySelectorAll('#habanaList [data-go], #astralList [data-go], #grandList [data-go], #maisonList [data-go]').forEach(b => {
     dressCard(b, b.dataset.go);
     b.classList.toggle('on', b.dataset.go === playWatch);
     b.onclick = () => pickWatch(b.dataset.go);
   });
-  Object.values(WATCHES).filter(w => w.caliber !== 'ZT18' && !w.grand && !w.maison).forEach(w => { const b = document.createElement('button'); b.className = 'wcard' + (playWatch === w.id ? ' on' : ''); b.dataset.watch = w.id; b.innerHTML = `<div><b>${w.name}</b><span>${w.blurb}</span><small>${CALIBERS[w.caliber].name} · ${CALIBERS[w.caliber].desc}</small></div>`; dressCard(b, w.id); b.onclick = () => pickWatch(w.id); wl.appendChild(b); });
+  Object.values(WATCHES).filter(w => w.caliber !== 'ZT18' && !w.grand && !w.maison && !w.opera).forEach(w => { const b = document.createElement('button'); b.className = 'wcard' + (playWatch === w.id ? ' on' : ''); b.dataset.watch = w.id; b.innerHTML = `<div><b>${w.name}</b><span>${w.blurb}</span><small>${CALIBERS[w.caliber].name} · ${CALIBERS[w.caliber].desc}</small></div>`; dressCard(b, w.id); b.onclick = () => pickWatch(w.id); wl.appendChild(b); });
   renderFaults();
   if (portraitsWanted) {
     const ids = [...new Set([...STORY.map(c => c.watch), ...Object.keys(WATCHES)])];
@@ -1317,7 +1319,7 @@ function loop(now) {
     if (G.MV.wheel) { const amp = run ? THREE.MathUtils.degToRad(E.amplitude()) : 0; G.MV.wheel.rotation.y = run ? amp * Math.sin(t * Math.PI * 8) : G.MV.wheel.rotation.y * 0.92; }
     if (run && P.escapeWheel) P.escapeWheel.rotation.y = -Math.floor(t * 8) * (Math.PI * 2 / 20) / 2;
     if (run && G.MV.kind === 'tourbillon') {
-      for (const [id, spd] of [['balance', 0.85], ['diamondCage', -0.45], ['bearCage', 0.28]]) {
+      for (const [id, spd] of [['balance', 0.85], ['diamondCage', -0.45], ['bearCage', 0.28], ['colibri', 0.9], ['bee', -1.3]]) {
         const spin = P[id] && P[id].getObjectByName('cageSpin');
         if (spin && E.st[id] === 'in') spin.rotation.y = t * spd;
       }

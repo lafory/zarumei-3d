@@ -87,5 +87,23 @@ export const WATCHES = {
     blurb: 'Caja rectángulo de oro, números romanos, cabujón azul y correa. El calibre y los tornillos son los del ZQ-11.',
     case: { style: 'tank', metal: 'gold', r: 20, bezel: 'polished', crownGuards: false, caseback: 'snap', backText: 'ZARUMEI · RECTA · QUARTZ · ORO 18K · Nº 053 · ', backMono: 'R' },
     dial: { kind: 'recta', r: 7.2, date: false }, hands: { style: 'sword', metal: 'gold' }, bracelet: { style: 'alligator', metal: 'gold' }
+  },
+  nacar: {
+    id: 'nacar', name: 'ZARUMEI Nácar', caliber: 'ZX60', opera: true, habana: 'nacre',
+    blurb: 'Buceo de acero, bisel de cerámica negra y nácar calado. Turbillón, oso Cuba, diamante, palma, colibrí, abeja y el Morro.',
+    case: { style: 'diver', metal: 'steel', r: 20.5, bezel: 'ceramicBlack', crownGuards: true, caseback: 'screw', backText: 'ZARUMEI · NACAR · ZX-60 · TOURBILLON · MINUTE REPEATER · 60 PIECES · ACIER · Nº 060 · ', backMono: 'N' },
+    dial: { kind: 'habana', r: 13.6, date: false }, hands: { style: 'leaf', metal: 'gold' }, bracelet: { style: 'oyster', metal: 'steel' }
+  },
+  noche: {
+    id: 'noche', name: 'ZARUMEI Noche', caliber: 'ZX60', opera: true, habana: 'stars',
+    blurb: 'Oro 18 k, cielo estrellado y correa de aligátor azul marino. El mismo ZX-60, el movimiento más largo del taller.',
+    case: { style: 'astral', metal: 'gold', r: 21, bezel: 'polished', crownGuards: false, caseback: 'screw', backText: 'ZARUMEI · NOCHE · ZX-60 · TOURBILLON · MINUTE REPEATER · 60 PIECES · ORO 18K · Nº 061 · ', backMono: 'H' },
+    dial: { kind: 'habana', r: 13.6, date: false }, hands: { style: 'leaf', metal: 'gold' }, bracelet: { style: 'alligator', metal: 'gold', dye: 0x1a3f86 }
+  },
+  verano: {
+    id: 'verano', name: 'ZARUMEI Verano', caliber: 'ZX60', opera: true, habana: 'tropic',
+    blurb: 'El mismo buceo de cerámica negra, con la esfera pintada: palmas, mar y el Morro, y encima el calibre calado.',
+    case: { style: 'diver', metal: 'steel', r: 20.5, bezel: 'ceramicBlack', crownGuards: true, caseback: 'screw', backText: 'ZARUMEI · VERANO · ZX-60 · TOURBILLON · MINUTE REPEATER · 60 PIECES · ACIER · Nº 062 · ', backMono: 'V' },
+    dial: { kind: 'habana', r: 13.6, date: false }, hands: { style: 'leaf', metal: 'gold' }, bracelet: { style: 'oyster', metal: 'steel' }
   }
 };

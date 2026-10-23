@@ -451,3 +451,57 @@ export function gatorColor() {
   }
   return tex(c);
 }
+// Bisel cerámico negro (Nácar / Verano): numerales blancos y triángulo de oro rosa a las 12.
+export function ceramicBlackBezel() {
+  const S = 2048, c = canvas(S), x = c.getContext('2d'), R = S / 2; x.translate(R, R);
+  const g = x.createRadialGradient(0, 0, R * 0.55, 0, 0, R); g.addColorStop(0, '#1a1c1f'); g.addColorStop(1, '#050506');
+  x.fillStyle = g; x.fillRect(-R, -R, S, S);
+  x.fillStyle = '#f2f4f7'; x.strokeStyle = '#f2f4f7'; x.textAlign = 'center'; x.textBaseline = 'middle';
+  for (let i = 1; i < 60; i++) {
+    const a = i * 6;
+    if (i % 10 === 0) { const [px, py] = P(R * 0.9, a); x.save(); x.translate(px, py); x.rotate(a * Math.PI / 180); x.font = `bold ${R * 0.09}px Helvetica`; x.fillText(String(i), 0, 0); x.restore(); }
+    else { const [x1, y1] = P(R * 0.97, a), [x2, y2] = P(R * (i % 5 ? 0.9 : 0.84), a); x.lineWidth = i % 5 ? 5 : 12; x.beginPath(); x.moveTo(x1, y1); x.lineTo(x2, y2); x.stroke(); }
+  }
+  x.fillStyle = '#c4896a'; x.beginPath(); x.moveTo(0, -R * 0.76); x.lineTo(-R * 0.075, -R * 0.98); x.lineTo(R * 0.075, -R * 0.98); x.closePath(); x.fill();
+  return tex(c);
+}
+// Nácar: blanco con velos rosa y verde.
+export function nacreTexture() {
+  const S = 1024, c = canvas(S), x = c.getContext('2d');
+  const g = x.createRadialGradient(S * 0.4, S * 0.35, 20, S / 2, S / 2, S * 0.7);
+  g.addColorStop(0, '#fffefb'); g.addColorStop(0.45, '#f4efe6'); g.addColorStop(1, '#e7dfd2');
+  x.fillStyle = g; x.fillRect(0, 0, S, S);
+  for (let i = 0; i < 9; i++) {
+    x.strokeStyle = ['rgba(255,186,196,.35)', 'rgba(176,220,206,.4)', 'rgba(255,244,210,.45)', 'rgba(196,186,230,.28)'][i % 4];
+    x.lineWidth = 18 + (i % 3) * 8; x.beginPath(); x.ellipse(S * 0.5, S * 0.5, 80 + i * 48, 40 + i * 22, i * 0.4, 0, 7); x.stroke();
+  }
+  return tex(c);
+}
+// Verano: cielo, palmas y agua detrás de la maquinaria.
+export function tropicTexture() {
+  const S = 1024, c = canvas(S), x = c.getContext('2d');
+  const sky = x.createLinearGradient(0, 0, 0, S); sky.addColorStop(0, '#7ec8ef'); sky.addColorStop(0.42, '#b7e3a1'); sky.addColorStop(0.62, '#3f8f4a'); sky.addColorStop(0.78, '#1e6a86'); sky.addColorStop(1, '#0c3e55');
+  x.fillStyle = sky; x.fillRect(0, 0, S, S);
+  x.fillStyle = '#f6e27a'; x.beginPath(); x.arc(S * 0.72, S * 0.22, 48, 0, 7); x.fill();
+  const palm = (px, py, sc) => {
+    x.strokeStyle = '#6a4a22'; x.lineWidth = 7 * sc; x.beginPath(); x.moveTo(px, py); x.quadraticCurveTo(px + 8, py - 40 * sc, px, py - 90 * sc); x.stroke();
+    x.fillStyle = '#1f7a32';
+    for (let i = 0; i < 6; i++) { const a = -Math.PI / 2 + (i - 2.5) * 0.45; x.beginPath(); x.ellipse(px + Math.cos(a) * 28 * sc, py - 90 * sc + Math.sin(a) * 16 * sc, 26 * sc, 8 * sc, a, 0, 7); x.fill(); }
+  };
+  palm(180, 620, 1.3); palm(300, 560, 0.9); palm(780, 600, 1.1); palm(860, 520, 0.7);
+  x.fillStyle = '#e7d7a2'; x.fillRect(0, 700, S, 40);
+  x.fillStyle = '#d7b15a'; x.fillRect(470, 760, 70, 36); x.fillRect(492, 720, 26, 50); x.beginPath(); x.arc(505, 716, 16, Math.PI, 0); x.fill();
+  return tex(c);
+}
+export function habanaSubdial() {
+  const S = 512, c = canvas(S), x = c.getContext('2d'), R = S / 2; x.translate(R, R);
+  const g = x.createRadialGradient(-40, -50, 10, 0, 0, R); g.addColorStop(0, '#3d74d6'); g.addColorStop(0.55, '#123a86'); g.addColorStop(1, '#071a44');
+  x.fillStyle = g; x.beginPath(); x.arc(0, 0, R, 0, 7); x.fill();
+  x.strokeStyle = '#e6c36a';
+  for (let i = 0; i < 60; i++) {
+    const a = i / 60 * Math.PI * 2, r0 = i % 5 ? R * 0.78 : R * 0.68;
+    x.lineWidth = i % 5 ? 2 : 4; x.beginPath(); x.moveTo(Math.sin(a) * r0, -Math.cos(a) * r0); x.lineTo(Math.sin(a) * R * 0.9, -Math.cos(a) * R * 0.9); x.stroke();
+  }
+  x.fillStyle = '#f3e2a8'; x.textAlign = 'center'; x.font = '600 46px Georgia, Times, serif'; x.fillText('ZARUMEI', 0, -R * 0.08);
+  return tex(c);
+}

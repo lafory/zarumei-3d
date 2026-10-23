@@ -21,11 +21,15 @@ export function buildCase(M, watch, movR) {
     for (const s of [-1, 1]) for (const xx of [-8.6, 8.6]) { const lug = new THREE.Mesh(new THREE.BoxGeometry(4.2, 4.6, 10), metal); lug.position.set(xx, -1.4, s * 21.5 * k); body.add(lug); }
     if (C.crownGuards) for (const s of [-1, 1]) { const sh = new THREE.Mesh(new THREE.BoxGeometry(3.4, 4.4, 2.6), metal); sh.position.set(20.6 * k, -0.9, s * 4.6); body.add(sh); }
     const bz = new THREE.Mesh(new THREE.LatheGeometry(V2([[16.0, 2.2], [19.6, 2.2], [19.9, 2.8], [19.4, 3.6], [16.0, 3.7]], k), 128), metal); bz.material = metal.clone(); bz.material.side = THREE.DoubleSide; body.add(bz);
-    const topMat = C.lacquer != null ? metal : C.bezel === 'ceramicBlue'
-      ? new THREE.MeshPhysicalMaterial({ map: TX.ceramicBezelTexture(), roughness: 0.12, metalness: 0.05, clearcoat: 1, clearcoatRoughness: 0.05 })
+    const topMat = C.lacquer != null ? metal : (C.bezel === 'ceramicBlue' || C.bezel === 'ceramicBlack')
+      ? new THREE.MeshPhysicalMaterial({ map: C.bezel === 'ceramicBlack' ? TX.ceramicBlackBezel() : TX.ceramicBezelTexture(), roughness: 0.12, metalness: 0.05, clearcoat: 1, clearcoatRoughness: 0.05 })
       : new THREE.MeshStandardMaterial({ color: metal.color, metalness: 1, roughness: 0.36, map: TX.bezelTexture(), envMapIntensity: 0.6 });
     const R1 = 19.3 * k, top = new THREE.Mesh(new THREE.RingGeometry(16.1 * k, R1, 128, 1).rotateX(-Math.PI / 2), topMat); top.position.y = 3.72; body.add(top);
     { const uv = top.geometry.attributes.uv, pos = top.geometry.attributes.position; for (let i = 0; i < uv.count; i++) uv.setXY(i, pos.getX(i) / (2 * R1) + 0.5, -pos.getZ(i) / (2 * R1) + 0.5); }
+    if (C.bezel === 'ceramicBlack') {
+      const tri = new THREE.Mesh(new THREE.ConeGeometry(1.05, 1.85, 3), new THREE.MeshStandardMaterial({ color: 0xe0a07a, metalness: 0.85, roughness: 0.32 }));
+      tri.rotation.x = -Math.PI / 2; tri.position.set(0, 3.95, -17.55 * k); body.add(tri);
+    }
     const nG = new THREE.BoxGeometry(0.3, 0.6, 0.5); for (let i = 0; i < 120; i++) { const n = new THREE.Mesh(nG, brushed); const a = i / 120 * Math.PI * 2; n.position.set(Math.cos(a) * 19.85 * k, 2.9, Math.sin(a) * 19.85 * k); n.rotation.y = -a; body.add(n); }
     if (C.style === 'chrono') {
       const capMat = C.pusher === 'orb' ? new THREE.MeshPhysicalMaterial({ color: 0x0e0e0e, metalness: 0.8, roughness: 0.18, clearcoat: 1, clearcoatRoughness: 0.08 }) : metal;
@@ -45,7 +49,7 @@ export function buildCase(M, watch, movR) {
       }
     }
     const crystal = new THREE.Mesh(new THREE.CylinderGeometry(16.1 * k, 16.1 * k, 0.8, 96), M.crystal); crystal.position.y = 3.3; crystal.renderOrder = 5; body.add(crystal);
-    if (watch.bracelet.style === 'alligator') alligator(body, -2.2, 21.5 * k + 5.6);
+    if (watch.bracelet.style === 'alligator') alligator(body, -2.2, 21.5 * k + 5.6, watch.bracelet.dye);
     else bracelet(body, M, watch, k, -2.2, 21.5 * k + 5.6, 7.6);
     dims = { cbY: -5.95, yFront: 6.55, yBack: 3.8 };
   } else if (C.style === 'astral') {
@@ -58,7 +62,7 @@ export function buildCase(M, watch, movR) {
     for (const s of [-1, 1]) for (const xx of [-6.4, 6.4]) { const lug = new THREE.Mesh(new THREE.BoxGeometry(3.1, 2.8, 6.4), brushed); lug.position.set(xx, -1.05, s * 19.6 * k); lug.rotation.x = s * 0.28; body.add(lug); }
     const bz = new THREE.Mesh(new THREE.LatheGeometry(V2([[15.0, 2.45], [19.6, 2.5], [20.15, 3.15], [19.2, 3.7], [15.0, 3.75]], k), 128), metal.clone()); bz.material.side = THREE.DoubleSide; body.add(bz);
     const crystal = new THREE.Mesh(new THREE.SphereGeometry(42, 72, 24, 0, Math.PI * 2, 0, Math.asin(15.1 * k / 42)), M.crystal); crystal.position.y = 3.7 - 42; crystal.renderOrder = 5; body.add(crystal);
-    alligator(body, -1.05, 21.2 * k + 4.2);
+    alligator(body, -1.05, 21.2 * k + 4.2, watch.bracelet && watch.bracelet.dye);
     dims = { cbY: -4.85, yFront: 6.15, yBack: 3.6 };
   } else if (C.style === 'octagon') {
     const kk = C.r / 20;
@@ -110,7 +114,7 @@ export function buildCase(M, watch, movR) {
     const crown = new THREE.Mesh(new THREE.CylinderGeometry(1.15, 1.2, 1.7, 16).rotateZ(Math.PI / 2), gold); crown.position.set(16.2, 0.2, 0); body.add(crown);
     const cab = new THREE.Mesh(new THREE.SphereGeometry(0.55, 14, 10), new THREE.MeshPhysicalMaterial({ color: 0x1a3f86, roughness: 0.08, metalness: 0.15, clearcoat: 1 }));
     cab.position.set(17.15, 0.2, 0); body.add(cab);
-    alligator(body, -1.3, 16.2);
+    alligator(body, -1.3, 16.2, watch.bracelet && watch.bracelet.dye);
     // El dorso exterior del marco está en y = −3,8. El fondo se apoya justo por fuera, sin clavarse en el oro.
     dims = { cbY: -4.13, yFront: 4.4, yBack: 2.5 };
   } else {
@@ -154,9 +158,11 @@ export function buildCase(M, watch, movR) {
   cb.position.y = dims.cbY;
   return { body, caseback: cb, dims };
 }
-function alligator(body, y, z0) {
+function alligator(body, y, z0, dye) {
   const map = TX.gatorColor();
-  const leather = new THREE.MeshStandardMaterial({ map, color: 0x3a2e24, roughness: 0.92, metalness: 0 });
+  const leather = dye
+    ? new THREE.MeshStandardMaterial({ color: dye, roughness: 0.62, metalness: 0.06, bumpMap: map, bumpScale: 0.35 })
+    : new THREE.MeshStandardMaterial({ map, color: 0x3a2e24, roughness: 0.92, metalness: 0 });
   const edge = new THREE.MeshStandardMaterial({ color: 0x0c0b09, roughness: 0.8 });
   for (const s of [-1, 1]) {
     const strap = new THREE.Mesh(new THREE.BoxGeometry(15.5, 2.4, 46), leather);

@@ -58,6 +58,9 @@ Para terminar hay que dar cuerda y hacer la prueba final en el timegrapher. La p
 | ZARUMEI Rosé Slim | Reloj de vestir extraplano de 38 mm en oro rosa, fondo a presión, esfera blanca, índices de bastón y brazalete de eslabones | **ZQ-11**, cuarzo fino (tipo Ronda 762 / Miyota GL20) |
 | ZARUMEI Astral «Miami» | Turbillón de oro, nebulosa violeta, oso Miami, diamante en jaula, correa de aligátor | **ZT-18**, turbillón manual |
 | ZARUMEI Astral «Cuba» | Turbillón de oro, cielo azul, jaula de volante, oso Cuba, diamante, correa de aligátor | **ZT-18**, turbillón manual |
+| ZARUMEI Nácar | Buceo de acero, bisel de cerámica negra, nácar calado | **ZX-60**, 60 piezas, turbillón manual |
+| ZARUMEI Noche | Oro 18 k, cielo estrellado, correa de aligátor azul marino | **ZX-60** |
+| ZARUMEI Verano | El mismo buceo, esfera pintada con palmas, mar y el Morro | **ZX-60** |
 
 El ZR-28 tiene **35 piezas y 25 tornillos**:
 - **Caja y exterior:** fondo, rotor, tija y bridas de caja.
@@ -71,6 +74,8 @@ El ZR-28 tiene **35 piezas y 25 tornillos**:
   - Remontoir: placa, balancín, tirette, **palanca de stop** y piñones.
 
 El ZQ-11 tiene: brida de pila, pila, circuito con el cuarzo, bobina, puente de rodaje, rotor del motor paso a paso, 4 ruedas, agujas, esfera, minutería y remontoir.
+
+El ZX-60 es el movimiento más largo: **60 piezas y 40 tornillos**, más que el Orbital (ZC-43, 54 piezas). Lo comparten Nácar, Noche y Verano. Lleva turbillón volante, repetición de minutos, calendario, oso, diamante, palma, colibrí, abeja y el Morro. En modo libre la falla es «Sin falla».
 
 ## Fallas (`src/data/faults.js`)
 | Falla | Calibre |
