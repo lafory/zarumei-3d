@@ -10,6 +10,7 @@ import { WATCHES } from './data/watches.js';
 import { CALIBERS } from './data/calibers.js';
 import { FAULTS } from './data/faults.js';
 import { STORY } from './data/story.js';
+import { SPARES, SPARE_ORDER } from './data/spares.js';
 import { createEngine } from './engine.js';
 import { loadAllImages, leatherTexture, velvetTexture, onyxTexture, clothTexture, contactShadowTexture } from './textures.js';
 import { openBoutique, initBoutique, wallet, queuePortraits } from './boutique.js';
@@ -601,6 +602,7 @@ function layoutFromState() {
   }
   if (G.MV.protector) G.MV.protector.visible = !!E.flags.protector;
   if (E.replaced.has('coil') && G.MV.sub && G.MV.sub.coilMat) G.MV.sub.coilMat.color.set(0xd88a4a);
+  applyReplacedLooks();
   refreshGhosts();
 }
 async function replayFaults() {
@@ -628,7 +630,9 @@ async function resumeSave(key) {
   layoutFromState();
   const prev = SPEED; SPEED = 0;
   try { await replayFaults(); } finally { SPEED = prev; }
+  applyReplacedLooks();
   G.active = true; sessionLive = true; sel = null; started = true; busy = false;
+  $('#partsBtn').hidden = false; closeParts();
   selectTool(null); stampTimer(s.elapsed || 0);
   $('#saveBtn').hidden = false; $('#intro').hidden = true; $('#endOverlay').hidden = true; $('#profile').hidden = true;
   hideSeat(); resize(); await setView(workView(), true); refresh();
@@ -718,6 +722,29 @@ async function flipHolder(to) {
   await tween(D(900), (k) => { mv.quaternion.slerpQuaternions(q0, q1, k); mv.position.y = y0 + (y1 - y0) * k + Math.sin(k * Math.PI) * 18; });
 }
 function flashLabel(t) { const l = $('#label3d'); l.innerHTML = t; l.hidden = false; clearTimeout(l._t); l._t = setTimeout(() => (l.hidden = true), 3200); }
+function markBattery(dead) {
+  const cell = G && G.MV.sub && G.MV.sub.batteryCell;
+  if (!cell) return;
+  const mats = cell.material;
+  if (!mats[1].userData._cap) { mats[1] = mats[1].clone(); mats[1].userData._cap = true; }
+  mats[1].color.set(dead ? 0x6e6a62 : 0xffffff);
+  mats[1].emissive = new THREE.Color(dead ? 0x000000 : 0x243018);
+  mats[1].emissiveIntensity = dead ? 0 : 0.35;
+}
+function applyReplacedLooks() {
+  if (!G) return;
+  const E = G.E, S = G.MV.sub || {};
+  if (E.replaced.has('battery')) markBattery(false);
+  else if (E.F.id === 'bateria' && E.fstep > 0) markBattery(true);
+  if (E.replaced.has('coil') && S.coilMat) S.coilMat.color.set(0xd88a4a);
+  if (E.replaced.has('balance') && S.pivot && S.staff) { S.pivot.rotation.z = 0; S.pivot.position.x = 0; S.pivot.material = S.staff.material; }
+  if (E.replaced.has('barrel') && S.mainspring) { S.mainspring.material.color.set(0xc7ccd3); if (S.barrelDrum && S.barrelDrum.material) S.barrelDrum.material.color.set(0xd4d9df); }
+}
+function showNewPart(id) {
+  applyReplacedLooks();
+  const label = { battery: '🔋 Pila nueva · 1,55 V', coil: '🧵 Bobina nueva', balance: '✓ Volante nuevo', barrel: '✓ Muelle nuevo' }[id] || '✓ Pieza nueva';
+  flashLabel(label);
+}
 async function faultFx(effect, on) {
   const S = G.MV.sub, f = G.E.F.id;
   if (effect === 'reveal') {
@@ -725,7 +752,7 @@ async function faultFx(effect, on) {
     if (f === 'muelleDebil') { S.mainspring.visible = true; S.barrelDrum.material.color.set(0x6e5a44); flashLabel('⚠ Muelle real fatigado'); }
     if (f === 'ejeRoto') { S.pivot.material = S.pivot.material.clone(); S.pivot.material.color.set(0xff4444); S.pivot.material.emissive = new THREE.Color(0x550000); flashLabel('⚠ Pivote del eje roto'); }
     if (f === 'bobina') { S.coilMat.color.set(0x5a2e14); flashLabel('⚠ Bobina cortada (∞ Ω)'); }
-    if (f === 'bateria') flashLabel('🔋 1,21 V · agotada');
+    if (f === 'bateria') { markBattery(true); flashLabel('🔋 1,21 V · agotada'); }
   }
   if (effect === 'openSpring' && S.spring) { const s = S.spring; await tween(D(450), (k) => { s.rotation.y = -0.9 * k; s.position.x = -0.5 * k; }); }
   if (effect === 'clean' && S.dirt) { await tween(D(450), (k) => S.dirt.scale.setScalar(1 - k * 0.99)); S.dirt.visible = false; flashLabel('Rubí limpio'); }
@@ -742,6 +769,7 @@ async function runFx(list) {
     else if (f.fx === 'turn') { sfx('screw'); await fxTurn(f.screw, f.dir, f.prog, f.lift); }
     else if (f.fx === 'unscrew') { sfx('screw'); await fxUnscrew(f.screw); }
     else if (f.fx === 'screw') { sfx('seat'); await fxScrew(f.screw); }
+    else if (f.fx === 'newpart') showNewPart(f.part);
     else if (f.fx === 'needSize') { document.querySelectorAll('.size').forEach(b => b.classList.toggle('hint', Math.abs(+b.dataset.size - f.size) < 0.01)); }
     else if (f.fx === 'lost') { sfx('bad'); await fxLost(f.screw); }
     else if (f.fx === 'slip') { stage.classList.remove('shake'); void stage.offsetWidth; stage.classList.add('shake'); }
@@ -805,6 +833,25 @@ function renderTray() {
     el.appendChild(c);
   }
 }
+function partLabel(id) { return G.E.name(id).replace(/^(el|la|las|los) /, '').split(' (')[0]; }
+function renderParts() {
+  const E = G.E;
+  const service = SPARE_ORDER.filter(id => E.P[id] && (!SPARES[id].types || SPARES[id].types.includes(E.C.type)));
+  const rest = E.C.parts.map(p => p.id).filter(id => id !== 'movement' && !service.includes(id));
+  const row = (id, serviceRow) => {
+    const sp = serviceRow ? SPARES[id] : null;
+    const neu = E.replaced.has(id);
+    const out = E.st[id] === 'out';
+    const status = neu ? (out ? 'Nueva · en la bandeja' : 'Nueva · montada') : (out ? 'Vieja · en la bandeja' : 'Sigue en el reloj');
+    return `<div class="partrow${neu ? ' new' : ''}${!neu && out ? ' hot' : ''}">
+      <div><b>${esc(partLabel(id))}</b><span class="spec">${esc(sp ? sp.spec : 'repuesto')} · ${esc(status)}</span>${sp ? `<span class="why">${esc(sp.why)}</span>` : ''}</div>
+      ${neu ? '' : `<button type="button" class="lux slim swap${!neu && out ? ' primary' : ''}" data-part="${esc(id)}">Poner nueva</button>`}
+    </div>`;
+  };
+  $('#partsList').innerHTML = (service.length ? `<p class="cinzel">Servicio</p>${service.map(id => row(id, true)).join('')}` : '') + `<p class="cinzel">Todas las piezas</p>${rest.map(id => row(id, false)).join('')}`;
+}
+function openParts() { if (!started || !G) return; $('#partsPanel').hidden = false; renderParts(); }
+function closeParts() { const p = $('#partsPanel'); if (p) p.hidden = true; }
 function updateBar() {
   if (!G) return; const g = G.E.goal();
   $('#steptxt').textContent = G.E.finished ? '¡Trabajo terminado!' : g.text; $('#phase').textContent = g.phase;
@@ -813,6 +860,9 @@ function updateBar() {
   const btn = $('#actionBtn'), E = G.E;
   const canWind = !E.quartz && E.flags.letdown && E.C.parts.filter(p => p.side !== 'case').every(p => E.st[p.id] === 'in');
   btn.hidden = !canWind; btn.textContent = '⚙️ Dar cuerda';
+  const step = E.F.steps[E.fstep];
+  const hot = !!(step && step.replace && E.st[step.replace] === 'out' && !E.replaced.has(step.replace));
+  const pb = $('#partsBtn'); if (pb) pb.classList.toggle('hint', hot);
   updateFlipBtn();
 }
 function updateFlipBtn() {
@@ -821,7 +871,7 @@ function updateFlipBtn() {
   f.textContent = view === 'holder' ? '↻ Voltear movimiento' : '↻ Voltear reloj';
 }
 function say(html, kind) { const m = $('#msg'); m.innerHTML = html; m.className = kind || ''; }
-function refresh() { refreshGhosts(); renderTray(); updateBar(); }
+function refresh() { refreshGhosts(); renderTray(); updateBar(); if ($('#partsPanel') && !$('#partsPanel').hidden) renderParts(); }
 
 // ───────── acciones ─────────
 async function act(r, opts = {}) {
@@ -879,7 +929,7 @@ async function turnScrew(sid, amount) { const r = G.E.screwTurn(sid, sel, size, 
 // ── teclado (escritorio / iPad con teclado) ──
 window.addEventListener('keydown', (e) => {
   if (e.target && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
-  if (e.key === 'Escape') { if (!$('#bqDetail').hidden) $('#bqBack').click(); else if (!$('#boutique').hidden) $('#bqClose').click(); else if (!$('#tgPanel').hidden) { if (!$('#tgClose').disabled) $('#tgClose').click(); } else if (started) openMenu(); else if (G && G.active && $('#endOverlay').hidden) { $('#intro').hidden = true; started = true; } return; }
+  if (e.key === 'Escape') { if (!$('#bqDetail').hidden) $('#bqBack').click(); else if (!$('#boutique').hidden) $('#bqClose').click(); else if (!$('#partsPanel').hidden) closeParts(); else if (!$('#tgPanel').hidden) { if (!$('#tgClose').disabled) $('#tgClose').click(); } else if (started) openMenu(); else if (G && G.active && $('#endOverlay').hidden) { $('#intro').hidden = true; started = true; } return; }
   if (!started || !G) return;
   if (e.shiftKey && (e.key === 'F' || e.key === 'f')) { toggleFullscreen(); e.preventDefault(); return; }
   if (e.key === 'f' || e.key === 'F') { if (!$('#flipBtn').hidden) $('#flipBtn').click(); return; }
@@ -903,6 +953,13 @@ function updateFsBtn() { document.querySelectorAll('.fsBtn').forEach(b => { b.cl
 document.querySelectorAll('.fsBtn').forEach(b => (b.onclick = toggleFullscreen));
 document.addEventListener('fullscreenchange', updateFsBtn); document.addEventListener('webkitfullscreenchange', updateFsBtn); updateFsBtn();
 if ($('#a2hsClose')) $('#a2hsClose').onclick = () => ($('#a2hs').hidden = true);
+$('#partsBtn').onclick = () => { if (busy) return; openParts(); };
+$('#partsClose').onclick = () => closeParts();
+$('#partsList').onclick = async (e) => {
+  const b = e.target.closest('.swap');
+  if (!b || busy || !G) return;
+  await act(G.E.swapPart(b.dataset.part));
+};
 $('#actionBtn').onclick = async () => { if (!busy && G) await act(G.E.button('wind')); };
 $('#flipBtn').onclick = async () => { if (busy || !G) return; await act(G.E.button(view === 'holder' ? 'flipHolder' : 'flipWatch'), { keepView: true }); };
 document.querySelectorAll('.vbtn[data-view]').forEach(b => b.onclick = () => { if (busy || !G) return; const v = b.dataset.view; setView(v === 'watch' ? (G.E.flags.flipped ? 'back' : 'front') : v); });
@@ -914,6 +971,7 @@ syncMute();
 document.addEventListener('pointerdown', () => unlockAudio(), { passive: true });
 $('#hintBtn').onclick = () => {
   if (!started || busy || !G) return; const h = G.E.hint(); say(h.msg); updateBar(); const a = h.action; if (!a) return;
+  if (a.replace) $('#partsBtn').classList.add('hint');
   if (a.tool) { document.querySelectorAll('.tool').forEach(b => b.classList.toggle('hint', b.dataset.tool === a.tool)); if (a.size) document.querySelectorAll('.size').forEach(b => b.classList.toggle('hint', +b.dataset.size === a.size)); }
   if (a.target && a.target.chip) { const c = document.querySelector(`.chip[data-chip="${a.target.chip}"]`); if (c) c.classList.add('hint'); if (seatMode && a.tool !== 'oiler' && a.tool !== 'screwdriver') say(h.msg + ' Luego toca el <b>anillo dorado</b> donde va.'); }
   const obj = a.target && (a.target.screw ? G.MV.screws[a.target.screw].obj : G.parts[a.target.part || a.target.sub]);
@@ -1009,7 +1067,7 @@ function finish() {
 }
 
 // ───────── menú: Historia / Libre ─────────
-function openMenu() { started = false; $('#intro').hidden = false; renderMenu(); }
+function openMenu() { started = false; closeParts(); $('#intro').hidden = false; renderMenu(); }
 function paintWho() {
   const u = book.current(), bar = $('#whoBar'); if (!bar) return;
   if (!u) { bar.hidden = true; return; }
@@ -1209,7 +1267,7 @@ $('#landSwitch').onclick = () => { book.logout(); paintLandingAuth(); window.scr
 async function begin(watchId, faultId, story) {
   buildWorld(watchId, faultId, story); G.active = true; sessionLive = true;
   sel = null; selectTool(null); started = true; busy = false; stampTimer(0);
-  $('#saveBtn').hidden = false; $('#intro').hidden = true; $('#endOverlay').hidden = true; resize(); await setView('front', true); refresh();
+  $('#saveBtn').hidden = false; $('#partsBtn').hidden = false; closeParts(); $('#intro').hidden = true; $('#endOverlay').hidden = true; resize(); await setView('front', true); refresh();
   const W = WATCHES[watchId], F = FAULTS[faultId];
   const seatNote = seatMode ? ' Al montar, toca la pieza y luego el anillo dorado.' : '';
   say(story ? `<b>${story.title}</b> — ${W.name}. ${story.intro}${seatNote}` : `<b>Modo libre</b> — ${W.name} · ${F.name}. ${F.free ? 'Desarma lo que quieras y vuelve a montarlo todo.' : 'Diagnostica, repara, monta y prueba.'}${seatNote}`);
@@ -1303,6 +1361,7 @@ window.__game = {
   },
   // ejecuta una acción como la haría el jugador (misma ruta de código que los toques)
   async do(a) {
+    if (a.replace) return act(G.E.swapPart(a.replace));
     if (a.button) { if (a.button === 'wind') $('#actionBtn').click(); else { await setView(a.button === 'flipHolder' ? 'holder' : workView()); $('#flipBtn').click(); } return; }
     if (a.tool !== sel) selectTool(a.tool); if (a.size) setSize(a.size);
     if (a.target.screw) { let r; do { r = await turnScrew(a.target.screw, 0.34); } while (r.kind === 'turn'); return; }

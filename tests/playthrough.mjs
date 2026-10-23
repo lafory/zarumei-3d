@@ -46,6 +46,11 @@ const tally = { taps: 0, holds: 0, chip: 0, fallback: 0, actions: 0 };
 // Ejecuta la acción sugerida con toques reales; si el punto en pantalla no golpea el objetivo, usa la ruta lógica.
 async function real(a, opts = {}) {
   tally.actions++;
+  if (a.replace) {
+    if (await p.evaluate(() => document.querySelector('#partsPanel').hidden)) await p.tap('#partsBtn');
+    await p.tap(`.swap[data-part="${a.replace}"]`);
+    tally.taps++; await idle(); return;
+  }
   if (a.button) { await ensureView(a); await p.tap(a.button === 'wind' ? '#actionBtn' : '#flipBtn'); tally.taps++; await idle(); return; }
   await tool(a.tool, a.size); const t = a.target;
   if (t.chip) { const pt = await p.evaluate((t) => __game.screenOf(t), t); if (pt) { await p.touchscreen.tap(pt.x, pt.y); tally.chip++; await idle(); return; } }

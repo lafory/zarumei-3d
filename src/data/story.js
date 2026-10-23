@@ -5,7 +5,7 @@ export const STORY = [
   { id: 'c2', watch: 'cuba', fault: 'magnetizado', title: 'Caso 2 · "Se adelanta muchísimo"', cliente: 'Yamilé R. — Hialeah, FL',
     diag: ['timegrapher', 'compass'], intro: 'Se adelanta minutos al día. ¿Qué dice la brújula?' },
   { id: 'c3', watch: 'rose', fault: 'bateria', title: 'Caso 3 · "No funciona"', cliente: 'Laura M. — Coral Gables, FL',
-    diag: ['timegrapher'], intro: 'Un cuarzo parado. Mide, abre el fondo a presión y comprueba la pila con el multímetro.' },
+    diag: ['timegrapher'], intro: 'Un cuarzo parado. Mide la pila. Si está agotada, sácala y pon una nueva en <b>Piezas</b>.' },
   { id: 'c4', watch: 'cuba', fault: 'ejeRoto', title: 'Caso 4 · "Se me cayó"', cliente: 'Andy P. — Little Havana, FL',
     diag: ['timegrapher'], intro: 'Se cayó al suelo y ya no late. Hay que llegar al volante.' },
   { id: 'c5', watch: 'miami', fault: 'muelleDebil', title: 'Caso 5 · "Se para por la noche"', cliente: 'Sr. Díaz — Miami, FL (otra vez)',

@@ -40,6 +40,7 @@ La interfaz tiene estética de boutique de alta joyería: ónix, terciopelo verd
   - Si la punta es demasiado grande, no entra. Si es demasiado pequeña, resbala y marca la cabeza; al segundo resbalón el tornillo **salta a la bandeja** (no se pierde). El agujero sigue marcado y se vuelve a poner con la punta correcta. Tocar la pieza, o su ficha 🔩, también lo aprieta.
   - Los tornillos van a la bandeja, al compartimento de su pieza. Con la pieza ya montada, la ficha 🔩 los aprieta uno a uno (punta correcta). También vale tocar el agujero fantasma. Si usas los tornillos de otra pieza, cuenta como **tornillo equivocado**.
   - La rueda de corona tiene **rosca a izquierdas**.
+- **Piezas nuevas:** el botón **Piezas** abre el cajón de repuestos. Se saca la vieja y se toca **Poner nueva**. Una pila por debajo de ~1,4 V no se recarga: se cambia por una SR626SW de 1,55 V y se monta con las pinzas de plástico. Igual la bobina, el volante, el muelle, o cualquier otra pieza del calibre.
 - **↻ Voltear:** da la vuelta al reloj, o al movimiento cuando está en el soporte.
 - **Dar cuerda:** antes de la prueba final en el timegrapher.
 - **SON / MUTE:** el reloj en marcha hace tic-tac (4 Hz mecánico, 1 Hz cuarzo). Tornillos, montaje y errores también suenan. El iPhone no suena hasta el primer toque.

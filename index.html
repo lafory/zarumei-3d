@@ -67,7 +67,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:8px
 .tool.sel{background:linear-gradient(180deg,#2c2210,#130e07) padding-box,var(--foil) border-box;box-shadow:0 0 14px rgba(217,180,94,.35),inset 0 0 10px rgba(217,180,94,.18);color:var(--gold-hi)}
 .tool.sel::after,.lux.primary::after{content:'';position:absolute;top:0;left:-60%;width:40%;height:100%;background:linear-gradient(100deg,transparent,rgba(255,241,196,.45),transparent);transform:skewX(-20deg);animation:glint 3.8s ease-in-out infinite}
 @keyframes glint{0%,70%{left:-60%}100%{left:130%}}
-.tool.hint,.chip.hint,.size.hint{animation:pulse 1.1s infinite}@keyframes pulse{50%{box-shadow:0 0 0 2px var(--gold),0 0 18px rgba(217,180,94,.8)}}
+.tool.hint,.chip.hint,.size.hint,#partsBtn.hint{animation:pulse 1.1s infinite}@keyframes pulse{50%{box-shadow:0 0 0 2px var(--gold),0 0 18px rgba(217,180,94,.8)}}
 #bottom{display:flex;gap:6px;align-items:center;padding-bottom:6px}
 #tray{flex:1;display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;min-height:34px;align-items:center}
 .chip{flex:none;background:var(--grain),linear-gradient(180deg,#1c1812,#0a0908);border:1px solid var(--hair);border-radius:2px;padding:6px 9px;white-space:nowrap;color:var(--ink);font-size:11px;cursor:pointer;font-family:var(--sans)}
@@ -132,6 +132,17 @@ button:disabled{opacity:.45}
 .tgvals div{background:#0c0b09;border:1px solid rgba(224,195,106,.2);padding:5px;text-align:center;font-size:11px;color:#e7d7a8}
 .tgvals b{display:block;font-size:16px;color:#fff6d2}.tgvals .warn b{color:#ffb35b}
 #tgNote{font-size:13px;line-height:1.4;margin:8px 0}
+#partsPanel{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 8px);width:min(540px,calc(100% - 16px));max-height:min(72dvh,560px);z-index:16;display:flex;flex-direction:column;background:var(--marble),linear-gradient(180deg,#14120e,#070707);border:1px solid var(--hair);outline:1px solid rgba(224,195,106,.18);outline-offset:-5px;border-radius:2px;padding:12px 12px 10px;animation:rise .45s}
+#partsPanel h3{margin:0;font-family:var(--caps);font-weight:500;letter-spacing:.16em;color:var(--gold);font-size:11px;text-transform:uppercase}
+#partsPanel .lead{margin:6px 0 0}
+#partsList{overflow:auto;min-height:0;display:flex;flex-direction:column;gap:6px;margin:8px 0}
+#partsList .cinzel{margin:6px 0 0}
+.partrow{display:flex;gap:8px;align-items:center;justify-content:space-between;border:1px solid var(--hair);padding:8px;background:rgba(0,0,0,.28)}
+.partrow.new{border-color:rgba(143,207,159,.65)}
+.partrow.hot{border-color:var(--gold);box-shadow:0 0 10px rgba(217,180,94,.28)}
+.partrow b{display:block;font-family:var(--serif);font-weight:500;font-size:16px;line-height:1.1;color:var(--gold-hi)}
+.partrow .spec,.partrow .why{display:block;font-size:11.5px;color:var(--muted);line-height:1.3}
+.partrow .swap{flex:none;padding:8px 8px;letter-spacing:.06em;font-size:9px}
 .small{font-size:12px;color:var(--muted)}.gold{color:var(--gold)}
 .lux.slim{padding:8px 10px;letter-spacing:.08em}
 .field{display:block;margin:10px 0 4px;font-family:var(--caps);font-size:10px;letter-spacing:.16em;color:var(--gold)}
@@ -263,6 +274,7 @@ body:not(.land) #landScroll{display:none!important}
   #tray::before{content:'Bandeja de piezas';flex-basis:100%;font-family:var(--caps);font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold)}
   #bottom .lux{width:100%}
   #tgPanel{left:auto;right:max(16px,env(safe-area-inset-right));transform:none;width:min(440px,29vw)}
+  #partsPanel{left:auto;right:max(16px,env(safe-area-inset-right));transform:none;width:min(440px,29vw)}
   #bqDetail{flex-direction:row}#bqStage{flex:1 1 60%}#bqInfo{flex:0 0 min(460px,40%);border-top:0;border-left:1px solid var(--hair);padding:calc(env(safe-area-inset-top) + 70px) 26px 26px}
   .vitrines{grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
 }
@@ -293,6 +305,7 @@ body:not(.land) #landScroll{display:none!important}
   <div class="kbd"><kbd>1</kbd>–<kbd>9</kbd> herramienta · <kbd>[</kbd><kbd>]</kbd> punta · <kbd>F</kbd> voltear · <kbd>H</kbd> pista · <kbd>W</kbd> cuerda · <kbd>Esc</kbd> menú · <kbd>⇧F</kbd> pantalla completa · arrastrar: girar · rueda: zoom · botón derecho: desplazar · mantener clic: girar tornillo</div>
   <div id="bottom">
     <div id="tray"></div>
+    <button class="lux slim" id="partsBtn" hidden>Piezas</button>
     <button class="lux" id="hintBtn">✦ Pista</button>
     <button class="lux slim" id="saveBtn" hidden>Guardar</button>
     <button class="lux primary" id="actionBtn" hidden>Dar cuerda</button>
@@ -312,7 +325,7 @@ body:not(.land) #landScroll{display:none!important}
     </div>
     <div id="liveBox" hidden></div>
     <div id="saveList" hidden></div>
-    <p class="small" style="text-align:center">Elige la herramienta y toca la pieza. Para volver a montar, toca la pieza y luego el anillo dorado en su sitio (o pasa a AUTO). Los tornillos salen uno a uno.</p>
+    <p class="small" style="text-align:center">Elige la herramienta y toca la pieza. Para volver a montar, toca la pieza y luego el anillo dorado en su sitio (o pasa a AUTO). Los tornillos salen uno a uno. Una pieza gastada —la pila, si está agotada— se cambia en <b>Piezas</b>.</p>
     <div class="tabs"><button class="tab on" data-tab="story">Historia</button><button class="tab" data-tab="play">Modo libre</button></div>
     <div id="storyPane"><div id="caseList"></div></div>
     <div id="playPane" hidden>
@@ -350,6 +363,13 @@ body:not(.land) #landScroll{display:none!important}
   <div class="tgvals" id="tgVals"></div>
   <div id="tgNote"></div>
   <div class="row" style="margin-top:4px"><button class="lux primary" id="tgClose">Entendido</button></div>
+</div>
+
+<div id="partsPanel" hidden>
+  <h3>Cajón de repuestos</h3>
+  <p class="small lead">Saca la pieza vieja. Aquí la cambias por una nueva y la montas como siempre. La pila agotada no se recarga.</p>
+  <div id="partsList"></div>
+  <button class="lux" id="partsClose" type="button">Cerrar</button>
 </div>
 
 <div id="a2hs" hidden><button id="a2hsClose" aria-label="Cerrar">✕</button><span class="cinzel">Pantalla completa en iPad</span>Safari no permite pantalla completa dentro de la página. Toca <b>Compartir</b> → <b>Agregar a pantalla de inicio</b> y abre ZARUMEI 3D desde el icono: se abrirá a pantalla completa.</div>

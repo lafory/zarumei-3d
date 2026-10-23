@@ -64,10 +64,10 @@ export const FAULTS = {
     symptom: '"Se paró de repente."',
     tg: { before: null }, meter: { battery: '1,21 V (agotada; nueva: 1,55 V)', coil: '1,9 kΩ (bien)' },
     steps: [
-      { tool: 'meter', on: 'battery', part: 'battery', need: 'in', fx: 'reveal', title: 'Mide la pila con el multímetro', msg: '🔋 <b>1,21 V</b>: la pila SR626SW está <b>agotada</b> (nueva: 1,55 V).' },
-      { removed: 'battery', title: 'Saca la pila agotada', msg: '✅ Pila agotada fuera. En la bandeja tienes una pila nueva SR626SW.' }
+      { tool: 'meter', on: 'battery', part: 'battery', need: 'in', fx: 'reveal', title: 'Mide la pila con el multímetro', msg: '🔋 <b>1,21 V</b>: la pila SR626SW está <b>agotada</b> (nueva: 1,55 V). Sácala y cámbiala en <b>Piezas</b>.' },
+      { replace: 'battery', title: 'Cambia la pila por una nueva', msg: '✅ Pila <b>nueva</b> SR626SW (1,55 V) en la bandeja. Móntala con las pinzas de plástico.' }
     ],
-    lessons: ['En cuarzo se mide antes de cambiar nada: pila por debajo de ~1,4 V = agotada.', 'La pila se toca con pinzas de plástico para no hacer cortocircuito.']
+    lessons: ['En cuarzo se mide antes de cambiar nada: pila por debajo de ~1,4 V = agotada.', 'La pila agotada no se recarga: se saca y se pone una nueva del cajón (botón Piezas).', 'La pila se toca con pinzas de plástico para no hacer cortocircuito.']
   },
   bobina: {
     id: 'bobina', name: 'Pila nueva y sigue parado · bobina cortada', short: 'Bobina', calibers: ['quartz'],
@@ -76,7 +76,7 @@ export const FAULTS = {
     steps: [
       { tool: 'meter', on: 'battery', part: 'battery', need: 'in', title: 'Mide la pila', msg: '🔋 1,56 V: la pila está bien. El problema está en otro sitio.' },
       { tool: 'meter', on: 'coil', part: 'coil', need: 'in', fx: 'reveal', title: 'Mide la bobina', msg: '🧵 <b>∞ Ω</b>: la bobina está <b>cortada</b> (sana ≈ 1,9 kΩ). Hay que cambiarla.' },
-      { removed: 'coil', title: 'Saca la bobina dañada', msg: '✅ Bobina dañada fuera. En la bandeja tienes la bobina de repuesto.' }
+      { replace: 'coil', title: 'Cambia la bobina cortada', msg: '✅ Bobina <b>nueva</b> (≈ 1,9 kΩ) en la bandeja. Vuelve a montarla y después la pila.' }
     ],
     lessons: ['Si la pila está bien y no hay impulsos, se mide la bobina: circuito abierto = bobina cortada.', 'Antes de tocar el circuito se quita la pila.']
   },

@@ -141,7 +141,9 @@ export function createEngine({ watchId, faultId, story = null }) {
     if ((p.placeRequires || []).includes('protector') && !flags.protector) return { err: 'Pon el <b>protector de esfera</b> antes de clavar las agujas.', k: 'wrongOrder' };
     if (id === 'dial' && flags.protector) return { err: 'Primero coloca la esfera y luego el protector encima: retíralo ahora.', k: 'wrongOrder' };
     if (p.oil && p.oil.when === 'before' && !oiled.has(id)) { stats.oilMissed++; return { err: `Antes: ${p.oil.msg} (aceitera sobre la pieza en la bandeja).`, k: 'wrongOrder' }; }
-    const s = curStep(); if (s && s.part === id && s.need === 'out') return { info: `Antes de volver a montar ${name(id)}: <b>${s.title}</b>.` };
+    const s = curStep();
+    if (s && s.replace === id && !replaced.has(id)) return { info: `Esa sigue siendo la pieza <b>vieja</b>. En <b>Piezas</b>, pon la nueva y después móntala.` };
+    if (s && s.part === id && s.need === 'out') return { info: `Antes de volver a montar ${name(id)}: <b>${s.title}</b>.` };
     return { ok: true };
   }
   function removeFx(id) {
@@ -319,6 +321,40 @@ export function createEngine({ watchId, faultId, story = null }) {
     fx.push({ fx: 'screw', screw: sid });
     return R('good', msg, fx);
   }
+  // El primer paso futuro que habla de esta pieza: si aún es un diagnóstico, no se puede cambiar.
+  function blockSwap(id) {
+    for (let i = fstep; i < F.steps.length; i++) {
+      const s = F.steps[i];
+      const about = s.part === id || s.on === id || s.removed === id || s.replace === id;
+      if (!about) continue;
+      if (s.replace === id || s.removed === id || s.fx === 'replace') return null;
+      return s;
+    }
+    return null;
+  }
+  function swapPart(id) {
+    if (!P[id]) return R('info', '');
+    if (id === 'movement') return R('info', 'El movimiento completo no se cambia: se reparan sus piezas.');
+    const s = curStep();
+    if (replaced.has(id)) {
+      if (s && s.replace === id) { const r2 = doStep(s); return R('good', r2.msg, r2.fx); }
+      if (s && s.fx === 'replace' && (s.part === id || s.on === id) && st[id] === 'out') { const r2 = doStep(s); return R('good', r2.msg, r2.fx); }
+      return R('info', `${cap(name(id))} ya es la pieza <b>nueva</b>.`);
+    }
+    if (st[id] !== 'out') return R('info', `Saca primero ${name(id)} con ${toolName(P[id].tool).toLowerCase()}. La nueva espera en el cajón: no se cambia puesta.`);
+    const block = blockSwap(id);
+    if (block) return R('info', `Antes de cambiarla: <b>${block.title}</b>.`);
+    const repairs = !!(s && (s.replace === id || s.removed === id || (s.fx === 'replace' && (s.part === id || s.on === id) && stepReady(s))));
+    if (!repairs && !F.free) penal(2, 'spares');
+    replaced.add(id);
+    const fx = [{ fx: 'newpart', part: id }];
+    if (s && (s.replace === id || (s.fx === 'replace' && (s.part === id || s.on === id) && stepReady(s)))) {
+      const r2 = doStep(s);
+      return R('good', r2.msg, fx.concat(r2.fx));
+    }
+    const fresh = F.free ? ' El reloj estaba sano: esta es de práctica.' : (repairs ? '' : ' Este reloj no la necesitaba.');
+    return R('good', `✅ ${cap(name(id))} de <b>repuesto</b> en la bandeja. Monta la nueva.${fresh}`, fx);
+  }
   function button(action) {
     if (action === 'flipWatch') { if (flags.mvLoc !== 'case' && false) return R('info', ''); flags.flipped = !flags.flipped; return R('info', flags.flipped ? 'Reloj boca abajo: trabajas por el fondo.' : 'Reloj boca arriba.', [{ fx: 'flipWatch', to: flags.flipped }]); }
     if (action === 'flipHolder') { if (flags.mvLoc !== 'holder') return R('info', 'El movimiento está en la caja.'); const pfx = []; if (flags.protector && flags.holderSide === 'dial') { flags.protector = false; pfx.push({ fx: 'protector', on: false }); } flags.holderSide = flags.holderSide === 'bridge' ? 'dial' : 'bridge'; return R('info', flags.holderSide === 'dial' ? 'Movimiento volteado: <b>lado esfera</b> arriba.' : 'Movimiento volteado: <b>lado puentes</b> arriba.', [...pfx, { fx: 'flipHolder', to: flags.holderSide }]); }
@@ -401,6 +437,7 @@ export function createEngine({ watchId, faultId, story = null }) {
     const dp = diagPending(); if (dp) return { tool: dp, target: { part: 'watch' } };
     const s = curStep();
     if (s) {
+      if (s.replace) { if (st[s.replace] !== 'out') return planRemove(s.replace); return { replace: s.replace }; }
       if (s.removed) return planRemove(s.removed);
       if (stepReady(s)) return { tool: s.tool, size: s.anySize ? 0.8 : undefined, target: st[s.part] === 'out' && s.on !== 'watch' ? (SUB[s.on] ? { sub: s.on, part: s.part } : { chip: s.part }) : (SUB[s.on] && s.on !== 'watch' ? { sub: s.on, part: s.part } : { part: s.on }) };
       return s.need === 'out' ? planRemove(s.part) : planAccess(s.part);
@@ -414,6 +451,7 @@ export function createEngine({ watchId, faultId, story = null }) {
   let freeDone = false;
   function describe(a) {
     if (!a) return 'Nada pendiente.';
+    if (a.replace) return `Abre <b>Piezas</b> y cambia ${name(a.replace)} por una <b>nueva</b>.`;
     if (a.button) return { flipWatch: 'Voltea el reloj (↻).', flipHolder: 'Voltea el movimiento en el soporte (↻).', wind: 'Da cuerda (botón «Dar cuerda»).' }[a.button];
     const t = toolName(a.tool) + (a.size ? ` de ${mm(a.size)}` : '');
     if (a.target.screw) return `Usa <b>${t}</b> en el tornillo de ${name(screws[a.target.screw].part)}.`;
@@ -473,7 +511,7 @@ export function createEngine({ watchId, faultId, story = null }) {
   return {
     W, C, F, P, st, screws, flags, stats, story, quartz,
     get score() { return score; }, get finished() { return finished; }, get armed() { return armed; }, get fstep() { return fstep; },
-    name, toolName, tapPart, tapChip, placeCheck, missSeat, screwTurn, button, suggest, describe, hint, goal, progress, tgRead, running, amplitude, missingList, allIn, oilPending, replaced, removedOnce,
+    name, toolName, tapPart, tapChip, placeCheck, missSeat, screwTurn, swapPart, button, suggest, describe, hint, goal, progress, tgRead, running, amplitude, missingList, allIn, oilPending, replaced, removedOnce,
     screwsOf, access, oiled, history, exportState, importState
   };
 }

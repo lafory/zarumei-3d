@@ -9,7 +9,8 @@ export function autoplay(E, { log = false, max = 2000 } = {}) {
   for (; n < max && !E.finished; n++) {
     const a = E.suggest(); if (!a) return { ok: false, why: 'sin sugerencia', n, goal: E.goal(), miss: E.missingList() };
     let r;
-    if (a.button) r = E.button(a.button);
+    if (a.replace) r = E.swapPart(a.replace);
+    else if (a.button) r = E.button(a.button);
     else if (a.target.screw) { do { r = E.screwTurn(a.target.screw, a.tool, a.size, 0.34); } while (r.kind === 'turn'); }
     else if (a.target.chip) r = E.tapChip(a.target.chip, a.tool, a.size);
     else r = E.tapPart(a.target.sub || a.target.part, a.tool, a.size);
@@ -18,7 +19,7 @@ export function autoplay(E, { log = false, max = 2000 } = {}) {
   }
   return { ok: E.finished, n, bads, score: E.score, stats: E.stats };
 }
-if (process.argv[1].endsWith('engine-sim.mjs')) {
+if (process.argv[1] && process.argv[1].endsWith('engine-sim.mjs')) {
   let fail = 0;
   for (const w of Object.values(WATCHES)) for (const f of Object.values(FAULTS)) {
     if (!f.calibers.includes(CALIBERS[w.caliber].type)) continue;
