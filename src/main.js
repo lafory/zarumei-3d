@@ -129,6 +129,7 @@ async function setView(v, instant = false) {
   $('#viewtag').textContent = 'Vista: ' + VIEW_NAMES[v]; stage.classList.toggle('loupe', v === 'loupe');
   document.querySelectorAll('.vbtn[data-view]').forEach(b => b.classList.toggle('on', b.dataset.view === v || (b.dataset.view === 'watch' && (v === 'front' || v === 'back'))));
   updateFlipBtn();
+  controls._sphericalDelta.set(0, 0, 0); controls._panOffset.set(0, 0, 0); controls._scale = 1;
   if (instant || SPEED < 0.2) { camera.position.copy(toPos); controls.target.copy(cfg.target); controls.update(); positionFloatingTool(); return; }
   const p0 = camera.position.clone(), t0v = controls.target.clone(); controls.enabled = false;
   await tween(D(650), (k) => { camera.position.lerpVectors(p0, toPos, k); controls.target.lerpVectors(t0v, cfg.target, k); });
@@ -433,9 +434,15 @@ function mergeStatic(group) {
 function disposeWorld() {
   hideSeat();
   if (!G) return;
+  // Al salir, la pieza ya no cuelga del reloj: scene.attach la dejó en la escena y el siguiente reloj heredaba el toque.
+  for (const o of Object.values(G.parts)) if (o.parent === scene) scene.remove(o);
+  for (const s of Object.values(G.MV.screws)) {
+    if (s.obj && s.obj.parent === scene) scene.remove(s.obj);
+    if (s.ghost && s.ghost.parent === scene) scene.remove(s.ghost);
+  }
   scene.remove(G.root); scene.remove(G.mvObj); scene.remove(T.tg); scene.remove(T.holder); scene.remove(T.tray);
   G.extra.forEach(o => scene.remove(o));
-  for (const o of [G.root, G.mvObj, T.tg, T.holder, T.tray]) o.traverse(c => { if (c.geometry) c.geometry.dispose(); });
+  for (const o of [G.root, G.mvObj, T.tg, T.holder, T.tray]) o.traverse(c => { if (c.geometry && !c.geometry.userData.shared) c.geometry.dispose(); });
 }
 function buildMovement(M, images, W, cal) {
   if (W.caliber === 'ZQ11') return buildZQ11(M, images, W, cal);
@@ -898,8 +905,15 @@ async function handleTap(hit) {
   if (!started || busy || !G) return;
   if (hit.seat && heldId && hit.seat === heldId) { const pid = heldId; hideSeat(); await act(G.E.tapChip(pid, sel, size)); return; }
   if (hit.screw || hit.ghost) {
-    if (sel !== 'screwdriver') { await act(G.E.screwTurn(hit.screw || hit.ghost, sel, size, 0)); return; }
-    await turnScrew(hit.screw || hit.ghost, 0.34); return;
+    const sid = hit.screw || hit.ghost;
+    const sc = G.E.screws[sid];
+    const part = sc && G.E.P[sc.part];
+    // El centro de la rueda es el tornillo. Si ya salió, el fantasma no debe quedarse el toque: las pinzas levantan la pieza.
+    if (sc && sc.state !== 'in' && G.E.st[sc.part] === 'in' && part && sel && sel === part.tool && sel !== 'screwdriver') {
+      await act(G.E.tapPart(sc.part, sel, size)); return;
+    }
+    if (sel !== 'screwdriver') { await act(G.E.screwTurn(sid, sel, size, 0)); return; }
+    await turnScrew(sid, 0.34); return;
   }
   // El protector cubre toda la esfera: con el movimiento en el soporte (lado esfera), cualquier toque lo pone/quita
   if (sel === 'dialProtector' && G.E.flags.mvLoc === 'holder' && G.E.flags.holderSide === 'dial' && G.E.st.dial === 'in' && !(hit.chain || []).some(c => c === 'timegrapher3d' || c === 'holderBench')) { await act(G.E.tapPart('dial', 'dialProtector', size)); return; }

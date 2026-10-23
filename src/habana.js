@@ -137,7 +137,8 @@ export function buildZX60(M, images, watch, cal) {
   at(barrel, -3.2, 1.15, -4.4); mv.add(barrel); parts.barrel = barrel; sub.mainspring = mainspring; sub.barrelDrum = barrel.children[0];
   const bb = tag(new THREE.Group(), 'barrelBridge');
   bb.add(new THREE.Mesh(extrudeShape(polyShape([[-8.2, -1.2], [-7.4, -8.6], [1.4, -8.8], [1.6, -1.4], [-2.2, 0.4]]), 0.7), M.bridgeGilt));
-  bb.add(at(jewelMesh(M, 0.32), -3.2, 0.72, -4.4)); bb.add(hitProxy(M, 4.0, 0.5, 0.4));
+  bb.add(at(jewelMesh(M, 0.32), -3.2, 0.72, -4.4));
+  bb.add(at(hitProxy(M, 5.4, 0.9, 0), -3.2, 0.5, -4.2));
   at(bb, 0, 2.15, 0); mv.add(bb); parts.barrelBridge = bb;
   const ratchet = tag(new THREE.Group(), 'ratchet');
   ratchet.add(gearMesh(2.4, 32, 0.26, M.steel, 0));
@@ -154,7 +155,8 @@ export function buildZX60(M, images, watch, cal) {
   click.add(hitProxy(M, 1.3, 0.4, 0.16)); at(click, -1.1, 2.9, -7.6); mv.add(click); parts.click = click;
   const pb = tag(new THREE.Group(), 'palletBridge');
   pb.add(new THREE.Mesh(extrudeShape(polyShape([[2.2, 5.2], [7.4, 4.6], [7.8, 7.2], [2.4, 7.4]]), 0.52), M.bridgeGilt));
-  pb.add(at(jewelMesh(M, 0.26), 5.0, 0.55, 6.2)); pb.add(hitProxy(M, 2.6, 0.4, 0.3));
+  pb.add(at(jewelMesh(M, 0.26), 5.0, 0.55, 6.2));
+  pb.add(at(hitProxy(M, 3.1, 0.7, 0), 5.0, 0.45, 6.15));
   at(pb, 0, 2.05, 0); mv.add(pb); parts.palletBridge = pb;
   const pf = tag(new THREE.Group(), 'palletFork');
   pf.add(new THREE.Mesh(extrudeShape(polyShape([[-0.22, -1.4], [0.22, -1.4], [0.18, 0.15], [0.95, 0.6], [0.8, 0.95], [0, 0.48], [-0.8, 0.95], [-0.95, 0.6], [-0.18, 0.15]]), 0.12, 0.01), M.steel));

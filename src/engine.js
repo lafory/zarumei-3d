@@ -273,7 +273,7 @@ export function createEngine({ watchId, faultId, story = null }) {
   function screwTurn(sid, tool, size, amount, dir) {
     const sc = screws[sid]; if (!sc) return R('info', '');
     const p = P[sc.part];
-    if (tool !== 'screwdriver') { if (tool === 'tweezers') return bad(`Ese tornillo de ${name(sc.part)} pide el <b>destornillador de ${mm(sc.s)}</b>${sc.lh ? ' (rosca a izquierdas)' : ''}. Con pinzas salta.`); return R('info', 'Elige el <b>destornillador</b> y su tamaño de punta.'); }
+    if (tool !== 'screwdriver') { if (tool === 'tweezers') return bad(`Ese tornillo de ${name(sc.part)} pide el <b>destornillador de ${mm(sc.s)}</b>${sc.lh ? ' (rosca a izquierdas)' : ''}. Con pinzas no sale: cuando el tornillo esté fuera, las pinzas levantan la pieza.`); return R('info', 'Elige el <b>destornillador</b> y su tamaño de punta.'); }
     if (!p || st[sc.part] !== 'in') return R('info', `${cap(name(sc.part))} no está montado. Colócalo y después atornilla.`);
     if (!access(sc.part)) return R('info', accessMsg(sc.part));
     let tightening = dir === 1 || (dir !== -1 && sc.state !== 'in');

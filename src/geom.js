@@ -49,5 +49,6 @@ export function screwMesh(M, size, ghost = false) {
   const mat = ghost ? M.ghost : M.blueScrew;
   g.add(new THREE.Mesh(G.head, mat)); g.add(new THREE.Mesh(G.dome, mat));
   if (!ghost) { g.add(new THREE.Mesh(G.slot, M.darkSteel)); const th = new THREE.Mesh(G.thread, M.steel); th.visible = false; th.name = 'thread'; g.add(th); }
+  g.traverse(o => { if (o.geometry) o.geometry.userData.shared = true; });
   return g;
 }
