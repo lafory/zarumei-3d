@@ -128,7 +128,7 @@ const VIEWS = {
   back: () => ({ target: new THREE.Vector3(0, 3, 2), size: 46, dir: new THREE.Vector3(0, 1, 0.5) }),
   holder: () => ({ target: HOLDER_POS.clone().add(new THREE.Vector3(0, 10, 0)), size: 36, dir: new THREE.Vector3(0, 1, 0.45) }),
   mat: () => ({ target: INSPECT_POS.clone().add(new THREE.Vector3(0, 2.2, 0)), size: 13, dir: new THREE.Vector3(0, 1, 0.42) }),
-  tray: () => ({ target: TRAY_POS.clone().add(new THREE.Vector3(52, 0, 56)), size: 128, dir: new THREE.Vector3(0, 1, 0.38) }),
+  tray: () => ({ target: TRAY_POS.clone().add(T && T.trayCenter ? T.trayCenter : new THREE.Vector3(52, 0, 82)), size: T && T.traySize ? T.traySize : 188, dir: new THREE.Vector3(0, 1, 0.38) }),
   loupe: () => ({ target: loupeTarget.c, size: Math.max(7, loupeTarget.r * 2.1), dir: new THREE.Vector3(0, 1, 0.42) }),
   tg: () => { const c = new THREE.Vector3(), n = new THREE.Vector3(0, 0, 1); T.screen.getWorldPosition(c); n.applyQuaternion(T.screen.getWorldQuaternion(new THREE.Quaternion())); return { target: c.add(new THREE.Vector3(-6, -2, 0)), size: 62, dir: n.add(new THREE.Vector3(0, 0.35, 0)) }; }
 };

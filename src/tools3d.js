@@ -136,15 +136,20 @@ export function makeTools(M, images, movR = 12.8) {
   const hd = flatDecal(7, engrave); hd.rotation.x = -Math.PI / 2; hd.position.set(0, 9.02, movR + 3.6); holder.add(hd);
   holder.traverse(o => { if (o.isMesh && !o.material.transparent) { o.castShadow = true; o.receiveShadow = true; } });
 
-  // ── Bandeja de piezas con compartimentos (6 × 7) ──
+  // ── Bandeja de piezas. 6 × 10: el ZX-60 deja 59 piezas (el Orbital 53) y el movimiento va al soporte.
+  const COLS = 6, ROWS = 10, CW = 17, RH = 16.6, x0 = 1, z0 = -1;
+  const trayW = COLS * CW, trayD = ROWS * RH;
+  const tcx = x0 + trayW / 2, tcz = z0 + trayD / 2;
   const tray = new THREE.Group();
-  const tb = new THREE.Mesh(new THREE.BoxGeometry(104, 1.2, 120), new THREE.MeshStandardMaterial({ map: velvetTexture('#0d2a20', 6), roughness: 1 })); tb.position.set(52, 0.6, 56); tray.add(tb);
+  const tb = new THREE.Mesh(new THREE.BoxGeometry(trayW + 2, 1.2, trayD + 4), new THREE.MeshStandardMaterial({ map: velvetTexture('#0d2a20', 6), roughness: 1 })); tb.position.set(tcx, 0.6, tcz); tray.add(tb);
   const wallM = new THREE.MeshStandardMaterial({ color: 0x1a120c, roughness: 0.5 }); const trimM = new THREE.MeshStandardMaterial({ color: 0xc9a24b, metalness: 1, roughness: 0.3 });
-  for (let i = 0; i <= 6; i++) { const w = new THREE.Mesh(new THREE.BoxGeometry(0.8, 2.4, 118), wallM); w.position.set(1 + i * 17, 1.6, 56); tray.add(w); if (i === 0 || i === 6) { const t2 = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.3, 118), trimM); t2.position.set(1 + i * 17, 2.9, 56); tray.add(t2); } }
-  for (let j = 0; j <= 7; j++) { const w = new THREE.Mesh(new THREE.BoxGeometry(102, 2.4, 0.8), wallM); w.position.set(52, 1.6, -1 + j * 16.6); tray.add(w); }
-  const td = flatDecal(14, print); td.rotation.x = -Math.PI / 2; td.position.set(52, 1.25, 124); tray.add(td);
+  for (let i = 0; i <= COLS; i++) { const w = new THREE.Mesh(new THREE.BoxGeometry(0.8, 2.4, trayD), wallM); w.position.set(x0 + i * CW, 1.6, tcz); tray.add(w); if (i === 0 || i === COLS) { const t2 = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.3, trayD), trimM); t2.position.set(x0 + i * CW, 2.9, tcz); tray.add(t2); } }
+  for (let j = 0; j <= ROWS; j++) { const w = new THREE.Mesh(new THREE.BoxGeometry(trayW, 2.4, 0.8), wallM); w.position.set(tcx, 1.6, z0 + j * RH); tray.add(w); }
+  const td = flatDecal(14, print); td.rotation.x = -Math.PI / 2; td.position.set(tcx, 1.25, z0 + trayD + 10); tray.add(td);
   tray.traverse(o => { if (o.isMesh && !o.material.transparent) o.receiveShadow = true; });
-  const traySlot = (i) => new THREE.Vector3(9.5 + (i % 6) * 17, 1.4, 7.3 + Math.floor(i / 6) * 16.6);
+  const traySlot = (i) => new THREE.Vector3(x0 + CW / 2 + (i % COLS) * CW, 1.4, z0 + RH / 2 + Math.floor(i / COLS) * RH);
+  const trayCenter = new THREE.Vector3(tcx, 0, tcz);
+  const traySize = Math.max(trayW, trayD) + 22;
 
-  return { models, tg, tgScreen: scr, screen, holder, tray, traySlot, logoMat };
+  return { models, tg, tgScreen: scr, screen, holder, tray, traySlot, trayCenter, traySize, logoMat };
 }
