@@ -134,7 +134,7 @@ const VIEWS = {
 };
 const VIEW_NAMES = { front: 'esfera', back: 'fondo / movimiento', holder: 'movimiento en el soporte', mat: 'alfombrilla de inspección', tray: 'bandeja de piezas', loupe: 'lupa x10', tg: 'timegrapher', libre: 'libre' };
 function fitDistance(sz) { const v = THREE.MathUtils.degToRad(camera.fov) / 2; return Math.max((sz / 2) / Math.tan(v), (sz / 2) / (Math.tan(v) * camera.aspect)) * 1.05; }
-let fly = null, fovFade = 0, libreFrom = null;
+let fly = null, fovFade = 0, libreFrom = null, libreShot = null;
 const FLY_SPEED = 90;
 function flyLook() {
   camera.rotation.order = 'YXZ';
@@ -143,6 +143,7 @@ function flyLook() {
 function startLibre() {
   if (landingOn || view === 'libre') return;
   libreFrom = view;
+  libreShot = { view, pos: camera.position.clone(), target: controls.target.clone() };
   const dir = new THREE.Vector3();
   camera.getWorldDirection(dir);
   fly = {
@@ -158,6 +159,7 @@ function startLibre() {
   controls.enabled = false;
   camera.near = 0.35;
   camera.fov = 23;
+  camera.rotation.order = 'YXZ';
   camera.updateProjectionMatrix();
   flyLook();
   const pad = $('#flyPad'), slider = $('#fovSlider');
@@ -167,7 +169,10 @@ function startLibre() {
   if (g) g.textContent = 'libre: 1 dedo mira · cruceta mueve · zoom en la barra';
   $('#viewtag').textContent = 'Vista: libre';
   stage.classList.remove('loupe');
-  document.querySelectorAll('.vbtn[data-view]').forEach(b => b.classList.toggle('on', b.dataset.view === 'libre'));
+  document.querySelectorAll('.vbtn[data-view]').forEach(b => {
+    b.classList.toggle('on', b.dataset.view === 'libre');
+    if (b.dataset.view === 'libre') b.textContent = 'VOLVER';
+  });
   updateFlipBtn();
 }
 function stopLibre() {
@@ -177,10 +182,13 @@ function stopLibre() {
   if (slider) slider.hidden = true;
   camera.near = 1;
   camera.fov = 23;
+  camera.rotation.order = 'XYZ';
   camera.updateProjectionMatrix();
   controls.enabled = true;
   const g = document.querySelector('#stage .gesture');
   if (g) g.textContent = 'girar: 1 dedo · zoom: 2 · tornillo: mantener';
+  const b = document.querySelector('[data-view="libre"]');
+  if (b) b.textContent = 'LIBRE';
 }
 function pokeFov() {
   const s = $('#fovSlider'); if (!s) return;
@@ -225,6 +233,7 @@ function stepFly(now) {
 }
 async function setView(v, instant = false) {
   if (v === 'libre') { startLibre(); return; }
+  const shot = view === 'libre' ? libreShot : null;
   if (view === 'libre') stopLibre();
   if (!VIEWS[v]) v = 'front';
   view = v; const cfg = VIEWS[v](), dist = fitDistance(cfg.size);
@@ -234,6 +243,10 @@ async function setView(v, instant = false) {
   document.querySelectorAll('.vbtn[data-view]').forEach(b => b.classList.toggle('on', b.dataset.view === v || (b.dataset.view === 'watch' && (v === 'front' || v === 'back'))));
   updateFlipBtn();
   controls._sphericalDelta.set(0, 0, 0); controls._panOffset.set(0, 0, 0); controls._scale = 1;
+  if (shot && shot.view === v) {
+    camera.position.copy(shot.pos); controls.target.copy(shot.target);
+    controls.enabled = true; controls.update(); positionFloatingTool(); return;
+  }
   if (instant || SPEED < 0.2) { camera.position.copy(toPos); controls.target.copy(cfg.target); controls.update(); positionFloatingTool(); return; }
   const p0 = camera.position.clone(), t0v = controls.target.clone(); controls.enabled = false;
   await tween(D(650), (k) => { camera.position.lerpVectors(p0, toPos, k); controls.target.lerpVectors(t0v, cfg.target, k); });
@@ -994,8 +1007,11 @@ function updateBar() {
 }
 function updateFlipBtn() {
   const f = $('#flipBtn'); if (!G) { f.hidden = true; return; }
-  f.hidden = !(view === 'front' || view === 'back' || (view === 'holder' && G.E.flags.mvLoc === 'holder'));
-  f.textContent = view === 'holder' ? '↻ Voltear movimiento' : '↻ Voltear reloj';
+  const watchSide = view === 'front' || view === 'back' || view === 'libre';
+  const holderSide = view === 'holder' && G.E.flags.mvLoc === 'holder';
+  f.hidden = !(watchSide || holderSide);
+  if (view === 'holder') f.textContent = '↻ Voltear movimiento';
+  else f.textContent = G.E.flags.flipped ? '↻ Boca arriba' : '↻ Voltear reloj';
 }
 function say(html, kind) { const m = $('#msg'); m.innerHTML = html; m.className = kind || ''; }
 function refresh() { refreshGhosts(); renderTray(); updateBar(); if ($('#partsPanel') && !$('#partsPanel').hidden) renderParts(); }
@@ -1105,7 +1121,7 @@ $('#partsList').onclick = async (e) => {
 };
 $('#actionBtn').onclick = async () => { if (!busy && G) await act(G.E.button('wind')); };
 $('#flipBtn').onclick = async () => { if (busy || !G) return; await act(G.E.button(view === 'holder' ? 'flipHolder' : 'flipWatch'), { keepView: true }); };
-document.querySelectorAll('.vbtn[data-view]').forEach(b => b.onclick = () => { if (busy || !G) return; const v = b.dataset.view; if (v === 'libre' && view === 'libre') { setView(viewBeforeLibre()); return; } setView(v === 'watch' ? (G.E.flags.flipped ? 'back' : 'front') : v); });
+document.querySelectorAll('.vbtn[data-view]').forEach(b => b.onclick = () => { if (busy || !G) return; const v = b.dataset.view; if (v === 'libre' && view === 'libre') { setView(viewBeforeLibre(), true); return; } setView(v === 'watch' ? (G.E.flags.flipped ? 'back' : 'front') : v); });
 $('#seatBtn').onclick = () => { if (busy) return; setSeatMode(!seatMode, true); };
 $('#hqBtn').onclick = () => { if (busy) return; setHQ(!hq, true); };
 function syncMute() { const b = $('#muteBtn'); if (!b) return; b.classList.toggle('on', !isMuted()); b.textContent = isMuted() ? 'MUTE' : 'SON'; }
