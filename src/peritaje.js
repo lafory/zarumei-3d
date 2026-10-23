@@ -231,3 +231,20 @@ export function recordDeal({ offer, verdict, paid, walked }) {
   write(db);
   return { rep: db.rep, delta, note, correct };
 }
+
+export function dropInventory(id) {
+  const db = read();
+  const before = db.inventory.length;
+  db.inventory = db.inventory.filter(it => it && it.id !== id);
+  write(db);
+  return db.inventory.length !== before;
+}
+
+export function receiveInventory(row) {
+  if (!row || typeof row.id !== 'string' || typeof row.watchId !== 'string') return false;
+  const db = read();
+  db.inventory.unshift(row);
+  db.inventory = db.inventory.slice(0, 24);
+  write(db);
+  return true;
+}

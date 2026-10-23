@@ -28,6 +28,7 @@ import { unlock as unlockAudio, play as playSfx, pulse as pulseSfx, setMuted, is
 import * as book from './accounts.js';
 import { BUILD_OPTS, DRAFT_ID, watchFromSpec, loadBuilds, rememberBuild, markBuildReady, isBuildReady, forgetBuild, cleanName, suggestedName, dialFits } from './build.js';
 import { OFFERS, VERDICTS, TRUTH_LABEL, offerById, periState, isClosed, inventory, nextLook, takeLooks, quotes, answer, recordDeal } from './peritaje.js';
+import { localStock, makeCode, cleanCode, openRoom } from './dealroom.js';
 
 const $ = (s) => document.querySelector(s);
 const stage = $('#stage');
@@ -1497,6 +1498,99 @@ if (periPanel) periPanel.addEventListener('click', (e) => {
   if (bid) periBid(bid.dataset.bid);
   if (e.target.closest('[data-peri-back]')) closePeri();
   if (e.target.closest('[data-peri-menu]')) { closePeri(); openMenu(); }
+});
+
+// Deal Room: la sala es opcional. El inventario solo se toca cuando los dos confirmaron.
+let dealApi = null, dealPick = 0, dealPrice = 500;
+function dealLine(card) {
+  if (!card) return '';
+  if (card.kind === 'build') {
+    const lab = (g, id) => (BUILD_OPTS[g].find(o => o.id === id) || {}).label || id;
+    const s = card.spec;
+    return `Armado en el taller · ${lab('case', s.case)} · ${lab('metal', s.metal)} · ${lab('dial', s.dial)} · ${lab('hands', s.hands)} · ${lab('caliber', s.caliber)}`;
+  }
+  return `${TRUTH_LABEL[card.truth] || card.truth} · te lo contaron como ${card.claim}`;
+}
+function closeDealRoom() {
+  if (dealApi) { try { dealApi.close(); } catch { /* ya cerrada */ } dealApi = null; }
+  const p = $('#dealPanel'); if (p) p.hidden = true;
+}
+function afterDeal(s) {
+  if (s.result && s.result.side === 'sold' && s.result.kind === 'build' && playWatch === s.result.holdId) playWatch = 'miami';
+  renderCustoms();
+  renderPeriOwn();
+}
+function renderDeal(state) {
+  const body = $('#dealBody'); if (!body) return;
+  if (!state) {
+    const stock = localStock();
+    const chips = stock.map((it, i) => `<button type="button" class="fchip${dealPick === i ? ' on' : ''}" data-hold="${i}">${esc(it.card.name)}</button>`).join('');
+    body.innerHTML = (stock.length
+      ? `<p class="small">Un reloj de este teléfono y un precio. El otro entra con el código. El saldo del taller no se mueve.</p><div class="optrow">${chips}</div><input id="dealPrice" inputmode="numeric" value="${dealPrice}">`
+      : `<p class="small">Todavía no tienes un reloj propio. Termina uno en Build o quédate uno en Peritaje. Sí puedes entrar a la sala de otro.</p>`)
+      + `<div class="optrow">${stock.length ? '<button type="button" class="fchip" data-deal="host">Crear sala</button>' : ''}<button type="button" class="fchip" data-deal="join-show">Unirme</button></div><div id="dealJoinRow" hidden><input id="dealJoin" maxlength="5" autocapitalize="characters" placeholder="CÓDIGO"><button type="button" class="fchip" data-deal="join">Entrar</button></div>`;
+    return;
+  }
+  const mineOk = state.role === 'sell' ? state.sellerOk : state.buyerOk;
+  const mineConfirm = state.role === 'sell' ? state.sellerConfirm : state.buyerConfirm;
+  let actions = '';
+  if (state.status === 'talk') {
+    actions = `<input id="dealBid" inputmode="numeric" value="${state.price}"><div class="optrow">${mineOk ? '' : '<button type="button" class="fchip" data-deal="accept">Acepto ese precio</button>'}<button type="button" class="fchip" data-deal="bid">${state.role === 'sell' ? 'Contraoferta' : 'Ofrezco'}</button><button type="button" class="fchip" data-deal="walk">Me voy</button></div>`;
+  } else if (state.status === 'seal') {
+    actions = `<div class="optrow">${mineConfirm ? '<span class="small">Confirmaste. Falta el otro.</span>' : '<button type="button" class="fchip" data-deal="confirm">Confirmo el pase</button>'}<button type="button" class="fchip" data-deal="walk">Me voy</button></div>`;
+  }
+  const tail = state.status !== 'done' || !state.result ? ''
+    : state.result.ok ? (state.result.side === 'sold' ? ' Salió de este teléfono.' : ' Ya está en Modo libre.')
+    : state.result.side === 'kept' ? ''
+    : ' No se pudo guardar en este teléfono.';
+  body.innerHTML = `<p class="cinzel" id="dealCodeText">${esc(state.code)}</p><p class="small">${state.role === 'sell' ? 'Vendes' : 'Compras'} · ${esc(state.phrase)}${esc(tail)}</p>${state.card ? `<p class="periLine"><b>${esc(state.card.name)}</b><br>${esc(dealLine(state.card))}<br>${fmtPrice(state.price)} · ronda ${state.round}/4</p>` : '<p class="small">Esperando al otro teléfono…</p>'}${actions}`;
+}
+function openDealPanel() {
+  const p = $('#dealPanel'); if (!p) return;
+  p.hidden = false;
+  if (!dealApi) renderDeal(null);
+}
+const dealOpen = $('#dealOpen');
+if (dealOpen) dealOpen.onclick = () => openDealPanel();
+const dealPanel = $('#dealPanel');
+if (dealPanel) dealPanel.addEventListener('click', (e) => {
+  const hold = e.target.closest('[data-hold]');
+  if (hold && !dealApi) {
+    dealPick = +hold.dataset.hold;
+    const inp = $('#dealPrice'); if (inp) dealPrice = +inp.value || dealPrice;
+    renderDeal(null);
+    return;
+  }
+  if (e.target.closest('[data-deal="join-show"]')) { const r = $('#dealJoinRow'); if (r) r.hidden = false; return; }
+  if (e.target.closest('[data-deal="host"]')) {
+    const stock = localStock();
+    const item = stock[dealPick];
+    const price = Math.round(+($('#dealPrice') && $('#dealPrice').value));
+    if (!item) { say('Elige un reloj.'); return; }
+    if (!(price >= 50 && price <= 500000)) { say('El precio va de 50 a 500.000.'); return; }
+    dealPrice = price;
+    if (dealApi) dealApi.close();
+    dealApi = openRoom({
+      role: 'sell', code: makeCode(), card: item.card, ask: price, holdId: item.holdId,
+      onState: (s) => { renderDeal(s); if (s.result) afterDeal(s); }
+    });
+    return;
+  }
+  if (e.target.closest('[data-deal="join"]')) {
+    const code = cleanCode($('#dealJoin') && $('#dealJoin').value);
+    if (code.length !== 5) { say('El código tiene 5 signos.'); return; }
+    if (dealApi) dealApi.close();
+    dealApi = openRoom({ role: 'buy', code, onState: (s) => { renderDeal(s); if (s.result) afterDeal(s); } });
+    return;
+  }
+  if (!dealApi) { if (e.target.closest('[data-deal="close"]')) closeDealRoom(); return; }
+  if (e.target.closest('[data-deal="accept"]')) dealApi.act({ t: 'accept' });
+  else if (e.target.closest('[data-deal="bid"]')) {
+    const price = Math.round(+($('#dealBid') && $('#dealBid').value));
+    if (!(price >= 50 && price <= 500000)) { say('El precio va de 50 a 500.000.'); return; }
+    dealApi.act({ t: 'bid', price });
+  } else if (e.target.closest('[data-deal="confirm"]')) dealApi.act({ t: 'confirm' });
+  else if (e.target.closest('[data-deal="walk"]') || e.target.closest('[data-deal="close"]')) closeDealRoom();
 });
 const buildNameInput = $('#buildName');
 if (buildNameInput) {

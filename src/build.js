@@ -143,6 +143,17 @@ export function markBuildReady(id) {
 }
 
 export function forgetBuild(id) {
-  writeRaw(readRaw().filter(r => r && r.id !== id));
+  const before = readRaw();
+  const had = before.some(r => r && r.id === id);
+  writeRaw(before.filter(r => r && r.id !== id));
   delete WATCHES[id];
+  return had;
+}
+
+// Un reloj que llegó por la Deal Room. Nace listo: Modo libre lo puede abrir.
+export function importDealBuild(name, spec) {
+  const id = 'b' + Date.now().toString(36) + Math.floor(Math.random() * 36).toString(36);
+  const w = rememberBuild(id, spec, name);
+  if (!w || !markBuildReady(id)) return null;
+  return w;
 }

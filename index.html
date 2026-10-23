@@ -123,7 +123,7 @@ button:disabled{opacity:.45}
 .wcard.on::after{content:'Elegido';display:block;padding:2px 10px 6px;font-family:var(--caps);letter-spacing:.22em;font-size:11px;color:var(--gold)}
 #playPane > .row,#buildPane > .row{position:sticky;bottom:0;z-index:3;background:#050505;padding:12px 0 6px}
 .optrow{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0 12px}
-#buildName{width:100%;background:#100e0c;color:var(--ink);border:1px solid var(--hair);border-radius:2px;padding:11px 12px;font:16px var(--sans);margin:0 0 8px}
+#buildName,#dealPrice,#dealJoin,#dealBid{width:100%;background:#100e0c;color:var(--ink);border:1px solid var(--hair);border-radius:2px;padding:11px 12px;font:16px var(--sans);margin:0 0 8px}
 #buildOpts .fchip{display:flex;flex-direction:column;align-items:flex-start;gap:1px;border-radius:2px;text-align:left}
 #buildOpts .fchip small{display:block;font-size:10px;color:var(--muted);letter-spacing:0;text-transform:none}
 #buildOpts .fchip.on small{color:#3d3114}
@@ -140,9 +140,9 @@ body.buildpeek #intro .card{max-height:58dvh;pointer-events:auto;border-top:1px 
 .tgvals b{display:block;font-size:16px;color:#fff6d2}.tgvals .warn b{color:#ffb35b}
 #tgNote{font-size:13px;line-height:1.4;margin:8px 0}
 #partsPanel{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 8px);width:min(540px,calc(100% - 16px));max-height:min(72dvh,560px);z-index:16;display:flex;flex-direction:column;background:var(--marble),linear-gradient(180deg,#14120e,#070707);border:1px solid var(--hair);outline:1px solid rgba(224,195,106,.18);outline-offset:-5px;border-radius:2px;padding:12px 12px 10px;animation:rise .45s}
-#partsPanel h3,#periPanel h3{margin:0;font-family:var(--caps);font-weight:500;letter-spacing:.16em;color:var(--gold);font-size:11px;text-transform:uppercase}
+#partsPanel h3,#periPanel h3,#dealPanel h3{margin:0;font-family:var(--caps);font-weight:500;letter-spacing:.16em;color:var(--gold);font-size:11px;text-transform:uppercase}
 #partsPanel .lead{margin:6px 0 0}
-#periPanel{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 8px);width:min(540px,calc(100% - 16px));max-height:min(70dvh,520px);overflow:auto;z-index:17;background:var(--marble),linear-gradient(180deg,#14120e,#070707);border:1px solid var(--hair);outline:1px solid rgba(224,195,106,.18);outline-offset:-5px;border-radius:2px;padding:12px 12px 10px;animation:rise .45s}
+#periPanel,#dealPanel{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 8px);width:min(540px,calc(100% - 16px));max-height:min(70dvh,520px);overflow:auto;z-index:17;background:var(--marble),linear-gradient(180deg,#14120e,#070707);border:1px solid var(--hair);outline:1px solid rgba(224,195,106,.18);outline-offset:-5px;border-radius:2px;padding:12px 12px 10px;animation:rise .45s}
 .periLine{font-size:14px;line-height:1.4;margin:6px 0}
 .periClue{font-size:13px;line-height:1.35;margin:6px 0;padding:4px 8px;border-left:2px solid var(--gold)}
 #periList .ticket{display:block}
@@ -286,7 +286,7 @@ body:not(.land) #landScroll{display:none!important}
   #tray::before{content:'Bandeja de piezas';flex-basis:100%;font-family:var(--caps);font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold)}
   #bottom .lux{width:100%}
   #tgPanel{left:auto;right:max(16px,env(safe-area-inset-right));transform:none;width:min(440px,29vw)}
-  #partsPanel,#periPanel{left:auto;right:max(16px,env(safe-area-inset-right));transform:none;width:min(440px,29vw)}
+  #partsPanel,#periPanel,#dealPanel{left:auto;right:max(16px,env(safe-area-inset-right));transform:none;width:min(440px,29vw)}
   #bqDetail{flex-direction:row}#bqStage{flex:1 1 60%}#bqInfo{flex:0 0 min(460px,40%);border-top:0;border-left:1px solid var(--hair);padding:calc(env(safe-area-inset-top) + 70px) 26px 26px}
   .vitrines{grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
 }
@@ -388,6 +388,11 @@ body:not(.land) #landScroll{display:none!important}
       <p class="cinzel" style="margin-top:12px">Mesa de peritaje</p>
       <p class="small">Te dejan un reloj y un cuento. Lo miras en el banco con la lupa, el timegrapher y el fondo. Luego das el veredicto y, si quieres, cierras el precio. El saldo y lo que compras quedan en este teléfono.</p>
       <p class="small" id="periRep"></p>
+      <div id="dealBox">
+        <p class="cinzel">Deal Room</p>
+        <p class="small">Opcional, entre dos teléfonos. El resto del juego no sale de este. Se pasa un solo reloj, con código. Si se corta, no cambia nada.</p>
+        <button class="lux" id="dealOpen" type="button">Abrir sala</button>
+      </div>
       <div id="periList"></div>
     </div>
     <button class="menuShop" data-open="boutique" id="shopBtn"><span style="font-size:22px;color:var(--gold)">◆</span><span><small class="cinzel">Maison LA FORY</small><b>Visitar la boutique</b><small>Relojes · Herramientas · Joyería</small></span></button>
@@ -412,6 +417,12 @@ body:not(.land) #landScroll{display:none!important}
   <h3>Peritaje</h3>
   <div id="periBody"></div>
   <div class="row"><button class="lux" type="button" data-peri-back>Seguir mirando</button><button class="lux" type="button" data-peri-menu>Menú</button></div>
+</div>
+
+<div id="dealPanel" hidden>
+  <h3>Deal Room</h3>
+  <div id="dealBody"></div>
+  <div class="row"><button class="lux" type="button" data-deal="close">Cerrar</button></div>
 </div>
 
 <div id="a2hs" hidden><button id="a2hsClose" aria-label="Cerrar">✕</button><span class="cinzel">Pantalla completa en iPad</span>Safari no permite pantalla completa dentro de la página. Toca <b>Compartir</b> → <b>Agregar a pantalla de inicio</b> y abre ZARUMEI 3D desde el icono: se abrirá a pantalla completa.</div>
@@ -465,7 +476,7 @@ body:not(.land) #landScroll{display:none!important}
   <div id="bqDetail" hidden><button class="lux" id="bqBack">← Volver</button><div id="bqStage"></div><div id="bqInfo"></div></div>
 </div>
 
-<script src="game.js?v=peri1"></script>
+<script src="game.js?v=deal1"></script>
 <script>
 setInterval(function(){var g=window.__game;if(!g||!g.started)return;var el=document.getElementById('timer');if(!el._t0)el._t0=Date.now();if(document.getElementById('endOverlay').hidden){var e=Math.floor((Date.now()-el._t0)/1000);el.textContent=Math.floor(e/60)+':'+String(e%60).padStart(2,'0');}},500);
 document.getElementById('menuTop').onclick=function(){ if (window.__game && __game.openMenu) __game.openMenu(); else document.getElementById('intro').hidden=false; };
