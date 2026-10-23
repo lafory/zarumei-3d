@@ -506,23 +506,39 @@ async function fxInstall(id) {
   if (id === 'caseback' && !G.E.quartz) { const r0 = obj.rotation.y; obj.rotation.y = r0 + 1.6; await tween(D(450), (k) => { obj.rotation.y = r0 + 1.6 * (1 - k); }); }
 }
 function screwSlotPos(sid) { const sc = G.E.screws[sid]; const base = trayWorld(slotOf(sc.part)); return base.add(new THREE.Vector3(-6 + sc.i * 2.4, 0.2, 5.6)); }
-async function fxTurn(sid, dir, prog) {
-  const s = G.MV.screws[sid], obj = s.obj, h = G.home[sid];
-  if (dir > 0 && obj.parent !== h.parent) { // atornillar: el tornillo viaja desde la bandeja al agujero
-    obj.visible = true; h.parent.attach(obj);
-    const up = h.pos.clone().add(new THREE.Vector3(0, 1.0, 0).applyQuaternion(h.quat));
-    const p0 = obj.position.clone(), q0 = obj.quaternion.clone();
-    if (SPEED >= 0.2) await tween(D(450), (k) => { obj.position.lerpVectors(p0, up, k); obj.quaternion.slerpQuaternions(q0, h.quat, k); }); else { obj.position.copy(up); obj.quaternion.copy(h.quat); }
-  }
+function seatScrew(sid) {
+  const pack = G.MV.screws[sid], h = G.home[sid];
+  if (!pack || !h) return;
+  const obj = pack.obj;
+  if (obj.parent !== h.parent) h.parent.attach(obj);
+  obj.visible = true;
+  obj.position.copy(h.pos);
+  obj.quaternion.copy(h.quat);
+  obj.scale.copy(h.scale);
+  const th = obj.getObjectByName('thread'); if (th) th.visible = false;
+}
+async function fxTurn(sid, dir, prog, lift) {
+  const pack = G.MV.screws[sid], obj = pack && pack.obj, h = G.home[sid];
+  if (!obj || !h) return;
+  obj.visible = true;
+  if (obj.parent !== h.parent) h.parent.attach(obj);
+  obj.scale.copy(h.scale);
   const axis = new THREE.Vector3(0, 1, 0).applyQuaternion(h.quat);
-  const target = h.pos.clone().add(axis.clone().multiplyScalar(dir > 0 ? (1 - prog) * 1.0 : prog * 0.8));
-  const p0 = obj.position.clone(); const lh = G.E.screws[sid].lh ? -1 : 1;
-  if (SPEED >= 0.2) await tween(D(240), (k) => { obj.position.lerpVectors(p0, target, k); obj.rotateOnAxis(new THREE.Vector3(0, 1, 0), dir * lh * 0.09); });
-  else obj.position.copy(target);
+  const along = lift == null ? (dir > 0 ? (1 - prog) * 0.9 : prog * 0.85) : lift * 0.9;
+  const target = h.pos.clone().add(axis.multiplyScalar(along));
+  const p0 = obj.position.clone();
+  const spin = dir * (G.E.screws[sid].lh ? -1 : 1) * 1.2;
+  const travel = p0.distanceTo(target) > 1.2;
+  const go = (k) => {
+    obj.position.lerpVectors(p0, target, k);
+    obj.quaternion.copy(h.quat);
+    obj.rotateOnAxis(new THREE.Vector3(0, 1, 0), spin * k);
+  };
+  if (SPEED >= 0.2) await tween(D(travel ? 460 : 200), go); else go(1);
   if (floatingTool && sel === 'screwdriver') { const w = new THREE.Vector3(); obj.getWorldPosition(w); floatingTool.position.copy(w).add(new THREE.Vector3(0, 0.6, 0)); floatingTool.rotation.y += dir * 0.6; }
 }
-async function fxUnscrew(sid) { const obj = G.MV.screws[sid].obj; obj.getObjectByName('thread').visible = true; await moveWorld(obj, screwSlotPos(sid), new THREE.Quaternion(), new THREE.Vector3(1, 1, 1), 600, 8); positionFloatingTool(); }
-async function fxScrew(sid) { const obj = G.MV.screws[sid].obj, h = G.home[sid]; obj.getObjectByName('thread').visible = false; obj.position.copy(h.pos); positionFloatingTool(); }
+async function fxUnscrew(sid) { const obj = G.MV.screws[sid].obj; const th = obj.getObjectByName('thread'); if (th) th.visible = true; await moveWorld(obj, screwSlotPos(sid), new THREE.Quaternion(), new THREE.Vector3(1, 1, 1), 600, 8); positionFloatingTool(); }
+async function fxScrew(sid) { seatScrew(sid); positionFloatingTool(); }
 async function fxLost(sid) { const obj = G.MV.screws[sid].obj; await moveWorld(obj, obj.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(60, -20, 50)), obj.quaternion.clone(), new THREE.Vector3(1, 1, 1), 500, 25); obj.visible = false; }
 function refreshGhosts() {
   if (!G) return;
@@ -533,7 +549,7 @@ function refreshGhosts() {
     if (sc.state === 'lost') s.obj.visible = false;
     else if (sc.state === 'in') s.obj.visible = !buried;
     else s.obj.visible = true;
-    s.ghost.visible = sc.state !== 'in' && sc.state !== 'lost' && G.E.st[sc.part] === 'in' && !covered;
+    s.ghost.visible = sc.state !== 'in' && G.E.st[sc.part] === 'in' && !covered;
   }
 }
 function placeRemoved(id) {
@@ -556,12 +572,27 @@ function placeScrewOut(sid) {
   const th = obj.getObjectByName('thread'); if (th) th.visible = true;
   scene.attach(obj); obj.position.copy(screwSlotPos(sid)); obj.quaternion.identity(); obj.scale.set(1, 1, 1); obj.visible = true;
 }
+function placePartial(sid) {
+  const sc = G.E.screws[sid], obj = G.MV.screws[sid].obj, h = G.home[sid];
+  if (!h) return placeScrewOut(sid);
+  if (obj.parent !== h.parent) h.parent.attach(obj);
+  obj.visible = true;
+  obj.scale.copy(h.scale);
+  obj.quaternion.copy(h.quat);
+  const axis = new THREE.Vector3(0, 1, 0).applyQuaternion(h.quat);
+  obj.position.copy(h.pos).add(axis.multiplyScalar(sc.prog * 0.9));
+  const th = obj.getObjectByName('thread'); if (th) th.visible = sc.prog > 0.2;
+}
 function layoutFromState() {
   const E = G.E;
   if (E.st.movement === 'out') placeRemoved('movement');
   for (const id of E.history) if (id !== 'movement' && E.st[id] === 'out') placeRemoved(id);
   for (const id of Object.keys(E.st)) if (E.st[id] === 'out' && id !== 'movement' && !E.history.includes(id)) placeRemoved(id);
-  for (const sid of Object.keys(E.screws)) if (E.screws[sid].state !== 'in') placeScrewOut(sid);
+  for (const sid of Object.keys(E.screws)) {
+    if (E.screws[sid].state === 'in' && !E.screws[sid].prog) seatScrew(sid);
+    else if (E.screws[sid].state === 'in') placePartial(sid);
+    else placeScrewOut(sid);
+  }
   if (E.flags.flipped) { G.root.rotation.z = Math.PI; G.root.position.y = G.CS.dims.yBack; }
   if (E.st.movement === 'out' && E.flags.holderSide === 'dial') {
     const pl = E.quartz ? 0.9 : 1.2;
@@ -708,9 +739,10 @@ async function runFx(list) {
   for (const f of list) {
     if (f.fx === 'remove') { sfx('remove'); await fxRemove(f.part, f.inspect); if (f.inspect) await setView('mat'); }
     else if (f.fx === 'install') { sfx('install'); await fxInstall(f.part); if (f.part === 'battery' && G.E.replaced.has('battery')) flashLabel('🔋 Pila nueva SR626SW'); if (f.part === 'coil' && G.E.replaced.has('coil')) G.MV.sub.coilMat.color.set(0xd88a4a); }
-    else if (f.fx === 'turn') { sfx('screw'); await fxTurn(f.screw, f.dir, f.prog); }
+    else if (f.fx === 'turn') { sfx('screw'); await fxTurn(f.screw, f.dir, f.prog, f.lift); }
     else if (f.fx === 'unscrew') { sfx('screw'); await fxUnscrew(f.screw); }
     else if (f.fx === 'screw') { sfx('seat'); await fxScrew(f.screw); }
+    else if (f.fx === 'needSize') { document.querySelectorAll('.size').forEach(b => b.classList.toggle('hint', Math.abs(+b.dataset.size - f.size) < 0.01)); }
     else if (f.fx === 'lost') { sfx('bad'); await fxLost(f.screw); }
     else if (f.fx === 'slip') { stage.classList.remove('shake'); void stage.offsetWidth; stage.classList.add('shake'); }
     else if (f.fx === 'flipWatch') await flipWatch(f.to);
@@ -1260,6 +1292,15 @@ window.__game = {
   startStory, startPlay, openMenu, openLanding, closeLanding, setSpeed: (s) => (SPEED = s), setView: (v) => setView(v),
   selectTool: (id) => selectTool(id), setSize,
   suggest: () => G.E.suggest(), describe: (a) => G.E.describe(a),
+  screwPose(sid) {
+    const pack = G.MV.screws[sid], h = G.home[sid], sc = G.E.screws[sid];
+    if (!pack || !h || !sc) return null;
+    const wp = new THREE.Vector3(), hw = new THREE.Vector3();
+    pack.obj.getWorldPosition(wp);
+    h.parent.updateWorldMatrix(true, false);
+    hw.copy(h.pos).applyMatrix4(h.parent.matrixWorld);
+    return { state: sc.state, prog: sc.prog, dist: +wp.distanceTo(hw).toFixed(3), parent: pack.obj.parent === h.parent, ang: +pack.obj.quaternion.angleTo(h.quat).toFixed(4) };
+  },
   // ejecuta una acción como la haría el jugador (misma ruta de código que los toques)
   async do(a) {
     if (a.button) { if (a.button === 'wind') $('#actionBtn').click(); else { await setView(a.button === 'flipHolder' ? 'holder' : workView()); $('#flipBtn').click(); } return; }

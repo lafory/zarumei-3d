@@ -14,11 +14,19 @@ export function screwsFor(M, cal, parts) {
     const g = screwMesh(M, s.s); g.userData.screwId = sid; g.name = sid;
     const hp = hitProxy(M, Math.max(0.95, s.s * 0.9), 1.0, 0.3); hp.userData.screwId = sid; g.add(hp);
     const ghost = screwMesh(M, s.s, true); ghost.userData.screwGhost = sid; ghost.visible = false;
-    const gh = hitProxy(M, Math.max(0.95, s.s * 0.9), 1.0, 0.3); gh.userData.screwGhost = sid; ghost.add(gh);
+    // El agujero es pequeño: el toque acepta un área más ancha para poder volver a meter el tornillo.
+    const gh = hitProxy(M, Math.max(2.2, s.s * 1.7), 1.8, 0.45); gh.userData.screwGhost = sid; ghost.add(gh);
     for (const o of [g, ghost]) {
       o.position.set(...s.p);
-      if (s.radial) { const d = new THREE.Vector3(s.p[0], 0, s.p[2]).normalize(); o.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d); o.position.add(d.clone().multiplyScalar(0.0)); }
-      o.rotation.y += (i * 1.7) % 3; host.add(o);
+      if (s.radial) {
+        const d = new THREE.Vector3(s.p[0], 0, s.p[2]);
+        if (d.lengthSq() > 1e-8) {
+          d.normalize();
+          o.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d);
+          o.rotateOnAxis(new THREE.Vector3(0, 1, 0), (i * 1.7) % 3);
+        }
+      } else o.rotation.y += (i * 1.7) % 3;
+      host.add(o);
     }
     out[sid] = { obj: g, ghost, host };
   });

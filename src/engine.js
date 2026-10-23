@@ -201,7 +201,12 @@ export function createEngine({ watchId, faultId, story = null }) {
       if (oilPending(id)) { if (screwsIn(id).length < screwsOf(id).length) return R('info', 'Primero pon todos sus tornillos.'); oiled.add(id); return R('good', `🛢 ${p.oil.msg}`, [{ fx: 'oil', part: id }]); }
       return R('info', '🛢 Ahí no hace falta aceite ahora (o ya está lubricado).');
     }
-    if (tool === 'screwdriver' && screwsIn(id).length) return R('info', `Toca <b>cada tornillo</b> de ${name(id)} con la punta correcta (mantén pulsado o toca varias veces).`);
+    if (tool === 'screwdriver') {
+      // Primero el que ya saltó a la bandeja; si no, el que solo salió a medias y sigue colgando.
+      const loose = screwsOf(id).find(x => x.state !== 'in') || screwsOf(id).find(x => x.state === 'in' && x.prog > 0);
+      if (loose) { if (armed && armed !== id) armed = null; return screwTurn(loose.id, tool, size, 1, 1); }
+      if (screwsIn(id).length) return R('info', `Toca <b>cada tornillo</b> de ${name(id)} con la punta correcta (mantén pulsado o toca varias veces).`);
+    }
     const c = canRemove(id);
     if (c.info) return R('info', c.info);
     if (c.err) return bad(c.err, 5, c.k);
@@ -213,7 +218,19 @@ export function createEngine({ watchId, faultId, story = null }) {
   }
   // ── toque sobre una pieza que está en la bandeja (o su chip) ──
   function tapChip(id, tool, size) {
-    if (!P[id] || st[id] !== 'out') return R('info', '');
+    if (!P[id]) return R('info', '');
+    // La ficha 🔩 tiene que funcionar con la pieza todavía montada: antes se ignoraba y el tornillo no volvía.
+    if (tool === 'screwdriver') {
+      const loose = screwsOf(id).find(x => x.state !== 'in') || screwsOf(id).find(x => x.state === 'in' && x.prog > 0);
+      armed = loose ? id : null;
+      if (st[id] === 'in') {
+        if (!loose) return R('info', `${cap(name(id))} no tiene tornillos sueltos.`);
+        if (!access(id)) return R('info', accessMsg(id));
+        return screwTurn(loose.id, tool, size, 1, 1);
+      }
+      return R('info', armed ? `🔩 Tornillos de ${name(id)} listos. Coloca la pieza y aprieta con punta de <b>${mm(loose.s)}</b>, o toca el agujero.` : `${cap(name(id))} no tiene tornillos sueltos.`);
+    }
+    if (st[id] !== 'out') return R('info', '');
     if (!tool) return R('info', `Elige la herramienta para colocar ${name(id)}.`);
     const s = curStep();
     if (s && !s.removed && s.part === id && (s.on === id || SUB[s.on])) {
@@ -221,7 +238,6 @@ export function createEngine({ watchId, faultId, story = null }) {
     }
     if (tool === 'loupe') return R('info', `🔍 ${cap(name(id))}.`, [{ fx: 'zoom', part: id }]);
     if (tool === 'oiler' && P[id].oil && P[id].oil.when === 'before') { oiled.add(id); return R('good', '🛢 ' + P[id].oil.msg, [{ fx: 'oil', part: id }]); }
-    if (tool === 'screwdriver') { armed = screwsOf(id).some(x => x.state !== 'in') ? id : null; return R('info', armed ? `🔩 Tornillos de ${name(id)} listos en la punta. Toca su agujero.` : `${cap(name(id))} no tiene tornillos sueltos.`); }
     if (['timegrapher', 'compass', 'meter', 'blower', 'demag'].includes(tool)) return tapPart(id === 'battery' || id === 'coil' ? id : 'watch', tool, size);
     const c = canInstall(id);
     if (c.info) return R('info', c.info);
@@ -251,40 +267,57 @@ export function createEngine({ watchId, faultId, story = null }) {
     return R('bad', `Ahí no va. El anillo dorado marca el sitio de <b>${name(id)}</b>.`);
   }
   // ── tornillos: contacto + giro ──
-  function screwTurn(sid, tool, size, amount) {
+  // dir: +1 apretar, −1 aflojar. Sin dir, un tornillo puesto se afloja y uno fuera se aprieta.
+  function screwTurn(sid, tool, size, amount, dir) {
     const sc = screws[sid]; if (!sc) return R('info', '');
     const p = P[sc.part];
     if (tool !== 'screwdriver') { if (tool === 'tweezers') return bad('Los tornillos se sacan y se ponen con el <b>destornillador</b>; con pinzas saltan.'); return R('info', 'Elige el <b>destornillador</b> y su tamaño de punta.'); }
-    const out = sc.state !== 'in';
-    if (st[sc.part] !== 'in') return R('info', `${cap(name(sc.part))} no está montado.`);
+    if (!p || st[sc.part] !== 'in') return R('info', `${cap(name(sc.part))} no está montado. Colócalo y después atornilla.`);
     if (!access(sc.part)) return R('info', accessMsg(sc.part));
-    if (!out) {
-      if (story && diagPending()) return bad(`Antes de abrir, un relojero <b>diagnostica</b>: usa ${toolName(diagPending())}.`, 5, 'wrongOrder');
-      const cov = p.coveredBy.find(c => st[c] === 'in'); if (cov) return bad(`Ese tornillo está debajo de ${name(cov)}. Quítala primero; la pista marca el que sí sale.`, 5, 'wrongOrder');
-    }
+    let tightening = dir === 1 || (dir !== -1 && sc.state !== 'in');
+    if (dir === 1 && sc.state === 'in' && sc.prog > 0) tightening = true;
+    if (dir !== 1 && sc.state === 'in') tightening = false;
+    if (!tightening && sc.state !== 'in') return R('info', 'Ese tornillo ya está fuera. Tócalo para volver a meterlo.');
+    if (!tightening && sc.state === 'in' && sc.prog === 0 && story && diagPending()) return bad(`Antes de abrir, un relojero <b>diagnostica</b>: usa ${toolName(diagPending())}.`, 5, 'wrongOrder');
+    const cov = (p.coveredBy || []).find(c => st[c] === 'in');
+    if (cov && (sc.prog === 0 || sc.state !== 'in')) return bad(`Ese tornillo está debajo de ${name(cov)}. Quítala primero; la pista marca el que sí sale.`, 5, 'wrongOrder');
     if (sc.prog === 0) {
-      if (size > sc.s + 0.05) return bad(`Punta de ${mm(size)} demasiado <b>grande</b>: no entra en la ranura y rayaría el puente. Este tornillo pide ${mm(sc.s)}.`, 2, 'wrongTool');
+      if (size > sc.s + 0.05) return bad(`Punta de ${mm(size)} demasiado <b>grande</b>: no entra en la ranura y rayaría el puente. Este tornillo pide ${mm(sc.s)}.`, 2, 'wrongTool', [{ fx: 'needSize', size: sc.s }]);
       if (size < sc.s - 0.05) {
-        sc.dmg++; penal(3, 'slips');
-        if (sc.dmg >= 2 && !out) { sc.state = 'lost'; penal(10, 'lost'); return R('bad', `💥 La punta pequeña resbaló otra vez y el tornillo <b>saltó y se perdió</b>. Tendrás que usar uno de repuesto.`, [{ fx: 'lost', screw: sid }]); }
-        return R('bad', `⚠️ Punta de ${mm(size)} demasiado <b>pequeña</b>: resbala y marca la cabeza del tornillo (dañado ${sc.dmg}/2). Usa ${mm(sc.s)}.`, [{ fx: 'slip', screw: sid }]);
+        sc.dmg++;
+        if (sc.dmg >= 2 && !tightening) {
+          sc.state = 'out'; sc.prog = 0; sc.spare = true; penal(3, 'slips'); penal(10, 'lost');
+          return R('bad', `❌ 💥 La punta pequeña resbaló otra vez y el tornillo <b>saltó a la bandeja</b>. No se pierde: vuelve a ponerlo con la punta de ${mm(sc.s)}. El agujero sigue marcado.`, [{ fx: 'unscrew', screw: sid }, { fx: 'slip', screw: sid }, { fx: 'needSize', size: sc.s }]);
+        }
+        return bad(`⚠️ Punta de ${mm(size)} demasiado <b>pequeña</b>: resbala y marca la cabeza del tornillo (dañado ${Math.min(sc.dmg, 2)}/2). Usa ${mm(sc.s)}.`, 3, 'slips', [{ fx: 'slip', screw: sid }, { fx: 'needSize', size: sc.s }]);
       }
-      if (out) {
+      if (tightening) {
         if (armed && armed !== sc.part) {
           const kinds = screwsOf(armed).map(x => x.k);
           if (!kinds.includes(sc.k)) { penal(5, 'wrongScrews'); const was = armed; armed = null; return R('bad', `❌ <b>Tornillo equivocado</b>: los de ${name(was)} son de otro largo o rosca. Usa los de ${name(sc.part)}.`, []); }
         }
-        if (sc.state === 'lost') { stats.spares++; score = Math.max(0, score - 5); sc.spare = true; }
+        if (sc.state === 'lost') { stats.spares++; score = Math.max(0, score - 5); sc.spare = true; sc.state = 'out'; }
       }
     }
-    sc.prog = Math.min(1, sc.prog + amount);
-    if (sc.prog < 1) return R('turn', out ? (sc.spare && sc.prog <= amount ? '🔩 Tornillo de <b>repuesto</b> (cajón LA FORY).' : '🔩 Atornillando…') : (sc.lh ? '↻ ¡Rosca a <b>izquierdas</b>! Se afloja girando a la derecha…' : '↺ Desatornillando…'), [{ fx: 'turn', screw: sid, dir: out ? 1 : -1, prog: sc.prog }]);
+    // Apretar un tornillo que solo salió a medias: sigue en la pieza y puede volver a su sitio.
+    if (tightening && sc.state === 'in') {
+      sc.prog = Math.max(0, sc.prog - (amount || 0));
+      if (sc.prog > 0) return R('turn', '🔩 Apretando…', [{ fx: 'turn', screw: sid, dir: 1, prog: sc.prog, lift: sc.prog }]);
+      sc.dmg = 0;
+      return R('good', '🔩 Tornillo apretado.', [{ fx: 'screw', screw: sid }]);
+    }
+    sc.prog = Math.min(1, sc.prog + (amount || 0));
+    const lift = tightening ? (1 - sc.prog) : sc.prog;
+    if (sc.prog < 1) return R('turn', tightening ? (sc.spare && sc.prog <= amount ? '🔩 Tornillo de <b>repuesto</b> (cajón LA FORY).' : '🔩 Atornillando…') : (sc.lh ? '↻ ¡Rosca a <b>izquierdas</b>! Se afloja girando a la derecha…' : '↺ Desatornillando…'), [{ fx: 'turn', screw: sid, dir: tightening ? 1 : -1, prog: sc.prog, lift }]);
     sc.prog = 0;
-    if (!out) { sc.state = 'out'; const left = screwsIn(sc.part).length; return R('good', `🔩 Tornillo fuera → bandeja.${left ? ` Quedan ${left}.` : ` ${cap(name(sc.part))} ya se puede levantar.`}`, [{ fx: 'unscrew', screw: sid }]); }
+    if (!tightening) { sc.state = 'out'; const left = screwsIn(sc.part).length; return R('good', `🔩 Tornillo fuera → bandeja.${left ? ` Quedan ${left}.` : ` ${cap(name(sc.part))} ya se puede levantar.`}`, [{ fx: 'unscrew', screw: sid }]); }
     sc.state = 'in'; sc.dmg = 0; const left = screwsOf(sc.part).length - screwsIn(sc.part).length; if (!left) armed = null;
     let msg = `🔩 Tornillo puesto.${left ? ` Faltan ${left}.` : ` ${cap(name(sc.part))} atornillado.`}`;
     if (!left && oilPending(sc.part)) msg += ` Lubrica: ${P[sc.part].oil.msg}`;
-    return R('good', msg, [{ fx: 'screw', screw: sid }]);
+    const fx = [];
+    if ((amount || 0) >= 0.99) fx.push({ fx: 'turn', screw: sid, dir: 1, prog: 1, lift: 0 });
+    fx.push({ fx: 'screw', screw: sid });
+    return R('good', msg, fx);
   }
   function button(action) {
     if (action === 'flipWatch') { if (flags.mvLoc !== 'case' && false) return R('info', ''); flags.flipped = !flags.flipped; return R('info', flags.flipped ? 'Reloj boca abajo: trabajas por el fondo.' : 'Reloj boca arriba.', [{ fx: 'flipWatch', to: flags.flipped }]); }

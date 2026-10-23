@@ -37,8 +37,8 @@ La interfaz tiene estética de boutique de alta joyería: ónix, terciopelo verd
 - **Herramientas:** eliges la herramienta y toca la pieza. Las piezas de la bandeja también salen como fichas abajo. Con **SITIO** (botón del visor, activo de entrada) tocas la ficha y luego el anillo dorado donde esa pieza vive. **AUTO** la encaja al tocarla, como antes. Aceite, lupa y tornillos no cambian.
 - **Calidad foto (8K):** más nítido, sombra más fina y un desenfoque suave solo en la lupa. La vista normal es una sola pasada, para el iPhone. No es un lienzo de 7680 px.
 - **Tornillos, uno a uno:** con el **destornillador**, elige la **punta** (0,8 a 1,6 mm) y **mantén pulsado** el tornillo para girarlo, o tócalo varias veces.
-  - Si la punta es demasiado grande, no entra. Si es demasiado pequeña, resbala y marca la cabeza; al segundo resbalón el tornillo **salta y se pierde**, y hay que usar uno de repuesto.
-  - Los tornillos van a la bandeja, al compartimento de su pieza. Para volver a ponerlos, toca la ficha 🔩 de su grupo (con eso se cargan en la punta) y luego cada agujero fantasma. Si usas los tornillos de otra pieza, cuenta como **tornillo equivocado**.
+  - Si la punta es demasiado grande, no entra. Si es demasiado pequeña, resbala y marca la cabeza; al segundo resbalón el tornillo **salta a la bandeja** (no se pierde). El agujero sigue marcado y se vuelve a poner con la punta correcta. Tocar la pieza, o su ficha 🔩, también lo aprieta.
+  - Los tornillos van a la bandeja, al compartimento de su pieza. Con la pieza ya montada, la ficha 🔩 los aprieta uno a uno (punta correcta). También vale tocar el agujero fantasma. Si usas los tornillos de otra pieza, cuenta como **tornillo equivocado**.
   - La rueda de corona tiene **rosca a izquierdas**.
 - **↻ Voltear:** da la vuelta al reloj, o al movimiento cuando está en el soporte.
 - **Dar cuerda:** antes de la prueba final en el timegrapher.
