@@ -82,7 +82,7 @@ export function buildZT18(M, images, watch, cal) {
   const spr = []; for (let t = 0; t < 12 * Math.PI; t += 0.25) { const rr = 0.8 + t * 0.09; spr.push(new THREE.Vector3(Math.cos(t) * rr, 0.4, Math.sin(t) * rr)); }
   const mainspring = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(spr), 180, 0.05, 4), new THREE.MeshStandardMaterial({ color: 0x6a5438, metalness: 0.7, roughness: 0.55 }));
   mainspring.visible = false; barrel.add(mainspring);
-  barrel.add(hitProxy(M, 4.8, 1.6, 0.7)); at(barrel, -3.2, 1.15, -4.4); mv.add(barrel); parts.barrel = barrel; sub.mainspring = mainspring;
+  barrel.add(hitProxy(M, 4.8, 1.6, 0.7)); at(barrel, -3.2, 1.15, -4.4); mv.add(barrel); parts.barrel = barrel; sub.mainspring = mainspring; sub.barrelDrum = barrel.children[0];
   const bb = tag(new THREE.Group(), 'barrelBridge');
   bb.add(new THREE.Mesh(extrudeShape(polyShape([[-8.2, -1.2], [-7.4, -8.6], [1.4, -8.8], [1.6, -1.4], [-2.2, 0.4]]), 0.7), M.bridgeGilt));
   bb.add(at(jewelMesh(M, 0.36), -3.2, 0.72, -4.4));
