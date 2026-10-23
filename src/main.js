@@ -1009,8 +1009,23 @@ function pick(cx, cy) {
   const firstD = hits.length ? hits[0].distance : 0;
   for (const h of hits) { if (h.distance - firstD > 2.5) break; for (let n = h.object; n; n = n.parent) if (n.userData.seat) return { seat: n.userData.seat, chain: [] }; }
   for (const h of hits.slice(0, 8)) { if (h.distance - firstD > 8) break; for (let n = h.object; n; n = n.parent) { const sid = n.userData.screwId || n.userData.screwGhost; if (!sid || !G) continue; const sc = G.E.screws[sid]; if (G.E.P[sc.part].coveredBy.some(c => G.E.st[c] === 'in')) continue; return n.userData.screwId ? { screw: sid } : { ghost: sid }; } }
-  for (const h of hits) { const chain = []; for (let n = h.object; n; n = n.parent) if (n.userData.partId) chain.push(n.userData.partId); if (chain.length) return { chain }; if (!h.object.userData.isHit) return { chain: [] }; }
-  return { chain: [] };
+  // La pieza de encima gana: un toque que también cruza el rochet no se queda en el puente de abajo.
+  const ids = [];
+  for (const h of hits) {
+    if (ids.length && h.distance - firstD > 8) break;
+    let id = null;
+    for (let n = h.object; n; n = n.parent) if (n.userData.partId) { id = n.userData.partId; break; }
+    if (id) { if (!ids.includes(id)) ids.push(id); continue; }
+    if (!h.object.userData.isHit) { if (!ids.length) return { chain: [] }; break; }
+  }
+  if (!ids.length) return { chain: [] };
+  let best = ids[0];
+  const P = G && G.E && G.E.P[best];
+  if (P) {
+    const cover = ids.find(id => id !== best && (P.coveredBy || []).includes(id) && G.E.st[id] === 'in');
+    if (cover) best = cover;
+  }
+  return { chain: best === ids[0] ? ids : [best, ...ids] };
 }
 renderer.domElement.addEventListener('pointerdown', (e) => {
   if (e.button > 0) return; // botón derecho/central = desplazar con OrbitControls

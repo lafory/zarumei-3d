@@ -140,10 +140,14 @@ export function buildZX60(M, images, watch, cal) {
   bb.add(at(jewelMesh(M, 0.32), -3.2, 0.72, -4.4)); bb.add(hitProxy(M, 4.0, 0.5, 0.4));
   at(bb, 0, 2.15, 0); mv.add(bb); parts.barrelBridge = bb;
   const ratchet = tag(new THREE.Group(), 'ratchet');
-  ratchet.add(gearMesh(2.4, 32, 0.26, M.steel, 0)); ratchet.add(hitProxy(M, 2.6, 0.45, 0.18));
+  ratchet.add(gearMesh(2.4, 32, 0.26, M.steel, 0));
+  ratchet.add(at(cyl(0.72, 0.1, M.steel, 16), 0, 0.12, 0));
+  ratchet.add(hitProxy(M, 2.55, 1.7, -0.2));
   at(ratchet, -3.2, 2.95, -4.4); mv.add(ratchet); parts.ratchet = ratchet;
   const cw = tag(new THREE.Group(), 'crownWheel');
-  cw.add(gearMesh(1.5, 20, 0.24, M.steel, 0)); cw.add(hitProxy(M, 1.7, 0.4, 0.16));
+  cw.add(gearMesh(1.5, 20, 0.24, M.steel, 0));
+  cw.add(at(cyl(0.5, 0.1, M.steel, 14), 0, 0.1, 0));
+  cw.add(hitProxy(M, 1.65, 1.55, -0.2));
   at(cw, -6.6, 2.9, -1.8); mv.add(cw); parts.crownWheel = cw;
   const click = tag(new THREE.Group(), 'click');
   click.add(new THREE.Mesh(extrudeShape(polyShape([[0, 0], [1.7, 0.3], [2.1, 1.05], [0.35, 0.95]]), 0.26, 0.02), M.steel));
