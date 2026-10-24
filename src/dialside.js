@@ -29,7 +29,7 @@ export function buildDial(M, images, watch, ys) {
     return dial;
   }
   const face = new THREE.Mesh(new THREE.CircleGeometry(r, 128).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ map: TX.dialTexture(kind, images, new Date().getDate()), roughness: kind === 'rose' || kind === 'lira' ? 0.25 : kind === 'octava' ? 0.35 : 0.5, metalness: kind === 'octava' ? 0.08 : 0 }));
-  face.position.y = ys.dial; dial.add(face);
+  face.position.y = ys.dial; face.renderOrder = 1; dial.add(face);
   const edge = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 0.3, 96, 1, true), M.darkSteel); edge.position.y = ys.dial - 0.15; dial.add(edge);
   const under = new THREE.Mesh(new THREE.CircleGeometry(r, 64).rotateX(Math.PI / 2), M.brassDial || M.darkSteel); under.position.y = ys.dial - 0.3; dial.add(under);
   for (const a of [0.8, 3.9]) { const foot = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 1.2, 8), M.goldWheel); foot.position.set(Math.cos(a) * 10.8, ys.dial - 0.9, Math.sin(a) * 10.8); dial.add(foot); }

@@ -46,7 +46,7 @@ export const CALIBERS = {
       { id: 'escapeWheel', name: 'la rueda de escape (705)', side: 'bridge', coveredBy: ['trainBridge', 'palletFork'], tool: 'tweezers' },
       { id: 'interWheel', name: 'la rueda intermedia (203)', side: 'bridge', coveredBy: ['trainBridge'], tool: 'tweezers' },
       // lado esfera (coordenadas del grupo dialSide: +Y hacia la esfera, 12h = −Z, 3h = +X)
-      ...HANDS_DIAL([{ s: 0.8, k: 'dial', p: [-9.2, -0.6, -9.2], radial: true }, { s: 0.8, k: 'dial', p: [9.2, -0.6, 9.2], radial: true }]),
+      ...HANDS_DIAL([{ s: 0.8, k: 'dial', face: true, p: [-9.1, 1.48, 9.1] }, { s: 0.8, k: 'dial', face: true, p: [9.1, 1.48, -9.1] }]),
       { id: 'datePlate', name: 'la placa sujeta-fecha', side: 'dial', coveredBy: ['dial'], tool: 'tweezers', screws: [{ s: 1.0, k: 'date', p: [9.6, 1.2, -5.5] }, { s: 1.0, k: 'date', p: [-9.6, 1.2, -5.5] }, { s: 1.0, k: 'date', p: [0, 1.2, 11.0] }] },
       { id: 'dateDisc', name: 'el disco de fecha', side: 'dial', coveredBy: ['datePlate'], tool: 'tweezers' },
       { id: 'hourWheel', name: 'la rueda de horas', side: 'dial', coveredBy: ['datePlate'], tool: 'tweezers' },
