@@ -117,6 +117,19 @@ export function buildCase(M, watch, movR) {
     alligator(body, -1.3, 16.2, watch.bracelet && watch.bracelet.dye);
     // El dorso exterior del marco está en y = −3,8. El fondo se apoya justo por fuera, sin clavarse en el oro.
     dims = { cbY: -4.13, yFront: 4.4, yBack: 2.5 };
+  } else if (C.style === 'pilot') {
+    // Flieger. Ningún reloj de la casa usa esta caja. El hueco (15,2) admite ZR-28 y ZQ-11, no la esfera de 16,2.
+    const prof = V2([[15.2, -4.0], [17.6, -4.0], [18.8, -3.0], [19.1, 0.2], [18.4, 1.55], [15.2, 1.55]], k);
+    const cm = new THREE.Mesh(new THREE.LatheGeometry(prof, 96), metal.clone()); cm.material.side = THREE.DoubleSide; body.add(cm);
+    const inner = new THREE.Mesh(new THREE.CylinderGeometry(15.2 * k, 15.2 * k, 5.4, 80, 1, true), brushed.clone()); inner.material.side = THREE.BackSide; inner.position.y = -1.2; body.add(inner);
+    const spacer = new THREE.Mesh(new THREE.LatheGeometry(V2([[movR + 0.12, -2.7], [15.05 * k, -2.7], [15.05 * k, -0.05], [movR + 0.12, -0.05]]), 80), M.spacer); spacer.material.side = THREE.DoubleSide; body.add(spacer);
+    const bz = new THREE.Mesh(new THREE.LatheGeometry(V2([[15.05, 1.5], [18.5, 1.55], [18.9, 2.15], [17.8, 2.7], [15.05, 2.75]], k), 96), brushed.clone()); bz.material.side = THREE.DoubleSide; body.add(bz);
+    const tri = new THREE.Mesh(new THREE.ConeGeometry(1.15, 2.05, 3), new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.4, roughness: 0.45 }));
+    tri.rotation.x = -Math.PI / 2; tri.position.set(0, 2.95, -16.6 * k); body.add(tri);
+    for (const s of [-1, 1]) for (const xx of [-6.2, 6.2]) { const lug = new THREE.Mesh(new THREE.BoxGeometry(3.4, 3.2, 7.2), brushed); lug.position.set(xx, -1.1, s * 18.6 * k); body.add(lug); }
+    const crystal = new THREE.Mesh(new THREE.CylinderGeometry(15.0 * k, 15.0 * k, 0.55, 80), M.crystal); crystal.position.y = 2.35; crystal.renderOrder = 5; body.add(crystal);
+    alligator(body, -1.2, 18.6 * k + 4.2, watch.bracelet && watch.bracelet.dye);
+    dims = { cbY: -4.4, yFront: 5.15, yBack: 3.2 };
   } else {
     const prof = V2([[15.4, -3.0], [18.2, -3.0], [18.9, -2.2], [19.0, 0.2], [18.6, 1.3], [15.4, 1.3]], k);
     const cm = new THREE.Mesh(new THREE.LatheGeometry(prof, 128), metal.clone()); cm.material.side = THREE.DoubleSide; body.add(cm);

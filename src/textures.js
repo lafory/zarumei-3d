@@ -92,7 +92,61 @@ export function moonDiscTexture() {
   }
   return tex(c);
 }
-export function dialTexture(kind, images, day) {
+const ATELIER = {
+  verde: { stops: [[0, '#3dba6a'], [0.55, '#146b38'], [1, '#062014']], mark: '#f3e2b0', ink: '#f6f1e2', track: '#f3e6c4' },
+  negro: { stops: [[0, '#3a3a3e'], [0.5, '#141416'], [1, '#050506']], mark: '#e6c36a', ink: '#f4efe2', track: '#e6c36a' },
+  coral: { stops: [[0, '#f0a090'], [0.5, '#b85a48'], [1, '#3a1612']], mark: '#fff6ee', ink: '#fff6ee', track: '#fff6ee' },
+  humo: { stops: [[0, '#e7edf2'], [0.45, '#8b97a3'], [1, '#1c242c']], mark: '#1a1c1e', ink: '#1a1c1e', track: '#1a1c1e' }
+};
+function atelierFace(x, R, kind, date, day, brand = true) {
+  const A = ATELIER[kind];
+  const g = x.createRadialGradient(-R * 0.18, -R * 0.22, R * 0.05, 0, 0, R);
+  for (const [t, col] of A.stops) g.addColorStop(t, col);
+  x.fillStyle = g; x.beginPath(); x.arc(0, 0, R, 0, Math.PI * 2); x.fill();
+  for (let i = 0; i < 240; i++) {
+    x.strokeStyle = i % 2 ? 'rgba(255,255,255,.04)' : 'rgba(0,0,0,.06)'; x.lineWidth = 2;
+    x.beginPath(); x.moveTo(0, 0); const [px, py] = P(R, i * 1.5); x.lineTo(px, py); x.stroke();
+  }
+  minuteTrack(x, R, A.track, 0.985, 0.95, 0.925);
+  if (date) dateWindow(x, R, day, A.mark);
+  if (!brand) return;
+  x.textAlign = 'center'; x.fillStyle = A.ink; x.font = `600 ${R * 0.07}px Georgia, serif`;
+  x.fillText('ZARUMEI', 0, -R * 0.42);
+  x.fillStyle = A.mark; x.font = `500 ${R * 0.032}px Helvetica, Arial`;
+  x.fillText('ATELIER', 0, R * 0.5);
+}
+function atelierGrand(x, R, kind, opt) {
+  const A = ATELIER[kind];
+  atelierFace(x, R, kind, false, 1, false);
+  x.textAlign = 'center'; x.textBaseline = 'middle';
+  if (opt.military) {
+    x.fillStyle = A.mark; x.font = `600 ${R * 0.04}px Georgia, serif`;
+    for (let h = 1; h <= 24; h++) {
+      const a = h / 24 * Math.PI * 2 - Math.PI / 2;
+      x.fillText(String(h), Math.cos(a) * R * 0.78, Math.sin(a) * R * 0.78);
+    }
+  }
+  const mm = (mx, mz) => [mx / 16.2 * R, mz / 16.2 * R];
+  const compass = !!opt.compass;
+  const day = compass ? mm(-6.6, -3.4) : mm(0, -9.1);
+  const month = compass ? mm(6.6, -3.4) : mm(0, -6.5);
+  punch(x, day[0], day[1], R * 0.22, R * 0.1, false);
+  punch(x, month[0], month[1], R * 0.24, R * 0.1, false);
+  if (opt.moon) { const p = mm(0, 7.6); punch(x, p[0], p[1], R * 0.16, 0, true); }
+  x.fillStyle = A.mark; x.font = `500 ${R * 0.03}px Helvetica, Arial`;
+  x.fillText('DÍA', day[0], day[1] - R * 0.09);
+  x.fillText('MES', month[0], month[1] - R * 0.09);
+  if (compass) {
+    const p = mm(0, -8.4);
+    x.strokeStyle = A.mark; x.lineWidth = 4; x.beginPath(); x.arc(p[0], p[1], R * 0.13, 0, Math.PI * 2); x.stroke();
+    x.fillText('N', p[0], p[1]);
+  }
+  const depth = opt.moon ? mm(5.6, 5.2) : mm(0, 7.7);
+  x.strokeStyle = A.mark; x.lineWidth = 4; x.beginPath(); x.arc(depth[0], depth[1], R * 0.11, 0, Math.PI * 2); x.stroke();
+  x.fillStyle = A.ink; x.fillText('PROF.', depth[0], depth[1] + R * 0.16);
+  x.textBaseline = 'alphabetic';
+}
+export function dialTexture(kind, images, day, opts = {}) {
   const S = 2048, c = canvas(S), x = c.getContext('2d'), R = S / 2;
   x.translate(R, R);
   if (kind === 'miami') {
@@ -161,6 +215,9 @@ export function dialTexture(kind, images, day) {
     x.font = `400 ${S * 0.02}px Helvetica, Arial`; x.fillStyle = '#6d675f'; x.fillText('QUARTZ', S / 2, S * 0.53);
   } else if (kind === 'diablo' || kind === 'espina' || kind === 'ala' || kind === 'orbital') {
     grandDial(x, R, kind);
+  } else if (ATELIER[kind]) {
+    if (opts.grand) atelierGrand(x, R, kind, opts.grand);
+    else atelierFace(x, R, kind, !!opts.date, day);
   } else { // rose: laca blanca + arte del oso ZARUMEI neón
     const g = x.createRadialGradient(-R * 0.2, -R * 0.25, R * 0.1, 0, 0, R); g.addColorStop(0, '#ffffff'); g.addColorStop(1, '#ece9e6');
     x.fillStyle = g; x.beginPath(); x.arc(0, 0, R, 0, Math.PI * 2); x.fill();
@@ -423,12 +480,15 @@ export function galaxyTexture(tone) {
   const S = 1024, c = canvas(S), x = c.getContext('2d');
   const g = x.createRadialGradient(S * 0.48, S * 0.42, 30, S / 2, S / 2, S * 0.62);
   if (tone === 'blue') { g.addColorStop(0, '#2450a4'); g.addColorStop(0.42, '#071433'); g.addColorStop(1, '#02040c'); }
+  else if (tone === 'amber') { g.addColorStop(0, '#f0c27a'); g.addColorStop(0.4, '#7a3b12'); g.addColorStop(1, '#1a0c04'); }
+  else if (tone === 'emerald') { g.addColorStop(0, '#5ee0b0'); g.addColorStop(0.42, '#0c4a38'); g.addColorStop(1, '#021410'); }
   else { g.addColorStop(0, '#7a32a4'); g.addColorStop(0.4, '#2a0848'); g.addColorStop(1, '#07010f'); }
   x.fillStyle = g; x.fillRect(0, 0, S, S);
   for (let i = 0; i < 7; i++) {
     const cx = S * (0.25 + Math.random() * 0.5), cy = S * (0.25 + Math.random() * 0.5);
     const rg = x.createRadialGradient(cx, cy, 8, cx, cy, 90 + Math.random() * 120);
-    rg.addColorStop(0, tone === 'blue' ? 'rgba(90,150,255,.28)' : 'rgba(190,90,255,.3)'); rg.addColorStop(1, 'rgba(0,0,0,0)');
+    const neb = tone === 'blue' ? 'rgba(90,150,255,.28)' : tone === 'amber' ? 'rgba(255,176,70,.26)' : tone === 'emerald' ? 'rgba(70,210,150,.26)' : 'rgba(190,90,255,.3)';
+    rg.addColorStop(0, neb); rg.addColorStop(1, 'rgba(0,0,0,0)');
     x.fillStyle = rg; x.beginPath(); x.arc(cx, cy, 220, 0, 7); x.fill();
   }
   for (let i = 0; i < 900; i++) {

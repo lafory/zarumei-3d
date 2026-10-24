@@ -387,7 +387,7 @@ body:not(.land) #landScroll{display:none!important}
     </div>
     <div id="buildPane" hidden>
       <p class="cinzel" style="margin-top:12px">Desde cero</p>
-      <p class="small">Elige la caja, el metal, la esfera y el calibre. La vista de arriba es el reloj terminado. Al confirmar, ninguna pieza va montada: se arma desde la bandeja, con las mismas herramientas.</p>
+      <p class="small">Del cuarzo corto al automático, al cronógrafo y hasta el turbillón y la ópera. Esferas de atelier, agujas delfín y lanceta, la caja Flieger y los cielos ámbar, esmeralda, tinta y arena no están en ningún reloj de la casa. La vista de arriba es el reloj terminado. Al confirmar, ninguna pieza va montada.</p>
       <label class="field" for="buildName">Nombre</label>
       <input id="buildName" maxlength="28" autocomplete="off" enterkeyhint="done">
       <div id="buildOpts"></div>
@@ -486,7 +486,7 @@ body:not(.land) #landScroll{display:none!important}
   <div id="bqDetail" hidden><button class="lux" id="bqBack">← Volver</button><div id="bqStage"></div><div id="bqInfo"></div></div>
 </div>
 
-<script src="game.js?v=screws3"></script>
+<script src="game.js?v=build1"></script>
 <script>
 setInterval(function(){var g=window.__game;if(!g||!g.started)return;var el=document.getElementById('timer');if(!el._t0)el._t0=Date.now();if(document.getElementById('endOverlay').hidden){var e=Math.floor((Date.now()-el._t0)/1000);el.textContent=Math.floor(e/60)+':'+String(e%60).padStart(2,'0');}},500);
 document.getElementById('menuTop').onclick=function(){ if (window.__game && __game.openMenu) __game.openMenu(); else document.getElementById('intro').hidden=false; };

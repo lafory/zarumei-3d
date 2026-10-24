@@ -30,10 +30,16 @@ function bearFace(images, which, r) {
   const S = 512, c = document.createElement('canvas'); c.width = c.height = S;
   const x = c.getContext('2d');
   x.beginPath(); x.arc(S / 2, S / 2 - 8, S / 2, 0, Math.PI * 2); x.clip();
-  const img = which === 'cuba' ? images.cubaBear : images.dial;
-  const k = Math.max(S / img.width, S / img.height) * (which === 'cuba' ? 1.05 : 1.15);
-  const w = img.width * k, h = img.height * k;
-  x.drawImage(img, (S - w) / 2, (S - h) / 2 + (which === 'cuba' ? 8 : 18), w, h);
+  if (which === 'sello') {
+    x.fillStyle = '#12141a'; x.fillRect(0, 0, S, S);
+    x.strokeStyle = '#e6c36a'; x.lineWidth = 26; x.lineJoin = 'miter';
+    x.beginPath(); x.moveTo(148, 148); x.lineTo(364, 148); x.lineTo(156, 348); x.lineTo(372, 348); x.stroke();
+  } else {
+    const img = which === 'cuba' ? images.cubaBear : images.dial;
+    const k = Math.max(S / img.width, S / img.height) * (which === 'cuba' ? 1.05 : 1.15);
+    const w = img.width * k, h = img.height * k;
+    x.drawImage(img, (S - w) / 2, (S - h) / 2 + (which === 'cuba' ? 8 : 18), w, h);
+  }
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
   const mesh = new THREE.Mesh(new THREE.CircleGeometry(r, 48).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ map: t, roughness: 0.42, metalness: 0.04 }));
   mesh.position.y = 0.2;
@@ -118,7 +124,8 @@ export function buildZT18(M, images, watch, cal) {
   const ds = new THREE.Group(); ds.name = 'dialSide'; ds.rotation.z = Math.PI; mv.add(ds);
   const ys = { dial: 0.42, hour: 1.55, min: 1.72, sec: 1.88 };
   const dial = tag(new THREE.Group(), 'dial');
-  const skyMat = new THREE.MeshStandardMaterial({ map: TX.galaxyTexture(watch.astral.sky), roughness: 0.92, metalness: 0.02, emissive: new THREE.Color(watch.astral.sky === 'blue' ? 0x061433 : 0x1a0830), emissiveIntensity: 0.12 });
+  const glow = watch.astral.sky === 'blue' ? 0x061433 : watch.astral.sky === 'amber' ? 0x3a1806 : watch.astral.sky === 'emerald' ? 0x063024 : 0x1a0830;
+  const skyMat = new THREE.MeshStandardMaterial({ map: TX.galaxyTexture(watch.astral.sky), roughness: 0.92, metalness: 0.02, emissive: new THREE.Color(glow), emissiveIntensity: 0.12 });
   const sky = new THREE.Mesh(new THREE.CircleGeometry(13.5, 96).rotateX(-Math.PI / 2), skyMat); sky.position.y = 0.22; sky.renderOrder = 1; dial.add(sky);
   dial.add(new THREE.Mesh(new THREE.TorusGeometry(13.5, 0.2, 8, 80).rotateX(Math.PI / 2), gold));
   dial.add(hitProxy(M, 13.5, 0.4, 0.25)); ds.add(dial); parts.dial = dial;

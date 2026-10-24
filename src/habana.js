@@ -35,6 +35,8 @@ function tinyHand(M, id, len, w, y) {
 function groundMat(kind) {
   if (kind === 'nacre') return new THREE.MeshPhysicalMaterial({ map: TX.nacreTexture(), roughness: 0.26, metalness: 0.04, clearcoat: 1, clearcoatRoughness: 0.1, iridescence: 0.55, iridescenceIOR: 1.3, iridescenceThicknessRange: [160, 520], envMapIntensity: 0.85 });
   if (kind === 'tropic') return new THREE.MeshStandardMaterial({ map: TX.tropicTexture(), roughness: 0.48, metalness: 0.02 });
+  if (kind === 'sand') return new THREE.MeshStandardMaterial({ color: 0xe6d2b0, roughness: 0.62, metalness: 0.04 });
+  if (kind === 'ink') return new THREE.MeshStandardMaterial({ color: 0x101114, roughness: 0.55, metalness: 0.18, emissive: new THREE.Color(0x0a0a0c), emissiveIntensity: 0.25 });
   return new THREE.MeshStandardMaterial({ map: TX.galaxyTexture('blue'), roughness: 0.9, metalness: 0.02, emissive: new THREE.Color(0x061433), emissiveIntensity: 0.16 });
 }
 function cubaCap() {

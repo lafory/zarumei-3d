@@ -26,7 +26,7 @@ import { makeTools } from './tools3d.js';
 import { ICONS } from './icons.js';
 import { unlock as unlockAudio, play as playSfx, pulse as pulseSfx, setMuted, isMuted } from './audio.js';
 import * as book from './accounts.js';
-import { BUILD_OPTS, DRAFT_ID, watchFromSpec, loadBuilds, rememberBuild, markBuildReady, isBuildReady, forgetBuild, cleanName, suggestedName, dialFits } from './build.js';
+import { BUILD_OPTS, DRAFT_ID, watchFromSpec, loadBuilds, rememberBuild, markBuildReady, isBuildReady, forgetBuild, cleanName, suggestedName, dialFits, caseFits, cieloFits, buildSummary } from './build.js';
 import { OFFERS, VERDICTS, TRUTH_LABEL, offerById, periState, isClosed, inventory, nextLook, takeLooks, quotes, answer, recordDeal } from './peritaje.js';
 import { localStock, makeCode, cleanCode, openRoom } from './dealroom.js';
 
@@ -1428,7 +1428,7 @@ function pickWatch(id) {
   renderFaults();
 }
 // ── Modo Build: configurador, vista previa en la escena y montaje desde la bandeja ──
-const buildSpec = { case: 'diver', metal: 'steel', dial: 'cuba', hands: 'baton', caliber: 'ZR28' };
+const buildSpec = { case: 'pilot', metal: 'steel', dial: 'verde', hands: 'dauphine', caliber: 'ZR28', extra: 'none', cielo: 'amber' };
 let buildNameEdited = false, previewTimer = 0, previewGen = 0;
 function buildNameValue() {
   const input = $('#buildName');
@@ -1453,23 +1453,49 @@ function renderCustoms() {
 }
 function renderBuild() {
   const host = $('#buildOpts'); if (!host || host.childElementCount) { syncBuildChips(); return; }
-  const groups = [['case', 'Caja'], ['metal', 'Metal'], ['dial', 'Esfera'], ['hands', 'Agujas'], ['caliber', 'Movimiento']];
+  const groups = [['case', 'Caja'], ['metal', 'Metal'], ['dial', 'Esfera'], ['cielo', 'Cielo'], ['hands', 'Agujas'], ['caliber', 'Movimiento'], ['extra', 'Piezas de más']];
   host.innerHTML = groups.map(([k, title]) => `<p class="cinzel">${title}</p><div class="optrow" data-group="${k}">${BUILD_OPTS[k].map(o => `<button type="button" class="fchip" data-k="${k}" data-v="${o.id}">${o.label}${o.hint ? `<small>${o.hint}</small>` : ''}</button>`).join('')}</div>`).join('');
   host.querySelectorAll('.fchip').forEach(b => b.onclick = () => { buildSpec[b.dataset.k] = b.dataset.v; if (!buildNameEdited && $('#buildName')) $('#buildName').value = suggestedName(buildSpec); syncBuildChips(); schedulePreview(); });
   syncBuildChips();
 }
 function syncBuildChips() {
-  if (!dialFits(buildSpec.caliber, buildSpec.dial)) {
+  const sky = buildSpec.caliber === 'ZT18' || buildSpec.caliber === 'ZX60';
+  if (!caseFits(buildSpec.caliber, buildSpec.case)) {
+    const next = BUILD_OPTS.case.find(c => caseFits(buildSpec.caliber, c.id));
+    if (next) buildSpec.case = next.id;
+  }
+  if (!sky && !dialFits(buildSpec.caliber, buildSpec.dial)) {
     const next = BUILD_OPTS.dial.find(d => dialFits(buildSpec.caliber, d.id));
     if (next) buildSpec.dial = next.id;
   }
+  if (sky && !cieloFits(buildSpec.caliber, buildSpec.cielo)) {
+    const next = BUILD_OPTS.cielo.find(c => cieloFits(buildSpec.caliber, c.id));
+    if (next) buildSpec.cielo = next.id;
+  }
+  if (!buildSpec.extra) buildSpec.extra = 'none';
+  if (!buildSpec.cielo) buildSpec.cielo = 'amber';
+  if (!buildNameEdited && $('#buildName')) $('#buildName').value = suggestedName(buildSpec);
+  document.querySelectorAll('#buildOpts .optrow').forEach(row => {
+    const k = row.dataset.group;
+    const hideGroup = (k === 'cielo' && !sky) || (k === 'extra' && buildSpec.caliber !== 'ZC') || ((k === 'dial' || k === 'hands') && sky);
+    row.hidden = hideGroup;
+    const title = row.previousElementSibling;
+    if (title && title.tagName === 'P') title.hidden = hideGroup;
+  });
   document.querySelectorAll('#buildOpts .fchip').forEach(b => {
-    const hide = b.dataset.k === 'dial' && !dialFits(buildSpec.caliber, b.dataset.v);
+    const k = b.dataset.k;
+    let hide = false;
+    if (k === 'dial') hide = sky || !dialFits(buildSpec.caliber, b.dataset.v);
+    else if (k === 'case') hide = !caseFits(buildSpec.caliber, b.dataset.v);
+    else if (k === 'cielo') hide = !cieloFits(buildSpec.caliber, b.dataset.v);
     b.hidden = hide;
-    b.classList.toggle('on', !hide && buildSpec[b.dataset.k] === b.dataset.v);
+    b.classList.toggle('on', !hide && buildSpec[k] === b.dataset.v);
   });
   const note = $('#buildNote');
-  if (note) note.textContent = sessionLive && G && !G.E.finished ? 'Hay un reloj en el banco. Montar empieza uno nuevo.' : 'Arriba ves el reloj terminado. Al montar, esa misma pieza nace desarmada.';
+  if (note) {
+    const bench = sessionLive && G && !G.E.finished ? 'Hay un reloj en el banco. Montar empieza uno nuevo. ' : '';
+    note.textContent = bench + buildSummary(buildSpec) + '. Arriba ves el reloj terminado. Al montar, esa misma pieza nace desarmada.';
+  }
 }
 function benchBusy() { return !!(sessionLive && G && !G.E.finished); }
 function schedulePreview() {
@@ -1645,7 +1671,12 @@ function dealLine(card) {
   if (card.kind === 'build') {
     const lab = (g, id) => (BUILD_OPTS[g].find(o => o.id === id) || {}).label || id;
     const s = card.spec;
-    return `Armado en el taller · ${lab('case', s.case)} · ${lab('metal', s.metal)} · ${lab('dial', s.dial)} · ${lab('hands', s.hands)} · ${lab('caliber', s.caliber)}`;
+    const bits = [lab('case', s.case), lab('metal', s.metal)];
+    if (s.caliber === 'ZT18' || s.caliber === 'ZX60') bits.push(lab('cielo', s.cielo || 'amber'));
+    else { bits.push(lab('dial', s.dial)); bits.push(lab('hands', s.hands)); }
+    bits.push(lab('caliber', s.caliber));
+    if (s.caliber === 'ZC' && s.extra && s.extra !== 'none') bits.push(lab('extra', s.extra));
+    return `Armado en el taller · ${bits.filter(Boolean).join(' · ')}`;
   }
   return `${TRUTH_LABEL[card.truth] || card.truth} · te lo contaron como ${card.claim}`;
 }

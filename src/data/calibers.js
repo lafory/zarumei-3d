@@ -156,7 +156,7 @@ function grandCaliber(id, name, desc, opt) {
     { id: 'minHand', name: 'la aguja de minutos', side: 'dial', coveredBy: ['secHand'], tool: 'handLevers', placeTool: 'handPress', requires: ['protector'], placeRequires: ['protector'] },
     { id: 'hourHand', name: 'la aguja de horas', side: 'dial', coveredBy: ['minHand'], tool: 'handLevers', placeTool: 'handPress', requires: ['protector'], placeRequires: ['protector'] },
     { id: 'depthHand', name: 'la aguja del profundímetro', side: 'dial', coveredBy: [], tool: 'handLevers', placeTool: 'handPress', requires: ['protector'], placeRequires: ['protector'] },
-    { id: 'emblem', name: opt.emblem === 'diablo' ? 'la máscara del diablo' : opt.emblem === 'espina' ? 'el cabujón de púas' : opt.emblem === 'ala' ? 'las alas de esmalte' : 'la jaula calada', side: 'dial', coveredBy: ['hourHand'], tool: 'tweezers', screws: [{ s: 0.8, k: 'emblem', p: [2.1, 0.45, 1.4] }, { s: 0.8, k: 'emblem', p: [-2.1, 0.45, 1.4] }] },
+    { id: 'emblem', name: opt.emblem === 'diablo' ? 'la máscara del diablo' : opt.emblem === 'espina' ? 'el cabujón de púas' : opt.emblem === 'ala' ? 'las alas de esmalte' : opt.emblem === 'sello' ? 'el sello del atelier' : 'la jaula calada', side: 'dial', coveredBy: ['hourHand'], tool: 'tweezers', screws: [{ s: 0.8, k: 'emblem', p: [2.1, 0.45, 1.4] }, { s: 0.8, k: 'emblem', p: [-2.1, 0.45, 1.4] }] },
     { id: 'dial', name: 'la esfera', side: 'dial', coveredBy: dialCover, tool: 'tweezers', screws: [{ s: 0.8, k: 'dial', face: true, p: [-12.5, 1.48, 7.2] }, { s: 0.8, k: 'dial', face: true, p: [12.5, 1.48, -7.2] }] },
     { id: 'calendarPlate', name: 'el puente de calendario', side: 'dial', coveredBy: ['dial'], tool: 'tweezers', screws: [{ s: 1.0, k: 'date', p: [8.4, 0.28, 0] }, { s: 1.0, k: 'date', p: [-8.2, 0.28, 2.2] }, { s: 1.0, k: 'date', p: [0, 0.28, 9.2] }] },
     { id: 'dayDisc', name: 'el disco de los días', side: 'dial', coveredBy: ['calendarPlate'], tool: 'tweezers' },
@@ -189,6 +189,9 @@ function grandCaliber(id, name, desc, opt) {
   );
   return { id, name, type: 'auto', desc, lift: 50, ampOk: [270, 310], parts };
 }
+
+// Build registra un calibre propio por reloj (módulos que la casa no vende juntos).
+export function makeGrand(id, name, desc, opt) { return grandCaliber(id, name, desc, opt); }
 
 Object.assign(CALIBERS, {
   ZC40: grandCaliber('ZC40', 'ZC-40', 'Cronógrafo mecánico, día, mes y profundímetro de membrana. 4 Hz, 28 rubíes.', { emblem: 'diablo' }),

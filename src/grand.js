@@ -83,6 +83,23 @@ function orbital(M) {
   return g;
 }
 
+function sello(M) {
+  const g = tag(new THREE.Group(), 'emblem');
+  const gold = M.metal('gold');
+  const disc = new THREE.Mesh(new THREE.CylinderGeometry(3.2, 3.2, 0.28, 48), gold);
+  disc.position.y = 0.31;
+  g.add(disc);
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(2.55, 0.12, 8, 48).rotateX(Math.PI / 2), gold);
+  ring.position.y = 0.48; g.add(ring);
+  for (const z of [-0.85, 0.85]) g.add(at(new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.1, 0.26), gold), 0, 0.52, z));
+  const diag = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.1, 2.15), gold);
+  diag.position.set(0, 0.52, 0); diag.rotation.y = 0.62; g.add(diag);
+  const cab = new THREE.Mesh(new THREE.SphereGeometry(0.38, 14, 10), BLUEJ);
+  cab.scale.y = 0.5; cab.position.set(0, 0.64, 0.05); g.add(cab);
+  g.add(hitProxy(M, 3.3, 0.7, 0.35));
+  return g;
+}
+
 function makeBalance(M, x, z) {
   const balance = tag(new THREE.Group(), 'balance');
   const wheel = new THREE.Group(); wheel.name = 'balanceWheel';
@@ -200,7 +217,7 @@ export function buildGrand(M, images, watch, cal) {
   const depthAt = opt.moon ? [5.6, 5.2] : [0, 7.7];
   const depthHand = subHand(M, 'depthHand', 3.2, metal, ys.sec + 0.06); depthHand.position.x = depthAt[0]; depthHand.position.z = depthAt[1]; ds.add(depthHand); parts.depthHand = depthHand;
 
-  const emblem = (opt.emblem === 'espina' ? espina : opt.emblem === 'ala' ? ala : opt.emblem === 'orbital' ? orbital : devil)(M);
+  const emblem = (opt.emblem === 'espina' ? espina : opt.emblem === 'ala' ? ala : opt.emblem === 'orbital' ? orbital : opt.emblem === 'sello' ? sello : devil)(M);
   emblem.position.y = ys.dial + 0.28; ds.add(emblem); parts.emblem = emblem;
 
   if (opt.military) {

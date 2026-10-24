@@ -3,7 +3,7 @@
 // ve la señal de conexión, no se queda con el inventario. El reloj viaja por el
 // canal directo (WebRTC). Si eso falla, no se escribe nada.
 import { WATCHES } from './data/watches.js';
-import { builds, forgetBuild, importDealBuild, watchFromSpec, cleanName } from './build.js';
+import { builds, forgetBuild, importDealBuild, watchFromSpec, cleanName, normalizeSpec } from './build.js';
 import { inventory, dropInventory, receiveInventory } from './peritaje.js';
 
 const BROKERS = ['wss://broker.hivemq.com:8884/mqtt', 'wss://broker.emqx.io:8084/mqtt'];
@@ -34,13 +34,10 @@ export function sanitizeCard(card) {
   const name = cleanName(card.name);
   if (card.kind === 'build') {
     const spec = card.spec || {};
-    const w = watchFromSpec('bcheck1', spec, name);
+    const n = normalizeSpec(spec);
+    const w = n && watchFromSpec('bcheck1', n, name);
     if (!w) return null;
-    return {
-      kind: 'build',
-      name: w.name,
-      spec: { case: spec.case, metal: spec.metal, dial: spec.dial, hands: spec.hands, caliber: spec.caliber }
-    };
+    return { kind: 'build', name: w.name, spec: n };
   }
   const watch = WATCHES[card.watchId];
   if (!watch || watch.custom) return null;

@@ -8,6 +8,8 @@ function handShape(style, len, w) {
   const s = new THREE.Shape();
   if (style === 'sword') { s.moveTo(-w * 0.55, -2); s.lineTo(-w / 2, len * 0.8); s.lineTo(0, len); s.lineTo(w / 2, len * 0.8); s.lineTo(w * 0.55, -2); }
   else if (style === 'baton') { s.moveTo(-w / 2, -2.4); s.lineTo(-w / 2, len * 0.9); s.lineTo(0, len); s.lineTo(w / 2, len * 0.9); s.lineTo(w / 2, -2.4); }
+  else if (style === 'dauphine') { s.moveTo(0, -1.7); s.lineTo(-w * 0.22, -0.6); s.lineTo(-w * 0.95, len * 0.62); s.lineTo(0, len); s.lineTo(w * 0.95, len * 0.62); s.lineTo(w * 0.22, -0.6); }
+  else if (style === 'arrow') { s.moveTo(-w * 0.2, -2); s.lineTo(-w * 0.2, len * 0.7); s.lineTo(-w * 0.85, len * 0.7); s.lineTo(0, len); s.lineTo(w * 0.85, len * 0.7); s.lineTo(w * 0.2, len * 0.7); s.lineTo(w * 0.2, -2); }
   else { s.moveTo(0, -1.6); s.quadraticCurveTo(-w * 0.75, len * 0.45, 0, len); s.quadraticCurveTo(w * 0.75, len * 0.45, 0, -1.6); } // hoja (leaf)
   s.closePath();
   const g = new THREE.ExtrudeGeometry(s, { depth: 0.14, bevelEnabled: false }); g.rotateX(-Math.PI / 2); return g;
@@ -22,13 +24,13 @@ export function buildDial(M, images, watch, ys) {
     return dial;
   }
   if (watch.grand) {
-    const face = new THREE.Mesh(new THREE.CircleGeometry(r, 96).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ map: TX.dialTexture(kind, images, 1), transparent: true, alphaTest: 0.45, roughness: kind === 'espina' ? 0.28 : 0.48, metalness: kind === 'espina' ? 0.35 : 0.04 }));
+    const face = new THREE.Mesh(new THREE.CircleGeometry(r, 96).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ map: TX.dialTexture(kind, images, 1, { grand: watch.grand }), transparent: true, alphaTest: 0.45, roughness: kind === 'espina' ? 0.28 : 0.48, metalness: kind === 'espina' ? 0.35 : 0.04 }));
     face.position.y = ys.dial; face.renderOrder = 1; dial.add(face);
     const edge = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 0.28, 80, 1, true), M.darkSteel); edge.position.y = ys.dial - 0.14; dial.add(edge);
     dial.add(hitProxy(M, r, 0.5, ys.dial));
     return dial;
   }
-  const face = new THREE.Mesh(new THREE.CircleGeometry(r, 128).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ map: TX.dialTexture(kind, images, new Date().getDate()), roughness: kind === 'rose' || kind === 'lira' ? 0.25 : kind === 'octava' ? 0.35 : 0.5, metalness: kind === 'octava' ? 0.08 : 0 }));
+  const face = new THREE.Mesh(new THREE.CircleGeometry(r, 128).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ map: TX.dialTexture(kind, images, new Date().getDate(), { date: !!date }), roughness: kind === 'rose' || kind === 'lira' ? 0.25 : kind === 'octava' ? 0.35 : 0.5, metalness: kind === 'octava' ? 0.08 : 0 }));
   face.position.y = ys.dial; face.renderOrder = 1; dial.add(face);
   const edge = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 0.3, 96, 1, true), M.darkSteel); edge.position.y = ys.dial - 0.15; dial.add(edge);
   const under = new THREE.Mesh(new THREE.CircleGeometry(r, 64).rotateX(Math.PI / 2), M.brassDial || M.darkSteel); under.position.y = ys.dial - 0.3; dial.add(under);
@@ -53,8 +55,9 @@ export function buildDial(M, images, watch, ys) {
   return dial;
 }
 export function buildHands(M, watch, ys) {
-  const st = watch.hands.style, metal = M.metal(watch.hands.metal), r = watch.dial.kind === 'recta' ? 11.2 : watch.dial.r, lume = st !== 'leaf';
+  const st = watch.hands.style, metal = M.metal(watch.hands.metal), r = watch.dial.kind === 'recta' ? 11.2 : watch.dial.r, lume = st !== 'leaf' && st !== 'dauphine';
   const lift = watch.dial.kind === 'recta' ? 1.85 : 0;
+  const hw = st === 'leaf' || st === 'dauphine' ? 1.15 : st === 'arrow' ? 1.35 : 1.5;
   const mk = (id, len, w, y) => {
     const g = tag(new THREE.Group(), id); const inner = new THREE.Group(); inner.name = 'rot'; g.add(inner);
     inner.add(new THREE.Mesh(handShape(st, len, w), metal));
@@ -63,8 +66,8 @@ export function buildHands(M, watch, ys) {
     const hp = new THREE.Mesh(new THREE.BoxGeometry(w + 1.2, 0.6, len), M.hit); hp.userData.isHit = true; hp.position.set(0, 0, -len / 2); inner.add(hp);
     g.position.y = y + lift; return g;
   };
-  const hour = mk('hourHand', r * 0.53, st === 'leaf' ? 1.3 : 1.5, ys.hour);
-  const min = mk('minHand', r * 0.79, st === 'leaf' ? 1.0 : 1.1, ys.min);
+  const hour = mk('hourHand', r * 0.53, hw, ys.hour);
+  const min = mk('minHand', r * 0.79, st === 'leaf' || st === 'dauphine' ? 0.9 : 1.1, ys.min);
   const sec = tag(new THREE.Group(), 'secHand'); { const inner = new THREE.Group(); inner.name = 'rot'; sec.add(inner);
     const col = watch.dial.kind === 'cuba' ? new THREE.MeshStandardMaterial({ color: 0xe0312a, metalness: 0.4, roughness: 0.35 }) : metal;
     inner.add(new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.08, r * 1.05).translate(0, 0, -r * 0.33), col));
