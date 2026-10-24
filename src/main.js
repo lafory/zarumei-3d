@@ -125,17 +125,41 @@ try { if (localStorage.getItem('zarumei.seat') === '0') seatMode = false; } catc
 // ───────── cámara ─────────
 function partWorldCenter(obj) { const b = new THREE.Box3().setFromObject(obj); return { c: b.getCenter(new THREE.Vector3()), r: b.getSize(new THREE.Vector3()).length() / 2 }; }
 let loupeTarget = null;
+function narrowStage() {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  return w < 900 && h > w * 0.95;
+}
+function fitDistance(sz, contain) {
+  const v = Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2);
+  const aspect = Math.max(0.35, camera.aspect || 1);
+  const vert = (sz / 2) / v;
+  const horiz = (sz / 2) / (v * aspect);
+  if (!contain && aspect < 0.92) return vert * 1.06;
+  return Math.max(vert, horiz) * 1.05;
+}
+function workSize(sz) { return narrowStage() ? sz * 0.74 : sz; }
+function workDir() { return narrowStage() ? new THREE.Vector3(0, 0.78, 1) : new THREE.Vector3(0, 1, 0.5); }
 const VIEWS = {
-  front: () => ({ target: new THREE.Vector3(0, 4, 4), size: G && G.W.case.style === 'slim' ? 46 : G && G.W.case.style === 'astral' ? 50 : 52, dir: new THREE.Vector3(0, 1, 0.5) }),
-  back: () => ({ target: new THREE.Vector3(0, 3, 2), size: 46, dir: new THREE.Vector3(0, 1, 0.5) }),
-  holder: () => ({ target: HOLDER_POS.clone().add(new THREE.Vector3(0, 10, 0)), size: 36, dir: new THREE.Vector3(0, 1, 0.45) }),
+  front: () => ({ target: new THREE.Vector3(0, 4, 4), size: workSize(G && G.W.case.style === 'slim' ? 46 : G && G.W.case.style === 'astral' ? 50 : 52), dir: workDir() }),
+  back: () => ({ target: new THREE.Vector3(0, 3, 2), size: workSize(46), dir: workDir() }),
+  holder: () => ({ target: HOLDER_POS.clone().add(new THREE.Vector3(0, 10, 0)), size: workSize(36), dir: narrowStage() ? new THREE.Vector3(0, 0.92, 0.88) : new THREE.Vector3(0, 1, 0.45) }),
   mat: () => ({ target: INSPECT_POS.clone().add(new THREE.Vector3(0, 2.2, 0)), size: 13, dir: new THREE.Vector3(0, 1, 0.42) }),
-  tray: () => ({ target: TRAY_POS.clone().add(T && T.trayCenter ? T.trayCenter : new THREE.Vector3(52, 0, 82)), size: T && T.traySize ? T.traySize : 188, dir: new THREE.Vector3(0, 1, 0.38) }),
+  tray: () => {
+    const dir = narrowStage() ? new THREE.Vector3(0, 0.72, 0.95) : new THREE.Vector3(0, 1, 0.38);
+    const fallback = TRAY_POS.clone().add(T && T.trayCenter ? T.trayCenter : new THREE.Vector3(52, 0, 82));
+    const sizeAll = T && T.traySize ? T.traySize : 188;
+    if (!narrowStage() || !G || !T) return { target: fallback, size: sizeAll, dir };
+    const recent = [...G.E.history].reverse().find(id => id !== 'movement' && G.E.st[id] === 'out' && G.parts[id]);
+    if (!recent) return { target: fallback, size: Math.min(sizeAll, 64), dir };
+    const p = new THREE.Vector3();
+    G.parts[recent].getWorldPosition(p);
+    return { target: new THREE.Vector3(p.x, 1.6, p.z), size: 48, dir };
+  },
   loupe: () => ({ target: loupeTarget.c, size: Math.max(7, loupeTarget.r * 2.1), dir: new THREE.Vector3(0, 1, 0.42) }),
   tg: () => { const c = new THREE.Vector3(), n = new THREE.Vector3(0, 0, 1); T.screen.getWorldPosition(c); n.applyQuaternion(T.screen.getWorldQuaternion(new THREE.Quaternion())); return { target: c.add(new THREE.Vector3(-6, -2, 0)), size: 62, dir: n.add(new THREE.Vector3(0, 0.35, 0)) }; }
 };
 const VIEW_NAMES = { front: 'esfera', back: 'fondo / movimiento', holder: 'movimiento en el soporte', mat: 'alfombrilla de inspección', tray: 'bandeja de piezas', loupe: 'lupa x10', tg: 'timegrapher', libre: 'libre' };
-function fitDistance(sz) { const v = THREE.MathUtils.degToRad(camera.fov) / 2; return Math.max((sz / 2) / Math.tan(v), (sz / 2) / (Math.tan(v) * camera.aspect)) * 1.05; }
 let fly = null, fovFade = 0, libreFrom = null, libreShot = null;
 const FLY_SPEED = 90;
 function flyLook() {
@@ -188,7 +212,7 @@ function stopLibre() {
   camera.updateProjectionMatrix();
   controls.enabled = true;
   const g = document.querySelector('#stage .gesture');
-  if (g) g.textContent = 'girar: 1 dedo · zoom: 2 · tornillo: mantener';
+  if (g) g.textContent = '1 dedo gira · pellizca acerca · al montar se acerca solo';
   const b = document.querySelector('[data-view="libre"]');
   if (b) b.textContent = 'LIBRE';
 }
@@ -233,17 +257,68 @@ function stepFly(now) {
   const next = camera.position.clone().addScaledVector(forward, fz * FLY_SPEED * dt).addScaledVector(right, fx * FLY_SPEED * dt);
   if (next.length() < 560) camera.position.copy(next);
 }
+let focusGen = 0;
+function markView(v) {
+  view = v;
+  $('#viewtag').textContent = 'Vista: ' + VIEW_NAMES[v];
+  stage.classList.toggle('loupe', v === 'loupe');
+  document.querySelectorAll('.vbtn[data-view]').forEach(b => b.classList.toggle('on', b.dataset.view === v || (b.dataset.view === 'watch' && (v === 'front' || v === 'back'))));
+  updateFlipBtn();
+}
+function homeWorld(id) {
+  const h = G && G.home[id];
+  if (!h || !h.parent) return null;
+  h.parent.updateWorldMatrix(true, false);
+  return h.pos.clone().applyMatrix4(h.parent.matrixWorld);
+}
+function focusSpan(id) {
+  const obj = G.parts[id];
+  if (!obj) return 16;
+  const box = new THREE.Box3().setFromObject(obj);
+  const sz = box.getSize(new THREE.Vector3());
+  const raw = Math.max(sz.x, sz.z);
+  if (!isFinite(raw) || raw < 0.4) return 16;
+  if (id === 'movement' || id === 'caseback' || id === 'dial') return Math.min(44, Math.max(22, raw * 1.15));
+  if (raw < 8) return 15;
+  if (raw < 18) return raw * 2.05;
+  return Math.min(36, raw * 1.25);
+}
+async function focusPart(id) {
+  if (!G || view === 'libre' || !G.home[id]) return;
+  const w = homeWorld(id);
+  if (!w) return;
+  const gen = ++focusGen;
+  const span = focusSpan(id);
+  const dir = (narrowStage() ? new THREE.Vector3(0.28, 0.8, 1) : new THREE.Vector3(0.22, 1, 0.78)).normalize();
+  const dist = fitDistance(span);
+  const toPos = w.clone().add(dir.multiplyScalar(dist));
+  markView(workView());
+  controls.minDistance = Math.max(6, dist * 0.32);
+  controls.maxDistance = Math.max(dist * 4.4, 90);
+  controls._sphericalDelta.set(0, 0, 0); controls._panOffset.set(0, 0, 0); controls._scale = 1;
+  if (SPEED < 0.2) { camera.position.copy(toPos); controls.target.copy(w); controls.update(); positionFloatingTool(); return; }
+  const p0 = camera.position.clone(), t0v = controls.target.clone();
+  controls.enabled = false;
+  await tween(D(460), (k) => {
+    if (gen !== focusGen) return;
+    camera.position.lerpVectors(p0, toPos, k);
+    controls.target.lerpVectors(t0v, w, k);
+  });
+  if (gen !== focusGen) return;
+  controls.enabled = true; controls.update(); positionFloatingTool();
+}
 async function setView(v, instant = false) {
+  focusGen++;
   if (v === 'libre') { startLibre(); return; }
   const shot = view === 'libre' ? libreShot : null;
   if (view === 'libre') stopLibre();
   if (!VIEWS[v]) v = 'front';
-  view = v; const cfg = VIEWS[v](), dist = fitDistance(cfg.size);
+  view = v; const cfg = VIEWS[v](), dist = fitDistance(cfg.size, v === 'tg');
   const toPos = cfg.target.clone().add(cfg.dir.clone().normalize().multiplyScalar(dist));
-  controls.minDistance = dist * 0.3; controls.maxDistance = dist * 2.4;
-  $('#viewtag').textContent = 'Vista: ' + VIEW_NAMES[v]; stage.classList.toggle('loupe', v === 'loupe');
-  document.querySelectorAll('.vbtn[data-view]').forEach(b => b.classList.toggle('on', b.dataset.view === v || (b.dataset.view === 'watch' && (v === 'front' || v === 'back'))));
-  updateFlipBtn();
+  const close = narrowStage();
+  controls.minDistance = dist * (close ? 0.16 : 0.3);
+  controls.maxDistance = dist * (close ? 3.6 : 2.4);
+  markView(v);
   controls._sphericalDelta.set(0, 0, 0); controls._panOffset.set(0, 0, 0); controls._scale = 1;
   if (shot && shot.view === v) {
     camera.position.copy(shot.pos); controls.target.copy(shot.target);
@@ -984,7 +1059,8 @@ function showSeat(id) {
   if (!h || !obj) return;
   const b = localBox(obj), sz = b.getSize(new THREE.Vector3());
   const horiz = (isFinite(sz.x) && isFinite(sz.z)) ? Math.max(sz.x, sz.z) : 6;
-  const rad = Math.max(2.2, Math.min(11, horiz * 0.38));
+  const touch = narrowStage();
+  const rad = Math.max(touch ? 2.8 : 2.2, Math.min(11, horiz * (touch ? 0.48 : 0.38)));
   const g = new THREE.Group();
   g.userData.seat = id;
   g.userData.seatPos = h.pos.clone();
@@ -992,7 +1068,8 @@ function showSeat(id) {
   ring.rotation.x = Math.PI / 2; ring.userData.seat = id; g.add(ring);
   const dot = new THREE.Mesh(new THREE.SphereGeometry(Math.max(0.35, rad * 0.08), 12, 8), new THREE.MeshBasicMaterial({ color: 0xfff6d0, toneMapped: false }));
   dot.userData.seat = id; g.add(dot);
-  const disc = new THREE.Mesh(new THREE.CylinderGeometry(rad * 1.2, rad * 1.2, 1.4, 24), M.hit);
+  const hitR = rad * (touch ? 1.65 : 1.2);
+  const disc = new THREE.Mesh(new THREE.CylinderGeometry(hitR, hitR, touch ? 2.4 : 1.4, 24), M.hit);
   disc.userData.seat = id; disc.userData.isHit = true; g.add(disc);
   h.parent.add(g); seatRing = g; heldId = id; faceSeat();
 }
@@ -1145,10 +1222,14 @@ function selectTool(id, talk = false) {
 }
 function showFloatingTool() { toolGroup.clear(); floatingTool = null; if (!sel || !T || !T.models[sel]) return; floatingTool = T.models[sel]; toolGroup.add(floatingTool); if (sel === 'screwdriver') T.models.screwdriver.userData.setSize(size); positionFloatingTool(); }
 function positionFloatingTool() {
-  if (!floatingTool) return; floatingTool.visible = view !== 'tray' && view !== 'tg'; const cfg = VIEWS[view] ? VIEWS[view]() : VIEWS.front(); const s = Math.min(cfg.size, 40) / 60;
-  floatingTool.scale.setScalar(s);
+  if (!floatingTool) return;
+  floatingTool.visible = view !== 'tray' && view !== 'tg';
+  const cfg = VIEWS[view] ? VIEWS[view]() : VIEWS.front();
+  const dist = Math.max(8, camera.position.distanceTo(controls.target));
+  const span = Math.min(cfg.size, dist * 0.42, 40);
+  floatingTool.scale.setScalar(span / 60);
   const right = new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 0);
-  floatingTool.position.copy(controls.target).add(right.multiplyScalar(cfg.size * 0.36)).add(new THREE.Vector3(0, cfg.size * 0.25, -cfg.size * 0.1));
+  floatingTool.position.copy(controls.target).add(right.multiplyScalar(span * 0.46)).add(new THREE.Vector3(0, span * 0.2, -span * 0.06));
   floatingTool.userData.base = floatingTool.position.clone();
 }
 function renderTray() {
@@ -1166,7 +1247,7 @@ function renderTray() {
     const c = document.createElement('button'); c.className = 'chip screw' + (E.armed === pid ? ' armed' : ''); c.dataset.screws = pid;
     const lost = list.filter(s => s.state === 'lost').length;
     c.innerHTML = `🔩 ${E.name(pid).replace(/^(el|la|las|los) /, '').split(' (')[0]} ×${list.length} · ${list[0].s.toFixed(1).replace('.', ',')}${lost ? ` <i>${lost} perdido</i>` : ''}`;
-    c.onclick = () => { if (busy) return; if (sel !== 'screwdriver') { say('Elige el <b>destornillador</b> y luego toca el grupo de tornillos para cargarlos en la punta.'); return; } act(E.tapChip(pid, 'screwdriver', size)); };
+    c.onclick = () => { if (busy) return; if (sel !== 'screwdriver') { say('Elige el <b>destornillador</b> y luego toca el grupo de tornillos para cargarlos en la punta.'); return; } act(E.tapChip(pid, 'screwdriver', size)).then(() => { if (G && G.E.armed === pid) focusPart(pid); }); };
     el.appendChild(c);
   }
 }
@@ -1229,7 +1310,10 @@ async function act(r, opts = {}) {
   busy = true;
   try { await runFx(r.fx); } finally { busy = false; }
   refresh();
-  if (!opts.keepView && r.fx.some(f => ['remove', 'install', 'flipHolder', 'flipWatch'].includes(f.fx)) && !r.fx.some(f => f.fx === 'remove' && f.inspect)) { const v = workView(); if (view !== v && view !== 'tray') await setView(v); }
+  const installed = (r.fx || []).find(f => f.fx === 'install' && f.part && f.part !== 'movement');
+  const needClose = !!(installed && G && G.E.screwsOf(installed.part).some(s => s.state !== 'in'));
+  if (!needClose && !opts.keepView && r.fx.some(f => ['remove', 'install', 'flipHolder', 'flipWatch'].includes(f.fx)) && !r.fx.some(f => f.fx === 'remove' && f.inspect)) { const v = workView(); if (view !== v && view !== 'tray') await setView(v); }
+  if (needClose) focusPart(installed.part);
   periObserve(r);
 }
 function resolveTarget(chain) {
@@ -1273,8 +1357,8 @@ async function chipTap(id, force) {
     const pre = G.E.placeCheck(id, sel, size);
     if (pre && pre.seek) {
       showSeat(id); renderTray(); sfx('seat');
-      say(`Tienes <b>${G.E.name(id)}</b>. Busca el <b>anillo dorado</b> y tócalo: ahí se monta.`);
-      const v = workView(); if (view === 'tray' || view === 'mat' || view === 'tg' || view === 'loupe') setView(v);
+      say(`Tienes <b>${G.E.name(id)}</b>. La cámara se acerca: toca el <b>anillo dorado</b>. Un dedo gira, dos pellizcan.`);
+      focusPart(id);
       return;
     }
     if (pre && pre.seek !== false) { await act(pre); return; }
@@ -1340,6 +1424,9 @@ $('#hintBtn').onclick = () => {
   if (a.replace) $('#partsBtn').classList.add('hint');
   if (a.tool) { document.querySelectorAll('.tool').forEach(b => b.classList.toggle('hint', b.dataset.tool === a.tool)); if (a.size) document.querySelectorAll('.size').forEach(b => b.classList.toggle('hint', +b.dataset.size === a.size)); }
   if (a.target && a.target.chip) { const c = document.querySelector(`.chip[data-chip="${a.target.chip}"]`); if (c) c.classList.add('hint'); if (seatMode && a.tool !== 'oiler' && a.tool !== 'screwdriver') say(h.msg + ' Luego toca el <b>anillo dorado</b> donde va.'); }
+  if (a.target && a.target.screw && G.E.screws[a.target.screw]) focusPart(G.E.screws[a.target.screw].part);
+  else if (a.target && a.target.chip && G.home[a.target.chip]) focusPart(a.target.chip);
+  else if (a.target && a.target.part && a.target.part !== 'watch' && a.target.part !== 'movement' && G.home[a.target.part] && focusSpan(a.target.part) <= 24) focusPart(a.target.part);
   const obj = a.target && (a.target.screw ? G.MV.screws[a.target.screw].obj : G.parts[a.target.part || a.target.sub]);
   if (obj && a.target.part !== 'movement') highlight(obj);
 };

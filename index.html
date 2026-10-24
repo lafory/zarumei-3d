@@ -319,7 +319,7 @@ body:not(.land) #landScroll{display:none!important}
     <input id="fovSlider" type="range" min="20" max="90" step="1" value="23" hidden aria-label="Zoom">
     <div id="sizes" hidden></div>
     <div id="label3d" hidden></div>
-    <span class="gesture">girar: 1 dedo · zoom: 2 · tornillo: mantener</span>
+    <span class="gesture">1 dedo gira · pellizca acerca · al montar se acerca solo</span>
   </div>
   <div id="msg">Cargando…</div>
   <div id="toolhead"><img id="toolheadLogo" alt="LA FORY">LA FORY <span>caja de herramientas</span></div>
@@ -496,7 +496,7 @@ body:not(.land) #landScroll{display:none!important}
   <div id="bqDetail" hidden><button class="lux" id="bqBack">← Volver</button><div id="bqStage"></div><div id="bqInfo"></div></div>
 </div>
 
-<script src="game.js?v=cristal1"></script>
+<script src="game.js?v=cerca1"></script>
 <script>
 setInterval(function(){var g=window.__game;if(!g||!g.started)return;var el=document.getElementById('timer');if(!el._t0)el._t0=Date.now();if(document.getElementById('endOverlay').hidden){var e=Math.floor((Date.now()-el._t0)/1000);el.textContent=Math.floor(e/60)+':'+String(e%60).padStart(2,'0');}},500);
 document.getElementById('menuTop').onclick=function(){ if (window.__game && __game.openMenu) __game.openMenu(); else document.getElementById('intro').hidden=false; };
