@@ -258,7 +258,7 @@ function viewBeforeLibre() {
   return libreFrom && VIEWS[libreFrom] ? libreFrom : workView();
 }
 
-let landingOn = false, landK = 0, landKs = 0, landBeat = -1, spinHome = null;
+let landingOn = false, landK = 0, landKs = 0, landBeat = -1, spinHome = null, landT0 = 0, landShown = false;
 const landTilt = { x: 0, y: 0 };
 const GALLERY_SPEC = [
   { id: 'miami', face: 'bridges', name: 'ZR-28' },
@@ -283,7 +283,7 @@ const LAND_CAM = (() => {
   return keys.map(p => ({ t: p.t, cam: new THREE.Vector3(...p.cam), look: new THREE.Vector3(...p.look) }));
 })();
 const LAND_BEATS = [
-  { k: 0, kicker: 'ZARUMEI 3D', title: 'La bóveda', text: 'Desliza. La cámara entra en el reloj.' },
+  { k: 0, kicker: 'ZARUMEI 3D', title: 'La bóveda', text: 'La cámara entra en el reloj.' },
   { k: 0.10, kicker: 'El fondo', title: 'Se abre', text: 'El fondo sale. Detrás está la máquina.' },
   { k: 0.24, kicker: 'Calibre ZR-28', title: 'Dentro', text: 'Ruedas, rubíes y el volante, en marcha.' },
   { k: 0.30, kicker: 'La bóveda', title: 'Flota', text: 'Sin caja y sin peana. El reloj queda en el aire.' },
@@ -351,18 +351,16 @@ function restoreLandingPose() {
   scene.fog = baseFog;
 }
 function paintBeat(k) {
-  let i = 0;
-  for (let n = 0; n < LAND_BEATS.length; n++) if (k >= LAND_BEATS[n].k) i = n;
-  if (i !== landBeat) {
-    landBeat = i;
-    const b = LAND_BEATS[i];
-    $('#landKicker').textContent = b.kicker;
-    $('#landTitle').textContent = b.title;
-    $('#landText').textContent = b.text;
-  }
-  $('#landCopy').classList.toggle('off', k > 0.9);
-  $('#landChevron').style.display = k > 0.04 ? 'none' : '';
-  const bar = $('#landBar'); if (bar) bar.style.height = (k * 100).toFixed(1) + '%';
+  if (landShown) return;
+  const bar = $('#landBar'); if (bar) bar.style.height = (clamp01(k / 0.52) * 100).toFixed(1) + '%';
+}
+function revealLogin() {
+  landShown = true;
+  const box = $('#landScroll');
+  if (box) { box.hidden = false; box.classList.add('in'); }
+  const copy = $('#landCopy'); if (copy) copy.classList.add('off');
+  const meter = document.querySelector('.landMeter'); if (meter) meter.hidden = true;
+  const skip = $('#landSkip'); if (skip && !book.current()) skip.hidden = true;
 }
 function paintLandingAuth() {
   const u = book.current();
@@ -372,16 +370,22 @@ function paintLandingAuth() {
   if (u) $('#landWho').textContent = u.name;
   const err = $('#gateErr'); if (err) err.textContent = '';
 }
-function openLanding() {
+function openLanding(opts = {}) {
   if (!G) return;
   captureSpin();
-  landingOn = true; landBeat = -1;
+  landingOn = true; landBeat = -1; landShown = false;
+  landT0 = performance.now();
+  landK = landKs = 0;
   document.documentElement.classList.add('land');
   document.body.classList.add('land');
-  $('#landScroll').hidden = false;
+  const box = $('#landScroll');
+  if (box) { box.hidden = false; box.classList.remove('in'); const card = box.querySelector('.card'); if (card) card.style.transform = ''; }
   $('#landing').hidden = false;
   $('#intro').hidden = true;
   $('#profile').hidden = true;
+  const meter = document.querySelector('.landMeter'); if (meter) meter.hidden = false;
+  const skip = $('#landSkip'); if (skip) skip.hidden = false;
+  const copy = $('#landCopy'); if (copy) copy.classList.remove('off');
   if (T) { T.tg.visible = T.holder.visible = T.tray.visible = false; }
   if (G) G.root.visible = true;
   if (gallery) gallery.visible = false;
@@ -393,14 +397,16 @@ function openLanding() {
   scene.environmentIntensity = 1.2;
   scene.fog = new THREE.Fog(0x07060a, 1400, 2400);
   paintLandingAuth();
+  if (opts.loginNow) { landT0 -= 3000; landK = landKs = 0.52; revealLogin(); }
   resize();
 }
 function closeLanding() {
-  landingOn = false; landK = landKs = 0;
+  landingOn = false; landK = landKs = 0; landShown = false;
   document.documentElement.classList.remove('land');
   document.body.classList.remove('land');
   $('#landing').hidden = true;
-  $('#landScroll').hidden = true;
+  const box = $('#landScroll');
+  if (box) { box.hidden = true; box.classList.remove('in'); }
   window.scrollTo(0, 0);
   try { restoreLandingPose(); } catch (err) { console.warn(err); }
   controls.enabled = true;
@@ -453,9 +459,13 @@ function poseFloat(t) {
 }
 function driveLanding(t) {
   if (!G) return;
-  const max = document.documentElement.scrollHeight - window.innerHeight;
-  if (max > 0) landK = window.scrollY / max;
-  landKs += (landK - landKs) * 0.18;
+  const elapsed = (performance.now() - landT0) / 1000;
+  if (!landShown && elapsed >= 3) revealLogin();
+  const u = clamp01(Math.min(elapsed, 3) / 3);
+  const e = u * u * (3 - 2 * u);
+  const drift = landShown ? Math.sin(elapsed * 0.4) * 0.035 : 0;
+  landK = e * 0.52 + (e > 0.2 ? drift : 0);
+  landKs += (landK - landKs) * 0.12;
   const k = landKs;
   const insideU = clamp01(k / INSIDE_END);
   const vaultU = clamp01((k - VAULT_AT) / (0.9 - VAULT_AT));
@@ -1324,8 +1334,7 @@ function openProfile() {
   $('#profileCard').querySelectorAll('[data-del]').forEach(b => b.onclick = () => { const r = book.removeUser(b.dataset.del); if (r.err) say(r.err); else openProfile(); });
 }
 function showGate() {
-  openLanding();
-  requestAnimationFrame(() => { window.scrollTo(0, document.documentElement.scrollHeight); landK = 1; });
+  openLanding({ loginNow: true });
 }
 function enterApp() {
   portraitsWanted = true;
@@ -1775,12 +1784,15 @@ $('#gateNew').onclick = () => { const r = book.register($('#gateName').value, $(
 $('#gateGuest').onclick = () => { book.enterGuest(); closeLanding(); };
 $('#gatePass').addEventListener('keydown', e => { if (e.key === 'Enter') $('#gateIn').click(); });
 function liftGate(el) {
+  const card = el.closest('.card');
   const run = () => {
+    if (!card) return;
     const vv = window.visualViewport;
     const top = vv ? vv.offsetTop : 0;
     const h = vv ? vv.height : window.innerHeight;
-    const r = el.getBoundingClientRect();
-    window.scrollBy(0, r.top - (top + h * 0.28));
+    const r = card.getBoundingClientRect();
+    const overlap = r.bottom - (top + h - 16);
+    card.style.transform = overlap > 8 ? `translateY(${-overlap}px)` : '';
   };
   setTimeout(run, 60);
   setTimeout(run, 340);
@@ -1792,10 +1804,6 @@ if (window.visualViewport) window.visualViewport.addEventListener('resize', () =
   if (el && (el.id === 'gateName' || el.id === 'gatePass')) liftGate(el);
 });
 $('#gateName').addEventListener('keydown', e => { if (e.key === 'Enter') $('#gatePass').focus(); });
-$('#landing').addEventListener('scroll', () => {
-  const el = $('#landing'), max = el.scrollHeight - el.clientHeight;
-  landK = max > 0 ? el.scrollTop / max : 0;
-}, { passive: true });
 document.querySelector('#intro .card').addEventListener('scroll', () => {
   const el = document.querySelector('#intro .card'), max = el.scrollHeight - el.clientHeight;
   const bar = $('#menuBar'); if (bar) bar.style.height = (max > 0 ? el.scrollTop / max * 100 : 0).toFixed(1) + '%';
@@ -1805,9 +1813,9 @@ $('#landing').addEventListener('pointermove', e => {
   landTilt.x = (e.clientX / window.innerWidth - 0.5) * 0.2;
   landTilt.y = (e.clientY / window.innerHeight - 0.5) * 0.1;
 });
-$('#landSkip').onclick = () => closeLanding();
+$('#landSkip').onclick = () => { if (book.current()) closeLanding(); else revealLogin(); };
 $('#landContinue').onclick = () => closeLanding();
-$('#landSwitch').onclick = () => { book.logout(); paintLandingAuth(); window.scrollTo(0, document.documentElement.scrollHeight); };
+$('#landSwitch').onclick = () => { book.logout(); paintLandingAuth(); const skip = $('#landSkip'); if (skip) skip.hidden = true; };
 async function begin(watchId, faultId, story, opts = {}) {
   buildWorld(watchId, faultId, story, opts); G.active = true; sessionLive = true;
   sel = null; selectTool(null); started = true; busy = false; stampTimer(0);

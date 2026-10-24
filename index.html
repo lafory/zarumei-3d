@@ -178,12 +178,13 @@ body.land #app{max-width:none;padding:0;height:100%}
 body.land header,body.land #stepbar,body.land #progress,body.land #msg,body.land #toolhead,body.land #tools,body.land .kbd,body.land #bottom,body.land #intro,body.land #a2hs{display:none!important}
 body.land #stage{position:fixed;inset:0;z-index:1;margin:0;height:100%;min-height:100%;border-radius:0;box-shadow:none}
 body.land #stage::before{background:linear-gradient(180deg,rgba(0,0,0,.42),transparent 14% 82%,rgba(0,0,0,.45))}
-html.land,html.land body{height:auto!important;overflow:auto!important;overflow-x:hidden!important;-webkit-overflow-scrolling:touch}
-#landScroll{position:relative;z-index:24;height:auto}
+html.land,html.land body{height:100%!important;overflow:hidden!important}
+#landScroll{position:fixed;left:0;right:0;bottom:0;z-index:27;height:auto;padding:0 14px calc(env(safe-area-inset-bottom) + 14px);opacity:0;pointer-events:none;transform:translateY(24px);transition:opacity .45s ease,transform .55s cubic-bezier(.16,.84,.22,1)}
 body:not(.land) #landScroll{display:none!important}
-.landSpacer{height:420vh}
-.landDock{min-height:auto;display:flex;align-items:flex-start;justify-content:center;padding:8vh 14px 58vh;position:relative;z-index:27}
-.landDock .card{width:min(440px,100%);max-height:none;overflow:visible;pointer-events:auto}
+#landScroll.in{opacity:1;pointer-events:auto;transform:none}
+.landSpacer{display:none}
+.landDock{min-height:0;display:flex;align-items:flex-end;justify-content:center;padding:0;position:relative;z-index:27}
+.landDock .card{width:min(440px,100%);max-height:min(78dvh,560px);overflow:auto;pointer-events:auto}
 #landing{position:fixed;inset:0;z-index:26;overflow:visible;pointer-events:none;background:transparent}
 #landing[hidden]{display:none!important}
 .landTop{position:fixed;top:0;left:0;right:0;z-index:28;display:flex;justify-content:flex-end;align-items:flex-start;padding:calc(env(safe-area-inset-top) + 10px) 14px 0;pointer-events:none}
@@ -192,8 +193,7 @@ body:not(.land) #landScroll{display:none!important}
 .landCopy.off{opacity:0}
 .landCopy h1{font-family:var(--serif);font-weight:500;font-size:clamp(32px,8vw,60px);margin:2px 0 4px;letter-spacing:.04em;text-shadow:0 10px 28px rgba(0,0,0,.75)}
 .landCopy p{margin:0 auto;max-width:320px;font-family:var(--serif);font-size:17px;line-height:1.3;color:var(--ivory);text-shadow:0 2px 12px #000}
-.landChevron{width:18px;height:18px;margin:16px auto 0;border-right:1.5px solid var(--gold-hi);border-bottom:1.5px solid var(--gold-hi);transform:rotate(45deg);animation:landBob 1.4s ease-in-out infinite;filter:drop-shadow(0 2px 4px #000)}
-@keyframes landBob{50%{transform:translateY(7px) rotate(45deg)}}
+.landChevron{display:none}
 .landMeter{position:fixed;left:0;top:18%;bottom:18%;width:2px;z-index:26;background:rgba(217,180,94,.18);pointer-events:none}
 .landMeter i{display:block;width:100%;height:0;background:var(--foil);background-size:100% 200%}
 @media (max-width:700px) and (max-aspect-ratio:4/5){
@@ -451,7 +451,7 @@ body:not(.land) #landScroll{display:none!important}
       <div id="landForm">
         <div class="cinzel">Libro del taller</div>
         <h2 class="foil" style="font-family:var(--serif);font-weight:500;font-size:32px;margin:6px 0 4px">Entra a la bóveda</h2>
-        <p class="small" style="text-align:center">El viaje termina aquí. Entra, crea tu nombre, o pasa como invitado.</p>
+        <p class="small" style="text-align:center">Entra, crea tu nombre, o pasa como invitado.</p>
         <label class="field" for="gateName">Nombre</label>
         <input id="gateName" autocomplete="username" maxlength="18" enterkeyhint="next">
         <label class="field" for="gatePass">Clave</label>
@@ -468,7 +468,7 @@ body:not(.land) #landScroll{display:none!important}
   <div class="landCopy" id="landCopy">
     <div class="cinzel" id="landKicker">ZARUMEI 3D</div>
     <h1 class="foil" id="landTitle">La bóveda</h1>
-    <p id="landText">Desliza. La cámara entra en el reloj.</p>
+    <p id="landText">La cámara entra en el reloj.</p>
     <div class="landChevron" id="landChevron"></div>
   </div>
   <div class="landMeter"><i id="landBar"></i></div>
@@ -486,7 +486,7 @@ body:not(.land) #landScroll{display:none!important}
   <div id="bqDetail" hidden><button class="lux" id="bqBack">← Volver</button><div id="bqStage"></div><div id="bqInfo"></div></div>
 </div>
 
-<script src="game.js?v=build1"></script>
+<script src="game.js?v=land1"></script>
 <script>
 setInterval(function(){var g=window.__game;if(!g||!g.started)return;var el=document.getElementById('timer');if(!el._t0)el._t0=Date.now();if(document.getElementById('endOverlay').hidden){var e=Math.floor((Date.now()-el._t0)/1000);el.textContent=Math.floor(e/60)+':'+String(e%60).padStart(2,'0');}},500);
 document.getElementById('menuTop').onclick=function(){ if (window.__game && __game.openMenu) __game.openMenu(); else document.getElementById('intro').hidden=false; };
