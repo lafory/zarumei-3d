@@ -367,6 +367,16 @@ body:not(.land) #landScroll{display:none!important}
         <button type="button" class="wcard" data-go="ala"><b><em class="nuevo">Nuevo</em>ZARUMEI Ala de Fuego</b><span>Alas de oro, brújula y hora militar de 24 h.</span><small>ZC-42 · mecánico</small></button>
         <button type="button" class="wcard" data-go="orbital"><b><em class="nuevo">Nuevo</em>ZARUMEI Orbital</b><span>Todo lo anterior y las fases de la luna, en jaula calada.</span><small>ZC-43 · mecánico</small></button>
       </div>
+      <p class="cinzel" style="margin-top:12px">Sala · Cronógrafos</p>
+      <div id="salaList">
+        <button type="button" class="wcard" data-go="fiesta"><b><em class="nuevo">Nuevo</em>ZARUMEI Fiesta</b><span>Oso, puro y ron. Día, mes y cronógrafo. Sin pila.</span><small>ZC-44 · mecánico</small></button>
+        <button type="button" class="wcard" data-go="cosmos"><b><em class="nuevo">Nuevo</em>ZARUMEI Cosmos</b><span>Esfera de color y resina. El mismo cronógrafo mecánico.</span><small>ZC-44 · mecánico</small></button>
+        <button type="button" class="wcard" data-go="hoja"><b><em class="nuevo">Nuevo</em>ZARUMEI Hoja</b><span>Hoja irisada, bisel de oro y correa con hojas.</span><small>ZC-44 · mecánico</small></button>
+        <button type="button" class="wcard" data-go="marte"><b><em class="nuevo">Nuevo</em>ZARUMEI Marte</b><span>El oso en Marte. Correa terracota. Día, mes y cronógrafo.</span><small>ZC-44 · mecánico</small></button>
+        <button type="button" class="wcard" data-go="mascara"><b><em class="nuevo">Nuevo</em>ZARUMEI Máscara</b><span>Caja negra y correa partida. Sin pila.</span><small>ZC-44 · mecánico</small></button>
+        <button type="button" class="wcard" data-go="cuerno"><b><em class="nuevo">Nuevo</em>ZARUMEI Cuerno</b><span>Laca negra, anillo de oro y costura roja.</span><small>ZC-44 · mecánico</small></button>
+        <button type="button" class="wcard" data-go="onelove"><b><em class="nuevo">Nuevo</em>ZARUMEI One Love</b><span>Trenzado rojo, oro y verde. Día, mes y cronógrafo.</span><small>ZC-44 · mecánico</small></button>
+      </div>
       <p class="cinzel" style="margin-top:12px">III · Turbillones</p>
       <div id="astralList">
         <button type="button" class="wcard" data-go="astralMiami"><b><em class="nuevo">Nuevo</em>ZARUMEI Astral «Miami»</b><span>Turbillón de oro 18 k, nebulosa violeta, diamante y el oso Miami.</span><small>ZT-18 · cuerda manual</small></button>
@@ -486,7 +496,7 @@ body:not(.land) #landScroll{display:none!important}
   <div id="bqDetail" hidden><button class="lux" id="bqBack">← Volver</button><div id="bqStage"></div><div id="bqInfo"></div></div>
 </div>
 
-<script src="game.js?v=land1"></script>
+<script src="game.js?v=sala1"></script>
 <script>
 setInterval(function(){var g=window.__game;if(!g||!g.started)return;var el=document.getElementById('timer');if(!el._t0)el._t0=Date.now();if(document.getElementById('endOverlay').hidden){var e=Math.floor((Date.now()-el._t0)/1000);el.textContent=Math.floor(e/60)+':'+String(e%60).padStart(2,'0');}},500);
 document.getElementById('menuTop').onclick=function(){ if (window.__game && __game.openMenu) __game.openMenu(); else document.getElementById('intro').hidden=false; };

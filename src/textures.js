@@ -44,6 +44,29 @@ function punch(x, cx, cy, w, h, round) {
   if (round) { x.beginPath(); x.arc(cx, cy, w, 0, Math.PI * 2); x.stroke(); }
   else x.strokeRect(cx - w / 2, cy - h / 2, w, h);
 }
+const ART = { fiesta: '#4a1020', cosmos: '#120818', hoja: '#0c0c0e', marte: '#2a140e', mascara: '#101012', cuerno: '#0c0c0e', onelove: '#101012' };
+function artDial(x, R, kind, images, opt) {
+  x.fillStyle = ART[kind]; x.beginPath(); x.arc(0, 0, R, 0, Math.PI * 2); x.fill();
+  const artR = R * 0.64;
+  const img = images[kind];
+  x.save(); x.beginPath(); x.arc(0, 0, artR, 0, Math.PI * 2); x.clip();
+  x.drawImage(img, -artR, -artR, artR * 2, artR * 2); x.restore();
+  x.strokeStyle = kind === 'cosmos' ? 'rgba(255,255,255,.75)' : '#e6c36a';
+  x.lineWidth = R * 0.012; x.beginPath(); x.arc(0, 0, artR + R * 0.008, 0, Math.PI * 2); x.stroke();
+  minuteTrack(x, R, kind === 'mascara' ? '#f4f4f4' : '#f2efe6', 0.975, 0.935, 0.905);
+  if (!opt || !opt.rim) return;
+  const mm = (mx, mz) => [mx / 16.2 * R, mz / 16.2 * R];
+  const day = mm(-12.6, -1.4), month = mm(12.6, -1.4), depth = mm(0, 13.2);
+  punch(x, day[0], day[1], R * 0.18, R * 0.085, false);
+  punch(x, month[0], month[1], R * 0.2, R * 0.085, false);
+  x.fillStyle = 'rgba(246,215,138,.92)'; x.font = `600 ${R * 0.026}px Helvetica, Arial`;
+  x.textAlign = 'center'; x.textBaseline = 'middle';
+  x.fillText('DÍA', day[0], day[1] - R * 0.07);
+  x.fillText('MES', month[0], month[1] - R * 0.07);
+  x.strokeStyle = 'rgba(246,215,138,.9)'; x.lineWidth = 4;
+  x.beginPath(); x.arc(depth[0], depth[1], R * 0.085, 0, Math.PI * 2); x.stroke();
+  x.fillText('PROF.', depth[0], depth[1] - R * 0.13);
+}
 function grandDial(x, R, kind) {
   const compass = kind !== 'diablo';
   const g = x.createRadialGradient(-R * 0.2, -R * 0.3, R * 0.05, 0, 0, R);
@@ -215,6 +238,8 @@ export function dialTexture(kind, images, day, opts = {}) {
     x.font = `400 ${S * 0.02}px Helvetica, Arial`; x.fillStyle = '#6d675f'; x.fillText('QUARTZ', S / 2, S * 0.53);
   } else if (kind === 'diablo' || kind === 'espina' || kind === 'ala' || kind === 'orbital') {
     grandDial(x, R, kind);
+  } else if (ART[kind]) {
+    artDial(x, R, kind, images, opts.grand);
   } else if (ATELIER[kind]) {
     if (opts.grand) atelierGrand(x, R, kind, opts.grand);
     else atelierFace(x, R, kind, !!opts.date, day);
@@ -272,6 +297,83 @@ export function bezelTexture() {
     }
   }
   x.fillStyle = '#3a2606'; x.beginPath(); x.moveTo(0, -R * 0.82); x.lineTo(-R * 0.06, -R * 0.97); x.lineTo(R * 0.06, -R * 0.97); x.fill();
+  return tex(c);
+}
+function starAt(x, cx, cy, r) {
+  x.beginPath();
+  for (let i = 0; i < 10; i++) {
+    const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r * 0.42 : r;
+    const px = cx + Math.cos(a) * rr, py = cy + Math.sin(a) * rr;
+    if (i === 0) x.moveTo(px, py); else x.lineTo(px, py);
+  }
+  x.closePath(); x.fill();
+}
+// El anillo visible del bisel cae en el borde exterior de la textura (≈ 0,84–1 R).
+export function starBezel() {
+  const S = 1024, c = canvas(S), x = c.getContext('2d'), R = S / 2;
+  x.translate(R, R);
+  x.fillStyle = '#c8102e'; x.beginPath(); x.arc(0, 0, R, 0, Math.PI * 2); x.fill();
+  x.fillStyle = '#002a8f'; x.beginPath(); x.arc(0, 0, R * 0.9, 0, Math.PI * 2); x.fill();
+  x.fillStyle = '#ffffff';
+  for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2 - Math.PI / 2; starAt(x, Math.cos(a) * R * 0.935, Math.sin(a) * R * 0.935, R * 0.032); }
+  return tex(c);
+}
+export function splashBezel() {
+  const S = 1024, c = canvas(S), x = c.getContext('2d'), R = S / 2;
+  x.translate(R, R);
+  const cols = ['#ff3b6a', '#ffb703', '#7cff6b', '#3ec6ff', '#b388ff', '#ff7a18'];
+  for (let i = 0; i < 48; i++) {
+    const a = i / 48 * Math.PI * 2;
+    x.fillStyle = cols[i % cols.length];
+    x.beginPath(); x.arc(Math.cos(a) * R * 0.92, Math.sin(a) * R * 0.92, R * 0.07, 0, Math.PI * 2); x.fill();
+  }
+  x.fillStyle = '#111'; x.font = `700 ${R * 0.055}px Helvetica, Arial`; x.textAlign = 'center'; x.textBaseline = 'middle';
+  for (const [n, a] of [['15', 0], ['30', 90], ['45', 180], ['60', 270]]) {
+    const rad = a * Math.PI / 180;
+    x.save(); x.translate(Math.cos(rad) * R * 0.92, Math.sin(rad) * R * 0.92); x.rotate(rad + Math.PI / 2); x.fillText(n, 0, 0); x.restore();
+  }
+  return tex(c);
+}
+export function wreathBezel() {
+  const S = 1024, c = canvas(S), x = c.getContext('2d'), R = S / 2;
+  x.translate(R, R);
+  x.fillStyle = '#8a6a2a'; x.fillRect(-R, -R, S, S);
+  x.strokeStyle = '#f3e0a4'; x.fillStyle = '#f3e0a4'; x.lineWidth = 3;
+  for (let i = 0; i < 24; i++) {
+    const a = i / 24 * Math.PI * 2;
+    x.save(); x.translate(Math.cos(a) * R * 0.93, Math.sin(a) * R * 0.93); x.rotate(a + Math.PI / 2);
+    x.beginPath(); x.ellipse(0, 0, R * 0.02, R * 0.045, 0, 0, Math.PI * 2); x.fill();
+    x.restore();
+  }
+  return tex(c);
+}
+export function natoTexture(stripes) {
+  const cols = stripes && stripes.length ? stripes : ['#1aa3a8', '#f2d24b', '#e23b2f', '#1f8a3a'];
+  const S = 256, c = canvas(S, 64), x = c.getContext('2d');
+  cols.forEach((col, i) => { x.fillStyle = col; x.fillRect(i * S / cols.length, 0, S / cols.length + 1, 64); });
+  return tex(c);
+}
+export function splatterTexture() {
+  const S = 512, c = canvas(S), x = c.getContext('2d');
+  x.fillStyle = 'rgba(255,255,255,.15)'; x.fillRect(0, 0, S, S);
+  const cols = ['#ff4d6d', '#ffd60a', '#4cc9f0', '#b5179e', '#80ed99', '#fb8500', '#7209b7'];
+  for (let i = 0; i < 90; i++) {
+    x.fillStyle = cols[i % cols.length];
+    x.globalAlpha = 0.55 + (i % 5) * 0.08;
+    x.beginPath(); x.arc((i * 97) % S, (i * 53) % S, 8 + (i % 7) * 6, 0, Math.PI * 2); x.fill();
+  }
+  x.globalAlpha = 1;
+  return tex(c);
+}
+export function suedeTexture() {
+  const S = 512, c = canvas(S), x = c.getContext('2d');
+  x.fillStyle = '#f4efe4'; x.fillRect(0, 0, S, S);
+  x.fillStyle = '#c47a45';
+  for (let i = 0; i < 40; i++) {
+    x.globalAlpha = 0.35 + (i % 4) * 0.12;
+    x.beginPath(); x.ellipse((i * 80) % S, (i * 47) % S, 30 + (i % 5) * 14, 18 + (i % 3) * 8, i, 0, Math.PI * 2); x.fill();
+  }
+  x.globalAlpha = 1;
   return tex(c);
 }
 

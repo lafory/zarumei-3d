@@ -1403,7 +1403,7 @@ function renderMenu() {
     b.onclick = () => { if (locked) { b.classList.add('shake'); setTimeout(() => b.classList.remove('shake'), 400); return; } startStory(c.id); }; list.appendChild(b);
   });
   const wl = $('#watchList'); wl.innerHTML = '';
-  document.querySelectorAll('#habanaList [data-go], #astralList [data-go], #grandList [data-go], #maisonList [data-go]').forEach(b => {
+  document.querySelectorAll('#habanaList [data-go], #astralList [data-go], #grandList [data-go], #salaList [data-go], #maisonList [data-go]').forEach(b => {
     dressCard(b, b.dataset.go);
     b.classList.toggle('on', b.dataset.go === playWatch);
     b.onclick = () => pickWatch(b.dataset.go);

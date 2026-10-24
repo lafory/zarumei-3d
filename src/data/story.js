@@ -39,5 +39,19 @@ export const STORY = [
   { id: 'c19', watch: 'noche', fault: 'muelleDebil', title: 'Caso 19 · "Se para por la noche"', cliente: 'Sr. Díaz — Miami, FL',
     diag: ['timegrapher'], intro: 'El Noche se para. Amplitud baja: el muelle real del ZX-60 ya no da fuerza.' },
   { id: 'c20', watch: 'verano', fault: 'magnetizado', title: 'Caso 20 · "Se adelanta muchísimo"', cliente: 'Club de buceo — Bahía de Vizcaya',
-    diag: ['timegrapher', 'compass'], intro: 'El Verano se adelanta desde que pasó junto a un altavoz. Mira la brújula.' }
+    diag: ['timegrapher', 'compass'], intro: 'El Verano se adelanta desde que pasó junto a un altavoz. Mira la brújula.' },
+  { id: 'c21', watch: 'fiesta', fault: 'aceiteSeco', title: 'Caso 21 · "Se atrasa"', cliente: 'Fiesta en la Calle Ocho',
+    diag: ['timegrapher', 'compass'], intro: 'El Fiesta se atrasa. Mide primero, descarta el magnetismo y luego abre. Es mecánico: no hay pila.' },
+  { id: 'c22', watch: 'cosmos', fault: 'magnetizado', title: 'Caso 22 · "Se adelanta muchísimo"', cliente: 'Estudio de Wynwood',
+    diag: ['timegrapher', 'compass'], intro: 'El Cosmos se adelanta minutos. La brújula dice si es magnetismo, antes de tocar el cronógrafo.' },
+  { id: 'c23', watch: 'hoja', fault: 'muelleDebil', title: 'Caso 23 · "Se para por la noche"', cliente: 'Colección privada — Coral Gables',
+    diag: ['timegrapher'], intro: 'La Hoja se para con cuerda. Hay que desarmar hasta el barrilete. Sin pila.' },
+  { id: 'c24', watch: 'marte', fault: 'ejeRoto', title: 'Caso 24 · "Se me cayó"', cliente: 'Taller de Little Havana',
+    diag: ['timegrapher'], intro: 'El Marte se cayó y ya no late. Hay que llegar al volante.' },
+  { id: 'c25', watch: 'mascara', fault: 'desregulado', title: 'Caso 25 · "Se adelanta un poco"', cliente: 'Galería de diseño — Miami Beach',
+    diag: ['timegrapher', 'compass'], intro: 'La Máscara se adelanta 38 s/día. Amplitud sana: mira si basta mover la raqueta.' },
+  { id: 'c26', watch: 'cuerno', fault: 'aceiteSeco', title: 'Caso 26 · "Se atrasa"', cliente: 'Sr. Díaz — Miami, FL',
+    diag: ['timegrapher', 'compass'], intro: 'El Cuerno pierde tiempo. Mide, descarta el magnetismo y revisa el aceite del volante.' },
+  { id: 'c27', watch: 'onelove', fault: 'magnetizado', title: 'Caso 27 · "Se adelanta muchísimo"', cliente: 'Yate en la bahía',
+    diag: ['timegrapher', 'compass'], intro: 'El One Love se adelanta desde un altavoz. Mira la brújula. El calibre es mecánico.' }
 ];

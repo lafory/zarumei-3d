@@ -10,7 +10,14 @@ const files = {
   decalGold: ['lafory-decal-engrave-gold-256.webp', 'image/webp'],
   decalWhite: ['lafory-decal-print-white-256.webp', 'image/webp'],
   cubaBear: ['dial-cuba-bear.webp', 'image/webp'],
-  roseArt: ['dial-rose-art.webp', 'image/webp']
+  roseArt: ['dial-rose-art.webp', 'image/webp'],
+  fiesta: ['dial-fiesta.jpg', 'image/jpeg'],
+  cosmos: ['dial-cosmos.jpg', 'image/jpeg'],
+  hoja: ['dial-hoja.jpg', 'image/jpeg'],
+  marte: ['dial-marte.jpg', 'image/jpeg'],
+  mascara: ['dial-mascara.jpg', 'image/jpeg'],
+  cuerno: ['dial-cuerno.jpg', 'image/jpeg'],
+  onelove: ['dial-onelove.jpg', 'image/jpeg']
 };
 let out = '// GENERADO por scripts/build.mjs — no editar\nexport const IMG = {\n';
 for (const [k, [f, mime]] of Object.entries(files)) out += `  ${k}: 'data:${mime};base64,${readFileSync(new URL(f, A)).toString('base64')}',\n`;

@@ -100,6 +100,20 @@ function sello(M) {
   return g;
 }
 
+function placa(M) {
+  const g = tag(new THREE.Group(), 'emblem');
+  const gold = M.metal('gold');
+  const disc = new THREE.Mesh(new THREE.CylinderGeometry(1.7, 1.7, 0.28, 40), gold);
+  disc.position.y = 0.31;
+  g.add(disc);
+  const bar = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.08, 1.2), gold);
+  bar.position.y = 0.48; g.add(bar);
+  g.add(at(new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.08, 0.2), gold), 0, 0.48, -0.5));
+  g.add(at(new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.08, 0.2), gold), 0, 0.48, 0.5));
+  g.add(hitProxy(M, 1.8, 0.55, 0.2));
+  return g;
+}
+
 function makeBalance(M, x, z) {
   const balance = tag(new THREE.Group(), 'balance');
   const wheel = new THREE.Group(); wheel.name = 'balanceWheel';
@@ -209,16 +223,18 @@ export function buildGrand(M, images, watch, cal) {
     tab.position.set(x + d.x * 1.1, 1.25, z + d.z * 1.1); tab.rotation.y = Math.atan2(-d.z, d.x) + Math.PI / 2; clamps.add(tab);
   }
   mv.add(clamps); parts.clamps = clamps;
-  parts.stem = stemGroup(M, R, M.metal(watch.case.metal), 0.65); mv.add(parts.stem);
+  parts.stem = stemGroup(M, R, M.metal(watch.case.crown || watch.case.metal), 0.65); mv.add(parts.stem);
 
   const ds = new THREE.Group(); ds.name = 'dialSide'; ds.rotation.z = Math.PI; mv.add(ds);
   const ys = { dial: 1.42, hour: 2.05, min: 2.32, sec: 2.58 };
   const metal = M.metal(watch.hands.metal);
-  const depthAt = opt.moon ? [5.6, 5.2] : [0, 7.7];
+  const depthAt = opt.rim ? [0, 13.2] : opt.moon ? [5.6, 5.2] : [0, 7.7];
   const depthHand = subHand(M, 'depthHand', 3.2, metal, ys.sec + 0.06); depthHand.position.x = depthAt[0]; depthHand.position.z = depthAt[1]; ds.add(depthHand); parts.depthHand = depthHand;
 
-  const emblem = (opt.emblem === 'espina' ? espina : opt.emblem === 'ala' ? ala : opt.emblem === 'orbital' ? orbital : opt.emblem === 'sello' ? sello : devil)(M);
-  emblem.position.y = ys.dial + 0.28; ds.add(emblem); parts.emblem = emblem;
+  const emblem = (opt.emblem === 'espina' ? espina : opt.emblem === 'ala' ? ala : opt.emblem === 'orbital' ? orbital : opt.emblem === 'sello' ? sello : opt.emblem === 'placa' ? placa : devil)(M);
+  emblem.position.y = ys.dial + 0.28;
+  if (opt.rim) emblem.position.z = -14.3;
+  ds.add(emblem); parts.emblem = emblem;
 
   if (opt.military) {
     const mil = subHand(M, 'milHand', watch.dial.r * 0.62, metal, ys.hour + 0.12); ds.add(mil); parts.milHand = mil;
@@ -246,8 +262,8 @@ export function buildGrand(M, images, watch, cal) {
     const mw = tag(new THREE.Group(), 'moonWheel'); mw.add(gearMesh(1.1, 16, 0.14, M.goldWheel, 0)); mw.add(hitProxy(M, 1.2, 0.3, 0.08)); at(mw, 2.6, 0.35, 6.4); ds.add(mw); parts.moonWheel = mw;
   }
 
-  const dayAt = opt.compass ? [-6.6, -3.4] : [0, -9.1];
-  const monAt = opt.compass ? [6.6, -3.4] : [0, -6.5];
+  const dayAt = opt.rim ? [-12.6, -1.4] : opt.compass ? [-6.6, -3.4] : [0, -9.1];
+  const monAt = opt.rim ? [12.6, -1.4] : opt.compass ? [6.6, -3.4] : [0, -6.5];
   const calPlate = tag(new THREE.Group(), 'calendarPlate');
   calPlate.add(new THREE.Mesh(extrudeShape(ringShape(7.2, 12.2), 0.16, 0, 40), M.steel));
   calPlate.add(hitProxy(M, 12, 0.3, 0.1)); calPlate.position.y = 0.85; ds.add(calPlate); parts.calendarPlate = calPlate;

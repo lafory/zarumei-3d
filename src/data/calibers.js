@@ -125,6 +125,10 @@ function grandCaliber(id, name, desc, opt) {
   const dialCover = ['hourHand', 'emblem', 'depthHand'];
   if (opt.military) dialCover.push('milHand');
   if (opt.compass) dialCover.push('compassBowl');
+  const emblemName = opt.emblem === 'diablo' ? 'la máscara del diablo' : opt.emblem === 'espina' ? 'el cabujón de púas' : opt.emblem === 'ala' ? 'las alas de esmalte' : opt.emblem === 'sello' ? 'el sello del atelier' : opt.emblem === 'placa' ? 'la placa de la esfera' : 'la jaula calada';
+  const emblemScrews = opt.rim
+    ? [{ s: 0.8, k: 'emblem', p: [1.15, 0.45, 0.4] }, { s: 0.8, k: 'emblem', p: [-1.15, 0.45, 0.4] }]
+    : [{ s: 0.8, k: 'emblem', p: [2.1, 0.45, 1.4] }, { s: 0.8, k: 'emblem', p: [-2.1, 0.45, 1.4] }];
   const parts = [
     { id: 'caseback', name: 'el fondo roscado', side: 'case', coveredBy: [], tool: 'caseWrench', oil: { when: 'before', lube: 'grasa de silicona', msg: 'Grasa de silicona en la junta del fondo.' } },
     { id: 'rotor', name: 'el rotor', side: 'bridge', coveredBy: ['caseback'], tool: 'tweezers', screws: [{ s: 1.6, k: 'rotor', p: [0, 0.55, 0] }] },
@@ -156,7 +160,7 @@ function grandCaliber(id, name, desc, opt) {
     { id: 'minHand', name: 'la aguja de minutos', side: 'dial', coveredBy: ['secHand'], tool: 'handLevers', placeTool: 'handPress', requires: ['protector'], placeRequires: ['protector'] },
     { id: 'hourHand', name: 'la aguja de horas', side: 'dial', coveredBy: ['minHand'], tool: 'handLevers', placeTool: 'handPress', requires: ['protector'], placeRequires: ['protector'] },
     { id: 'depthHand', name: 'la aguja del profundímetro', side: 'dial', coveredBy: [], tool: 'handLevers', placeTool: 'handPress', requires: ['protector'], placeRequires: ['protector'] },
-    { id: 'emblem', name: opt.emblem === 'diablo' ? 'la máscara del diablo' : opt.emblem === 'espina' ? 'el cabujón de púas' : opt.emblem === 'ala' ? 'las alas de esmalte' : opt.emblem === 'sello' ? 'el sello del atelier' : 'la jaula calada', side: 'dial', coveredBy: ['hourHand'], tool: 'tweezers', screws: [{ s: 0.8, k: 'emblem', p: [2.1, 0.45, 1.4] }, { s: 0.8, k: 'emblem', p: [-2.1, 0.45, 1.4] }] },
+    { id: 'emblem', name: emblemName, side: 'dial', coveredBy: ['hourHand'], tool: 'tweezers', screws: emblemScrews },
     { id: 'dial', name: 'la esfera', side: 'dial', coveredBy: dialCover, tool: 'tweezers', screws: [{ s: 0.8, k: 'dial', face: true, p: [-12.5, 1.48, 7.2] }, { s: 0.8, k: 'dial', face: true, p: [12.5, 1.48, -7.2] }] },
     { id: 'calendarPlate', name: 'el puente de calendario', side: 'dial', coveredBy: ['dial'], tool: 'tweezers', screws: [{ s: 1.0, k: 'date', p: [8.4, 0.28, 0] }, { s: 1.0, k: 'date', p: [-8.2, 0.28, 2.2] }, { s: 1.0, k: 'date', p: [0, 0.28, 9.2] }] },
     { id: 'dayDisc', name: 'el disco de los días', side: 'dial', coveredBy: ['calendarPlate'], tool: 'tweezers' },
@@ -198,6 +202,7 @@ Object.assign(CALIBERS, {
   ZC41: grandCaliber('ZC41', 'ZC-41', 'El ZC-40 más una brújula mecánica sobre la esfera.', { emblem: 'espina', compass: true }),
   ZC42: grandCaliber('ZC42', 'ZC-42', 'Cronógrafo, calendario, profundímetro, brújula y hora militar de 24 h.', { emblem: 'ala', compass: true, military: true }),
   ZC43: grandCaliber('ZC43', 'ZC-43', 'Gran complicación: todo lo anterior y fases de la luna.', { emblem: 'orbital', compass: true, military: true, moon: true }),
+  ZC44: grandCaliber('ZC44', 'ZC-44', 'Cronógrafo mecánico con día, mes y profundímetro. Sin pila. 4 Hz.', { emblem: 'placa', rim: true }),
   ZX60: {
     id: 'ZX60', name: 'ZX-60', type: 'tourbillon',
     desc: 'La complicación más larga del taller: turbillón volante, repetición de minutos, calendario, autómatas y joya. 60 piezas, más que el ZC-43. Cuerda manual, 21.600 A/h.',

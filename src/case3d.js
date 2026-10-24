@@ -26,6 +26,13 @@ export function buildCase(M, watch, movR) {
       : new THREE.MeshPhysicalMaterial({ color: metal.color, metalness: 1, roughness: 0.28, map: TX.bezelTexture(), envMapIntensity: 1.05, clearcoat: 0.25, clearcoatRoughness: 0.22 });
     const R1 = 19.3 * k, top = new THREE.Mesh(new THREE.RingGeometry(16.1 * k, R1, 128, 1).rotateX(-Math.PI / 2), topMat); top.position.y = 3.72; body.add(top);
     { const uv = top.geometry.attributes.uv, pos = top.geometry.attributes.position; for (let i = 0; i < uv.count; i++) uv.setXY(i, pos.getX(i) / (2 * R1) + 0.5, -pos.getZ(i) / (2 * R1) + 0.5); }
+    if (C.bezel === 'stars') top.material = new THREE.MeshPhysicalMaterial({ color: 0xffffff, metalness: 0.2, roughness: 0.38, map: TX.starBezel(), clearcoat: 0.35, clearcoatRoughness: 0.25 });
+    else if (C.bezel === 'splash') top.material = new THREE.MeshPhysicalMaterial({ color: 0xffffff, metalness: 0.12, roughness: 0.32, map: TX.splashBezel(), clearcoat: 0.45, clearcoatRoughness: 0.2 });
+    else if (C.bezel === 'wreath') {
+      const gold = M.metal('gold');
+      bz.material = gold.clone(); bz.material.side = THREE.DoubleSide;
+      top.material = new THREE.MeshPhysicalMaterial({ color: 0xe6c36a, metalness: 0.82, roughness: 0.3, map: TX.wreathBezel(), envMapIntensity: 1 });
+    }
     if (C.bezel === 'ceramicBlack') {
       const tri = new THREE.Mesh(new THREE.ConeGeometry(1.05, 1.85, 3), new THREE.MeshStandardMaterial({ color: 0xe0a07a, metalness: 0.85, roughness: 0.32 }));
       tri.rotation.x = -Math.PI / 2; tri.position.set(0, 3.95, -17.55 * k); body.add(tri);
@@ -48,9 +55,21 @@ export function buildCase(M, watch, movR) {
         body.add(cone);
       }
     }
+    if (C.bezel === 'leaves' || C.bezel === 'wreath') bezelLeaves(body, k);
+    if (C.ring) {
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(16.35 * k, 0.22, 8, 96).rotateX(Math.PI / 2), M.metal('gold'));
+      ring.position.y = 3.55; body.add(ring);
+    }
     const crystal = new THREE.Mesh(new THREE.CylinderGeometry(16.1 * k, 16.1 * k, 0.8, 96), M.crystal); crystal.position.y = 3.3; crystal.renderOrder = 5; body.add(crystal);
-    if (watch.bracelet.style === 'alligator') alligator(body, -2.2, 21.5 * k + 5.6, watch.bracelet.dye);
-    else bracelet(body, M, watch, k, -2.2, 21.5 * k + 5.6, 7.6);
+    const bs = watch.bracelet.style, zS = 21.5 * k + 5.6, yS = -2.2;
+    if (bs === 'alligator') { alligator(body, yS, zS, watch.bracelet.dye); if (watch.bracelet.leaves) leafApplique(body, yS, zS); }
+    else if (bs === 'nato') nato(body, yS, zS, watch.bracelet.stripes);
+    else if (bs === 'resin') resin(body, yS, zS);
+    else if (bs === 'weave') weave(body, yS, zS);
+    else if (bs === 'split') splitStrap(body, yS, zS);
+    else if (bs === 'stitch') stitchStrap(body, yS, zS, watch.bracelet.stitch);
+    else if (bs === 'suede') suede(body, yS, zS);
+    else bracelet(body, M, watch, k, yS, zS, 7.6);
     dims = { cbY: -5.95, yFront: 6.55, yBack: 3.8 };
   } else if (C.style === 'astral') {
     const prof = V2([[15.2, -4.4], [18.4, -4.4], [20.4, -3.1], [20.7, 0.2], [20.0, 1.7], [17.6, 2.55], [15.2, 2.55]], k);
@@ -172,6 +191,94 @@ export function buildCase(M, watch, movR) {
   }
   cb.position.y = dims.cbY;
   return { body, caseback: cb, dims };
+}
+function leafGeo() {
+  const s = new THREE.Shape();
+  s.moveTo(0, 1.05);
+  s.bezierCurveTo(0.55, 0.45, 0.42, -0.15, 0, -1.05);
+  s.bezierCurveTo(-0.42, -0.15, -0.55, 0.45, 0, 1.05);
+  const g = new THREE.ExtrudeGeometry(s, { depth: 0.1, bevelEnabled: false });
+  g.rotateX(-Math.PI / 2);
+  return g;
+}
+const LEAF = new THREE.MeshStandardMaterial({ color: 0xe6c36a, metalness: 0.88, roughness: 0.28 });
+function bezelLeaves(body, k) {
+  const geo = leafGeo();
+  for (let i = 0; i < 12; i++) {
+    const a = i / 12 * Math.PI * 2;
+    const m = new THREE.Mesh(geo, LEAF);
+    m.position.set(Math.cos(a) * 17.7 * k, 3.95, Math.sin(a) * 17.7 * k);
+    m.rotation.y = -a;
+    body.add(m);
+  }
+}
+function leafApplique(body, y, z0) {
+  const geo = leafGeo();
+  for (const s of [-1, 1]) for (const [i, dz] of [10, 24, 38].entries()) {
+    const m = new THREE.Mesh(geo, LEAF);
+    m.position.set((i % 2 ? -1 : 1) * 2.4, y + 0.95, s * (z0 + dz));
+    m.rotation.y = s > 0 ? 0.4 : Math.PI - 0.4;
+    body.add(m);
+  }
+}
+function nato(body, y, z0, stripes) {
+  const mat = new THREE.MeshStandardMaterial({ map: TX.natoTexture(stripes), roughness: 0.88, metalness: 0 });
+  for (const s of [-1, 1]) {
+    const strap = new THREE.Mesh(new THREE.BoxGeometry(16, 1.5, 50), mat);
+    strap.position.set(0, y - 0.15, s * (z0 + 22));
+    body.add(strap);
+  }
+}
+function resin(body, y, z0) {
+  const mat = new THREE.MeshStandardMaterial({ map: TX.splatterTexture(), color: 0xffffff, roughness: 0.18, metalness: 0.02, transparent: true, opacity: 0.74 });
+  for (const s of [-1, 1]) {
+    const strap = new THREE.Mesh(new THREE.BoxGeometry(16.2, 2.3, 48), mat);
+    strap.position.set(0, y - 0.1, s * (z0 + 21));
+    body.add(strap);
+  }
+}
+function weave(body, y, z0) {
+  const mats = [0x9e1b2e, 0xd4af37, 0x1f7a3a, 0x0e6b62].map(c => new THREE.MeshStandardMaterial({ color: c, roughness: 0.55, metalness: 0.12 }));
+  const G = new THREE.BoxGeometry(3.5, 1.15, 3.15);
+  for (const s of [-1, 1]) for (let i = 0; i < 14; i++) {
+    const z = s * (z0 + 2 + i * 3.15);
+    for (let j = 0; j < 4; j++) {
+      const m = new THREE.Mesh(G, mats[(i + j) % 4]);
+      m.position.set((j - 1.5) * 3.55, y - 0.05 + ((i + j) % 2) * 0.32, z);
+      body.add(m);
+    }
+  }
+}
+function splitStrap(body, y, z0) {
+  const black = new THREE.MeshStandardMaterial({ color: 0x1a1a1c, roughness: 0.62 });
+  const white = new THREE.MeshStandardMaterial({ color: 0xe6e6ea, roughness: 0.5 });
+  for (const s of [-1, 1]) for (const [mat, x] of [[black, -4.05], [white, 4.05]]) {
+    const strap = new THREE.Mesh(new THREE.BoxGeometry(8.1, 1.7, 48), mat);
+    strap.position.set(x, y - 0.2, s * (z0 + 21));
+    body.add(strap);
+  }
+}
+function stitchStrap(body, y, z0, color) {
+  const leather = new THREE.MeshStandardMaterial({ color: 0x161616, roughness: 0.72 });
+  const thread = new THREE.MeshStandardMaterial({ color: color || 0xc41212, roughness: 0.45 });
+  for (const s of [-1, 1]) {
+    const strap = new THREE.Mesh(new THREE.BoxGeometry(15.2, 1.7, 50), leather);
+    strap.position.set(0, y - 0.25, s * (z0 + 22));
+    body.add(strap);
+    for (const x of [-6.4, 6.4]) {
+      const st = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.16, 46), thread);
+      st.position.set(x, y + 0.62, s * (z0 + 22));
+      body.add(st);
+    }
+  }
+}
+function suede(body, y, z0) {
+  const mat = new THREE.MeshStandardMaterial({ map: TX.suedeTexture(), color: 0xffffff, roughness: 0.92, metalness: 0 });
+  for (const s of [-1, 1]) {
+    const strap = new THREE.Mesh(new THREE.BoxGeometry(15.4, 1.8, 48), mat);
+    strap.position.set(0, y - 0.2, s * (z0 + 21));
+    body.add(strap);
+  }
 }
 function alligator(body, y, z0, dye) {
   const map = TX.gatorColor();
