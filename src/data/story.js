@@ -53,5 +53,11 @@ export const STORY = [
   { id: 'c26', watch: 'cuerno', fault: 'aceiteSeco', title: 'Caso 26 · "Se atrasa"', cliente: 'Sr. Díaz — Miami, FL',
     diag: ['timegrapher', 'compass'], intro: 'El Cuerno pierde tiempo. Mide, descarta el magnetismo y revisa el aceite del volante.' },
   { id: 'c27', watch: 'onelove', fault: 'magnetizado', title: 'Caso 27 · "Se adelanta muchísimo"', cliente: 'Yate en la bahía',
-    diag: ['timegrapher', 'compass'], intro: 'El One Love se adelanta desde un altavoz. Mira la brújula. El calibre es mecánico.' }
+    diag: ['timegrapher', 'compass'], intro: 'El One Love se adelanta desde un altavoz. Mira la brújula. El calibre es mecánico.' },
+  { id: 'c28', watch: 'cuba', fault: 'cristalRayado', title: 'Caso 28 · "El cristal está rayado"', cliente: 'Buzo de Key Biscayne',
+    diag: ['timegrapher'], intro: 'La Cuba Azul marcha. El cristal no: está lleno de rayas. Se saca con la <b>cuchilla</b> y se prensa uno nuevo.' },
+  { id: 'c29', watch: 'lira', fault: 'cristalSucio', title: 'Caso 29 · "No se lee"', cliente: 'Carmen D. — Coral Gables, FL',
+    diag: ['timegrapher'], intro: 'El Lira anda, pero la esfera no se ve. El cristal está sucio por dentro. Sácalo, límpialo y vuelve a prensarlo.' },
+  { id: 'c30', watch: 'recta', fault: 'cristalRayado', title: 'Caso 30 · "Una raya en el cristal"', cliente: 'Sr. Alcántara — Calle Ocho',
+    diag: ['timegrapher'], intro: 'El Recta da la hora. El cristal de oro de vestir lleva una raya de un golpe. Se cambia, no se pule.' }
 ];

@@ -185,8 +185,9 @@ function mesaChecks(w, estado) {
   }[estado];
   const out = [
     { id: 'tg', any: ['tg'], hint: 'Pon el timegrapher y toca el reloj.', text: tg },
-    { id: 'cara', any: ['loupe:dial', 'loupe:hourHand', 'loupe:minHand', 'loupe:secHand'], hint: 'Lupa sobre la esfera, el cristal o las agujas.', text: cara }
+    { id: 'cara', any: ['loupe:dial', 'loupe:hourHand', 'loupe:minHand', 'loupe:secHand', 'loupe:crystal'], hint: 'Lupa sobre la esfera, el cristal o las agujas.', text: cara }
   ];
+  if (estado === 'rayado') out.push({ id: 'cristal', any: ['remove:crystal'], hint: 'Boca arriba, con la cuchilla: saca el cristal.', text: 'El cristal sale rayado. No se pule: si te lo quedas, hay que cambiarlo.' });
   if (estado === 'agua') out.push({ id: 'fondo', any: ['remove:caseback'], hint: backHint, text: 'Al abrir: verdín en el canto del movimiento. Entró agua y se quedó.' });
   if (estado === 'roto') out.push({ id: 'eje', any: ['loupe:secHand', 'loupe:balance'], hint: 'Lupa en el segundero. Si abres el fondo, en el volante.', text: 'Segundero doblado. El eje del volante no sobrevivió el golpe.' });
   return out;
@@ -339,6 +340,7 @@ export function recordDeal({ offer, verdict, paid, walked }) {
       paid,
       worth: offer.fair,
       claim: offer.claim.title,
+      repair: offer.estado === 'rayado' ? 'cristalRayado' : null,
       at: Date.now()
     });
     db.inventory = db.inventory.slice(0, 24);

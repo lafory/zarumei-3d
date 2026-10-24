@@ -87,6 +87,26 @@ export const FAULTS = {
     steps: [],
     lessons: ['El agua se ve en el cristal empañado y en el verdín. No vuelve con cuerda ni con una pila nueva.']
   },
+  cristalRayado: {
+    id: 'cristalRayado', name: 'Cristal rayado', short: 'Cristal', calibers: ['auto', 'quartz', 'tourbillon'],
+    symptom: '"Anda bien, pero el cristal está hecho rayas."',
+    tg: { before: null },
+    steps: [
+      { tool: 'loupe', on: 'crystal', part: 'crystal', need: 'in', fx: 'reveal', title: 'Mira el cristal con la lupa', msg: '🔍 El cristal está <b>rayado</b>. No se pule: se cambia.' },
+      { replace: 'crystal', title: 'Cambia el cristal rayado', msg: '✅ Cristal <b>nuevo</b> en la bandeja. Prénsalo por la esfera, con la prensa.' }
+    ],
+    lessons: ['Un cristal rayado se saca con la cuchilla y se prensa uno nuevo.', 'El reloj puede marchar bien con el cristal inservible.']
+  },
+  cristalSucio: {
+    id: 'cristalSucio', name: 'Cristal sucio', short: 'Sucio', calibers: ['auto', 'quartz', 'tourbillon'],
+    symptom: '"No se lee la esfera. El cristal está opaco."',
+    tg: { before: null },
+    steps: [
+      { tool: 'loupe', on: 'crystal', part: 'crystal', need: 'in', fx: 'reveal', title: 'Mira el cristal con la lupa', msg: '🔍 Hay <b>película y manchas</b> por dentro. Hay que sacarlo para limpiarlo.' },
+      { tool: 'cleaner', on: 'crystal', part: 'crystal', need: 'out', fx: 'clean', title: 'Limpia el cristal', msg: '✅ Cristal limpio. Prénsalo otra vez. Si prefieres uno nuevo, está en Piezas.' }
+    ],
+    lessons: ['La suciedad de dentro no sale por fuera: se saca el cristal, se limpia y se prensa.', 'Si el cristal además está rayado, se cambia.']
+  },
   sinFalla: {
     id: 'sinFalla', name: 'Sin falla · desarme libre', short: 'Libre', calibers: ['auto', 'quartz', 'tourbillon'], free: true,
     symptom: 'Práctica libre: desarma todo lo que quieras y vuelve a montarlo.',

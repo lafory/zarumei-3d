@@ -21,6 +21,7 @@ import { buildZT18 } from './tourbillon.js';
 import { buildGrand } from './grand.js';
 import { buildZX60 } from './habana.js';
 import { buildCase } from './case3d.js';
+import { hitProxy, tag } from './geom.js';
 import { buildDial, buildHands } from './dialside.js';
 import { makeTools } from './tools3d.js';
 import { ICONS } from './icons.js';
@@ -596,23 +597,77 @@ function buildWorld(watchId, faultId, story, opts = {}) {
   T.tg.position.copy(TG_POS); T.tg.rotation.y = -0.75; scene.add(T.tg);
   T.holder.position.copy(HOLDER_POS); scene.add(T.holder);
   T.tray.position.copy(TRAY_POS); scene.add(T.tray);
-  const parts = { ...MV.parts, caseback: CS.caseback, movement: MV.mv };
+  const parts = { ...MV.parts, caseback: CS.caseback, movement: MV.mv, crystal: makeCrystal(CS.body) };
+  root.add(parts.crystal);
   const home = {};
   scene.updateMatrixWorld(true);
   for (const [id, o] of Object.entries(parts)) home[id] = { parent: o.parent, pos: o.position.clone(), quat: o.quaternion.clone(), scale: o.scale.clone() };
   for (const [sid, s] of Object.entries(MV.screws)) home[sid] = { parent: s.obj.parent, pos: s.obj.position.clone(), quat: s.obj.quaternion.clone(), scale: s.obj.scale.clone() };
   const E = createEngine({ watchId, faultId, story, empty: !!opts.empty });
-  G = { W, cal, MV, CS, root, mvMount, mvObj: MV.mv, parts, home, E, slots: {}, nextSlot: 0, extra: [], amp: 0 };
+  G = { W, cal, MV, CS, root, mvMount, mvObj: MV.mv, parts, home, E, slots: {}, nextSlot: 0, extra: [], amp: 0, crystalClean: false };
   initFaultVisuals();
-  if (opts.condition) dressCondition(opts.condition);
+  const cond = opts.condition || (faultId === 'cristalRayado' ? 'rayado' : faultId === 'cristalSucio' ? 'sucio' : null);
+  if (cond) dressCondition(cond);
   if (opts.empty) layoutFromState();
   else refreshGhosts();
+  syncCrystal();
 }
 function initFaultVisuals() {
   const f = G.E.F.id, S = G.MV.sub;
   if (f === 'aceiteSeco' && S.dirt) { S.dirt.visible = true; S.dirt.material.color.set(0x7a5a24); }
   if (f === 'ejeRoto' && S.pivot) { S.pivot.rotation.z = 0.9; S.pivot.position.x = 0.25; }
   if (f === 'desregulado' && S.regulator) S.regulator.rotation.y = 0.62;
+}
+function makeCrystal(body) {
+  let glass = null;
+  body.traverse(o => { if (o.userData && o.userData.crystalGlass) glass = o; });
+  const g = tag(new THREE.Group(), 'crystal');
+  const discMat = M.crystal.clone();
+  discMat.opacity = 0.72;
+  discMat.color = new THREE.Color(0xd5e6f2);
+  const disc = new THREE.Mesh(new THREE.CylinderGeometry(6.6, 6.6, 0.34, 48), discMat);
+  disc.name = 'crystalDisc';
+  g.add(disc);
+  const film = new THREE.Mesh(new THREE.CircleGeometry(6.35, 48).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.95, depthWrite: false }));
+  film.name = 'crystalWear';
+  film.position.y = 0.22;
+  film.visible = false;
+  film.raycast = () => {};
+  g.add(film);
+  const hit = hitProxy(M, 6.8, 0.7, 0);
+  hit.name = 'crystalHit';
+  g.add(hit);
+  g.userData.glass = glass;
+  g.position.set(0, 4.2, 0);
+  return g;
+}
+function syncCrystal() {
+  if (!G || !G.parts.crystal) return;
+  const inn = G.E.st.crystal === 'in';
+  const neu = G.E.replaced.has('crystal');
+  const g = G.parts.crystal;
+  const glass = g.userData.glass;
+  const disc = g.getObjectByName('crystalDisc');
+  const hit = g.getObjectByName('crystalHit');
+  const film = g.getObjectByName('crystalWear');
+  if (glass) glass.visible = inn;
+  if (disc) disc.visible = !inn;
+  if (hit) hit.visible = !inn;
+  if (film) film.visible = !inn && !neu && !G.crystalClean && !!film.userData.kind;
+  const wear = G.root.getObjectByName('wear');
+  if (wear) wear.visible = inn && !neu && !G.crystalClean;
+}
+function glassHit(obj) {
+  for (let n = obj; n; n = n.parent) if (n.userData && n.userData.crystalGlass) return true;
+  return false;
+}
+function wantCrystal() {
+  if (!G || !sel) return false;
+  if (sel === 'caseKnife') return true;
+  const s = G.E.F.steps[G.E.fstep];
+  if (!s) return false;
+  const about = s.on === 'crystal' || s.part === 'crystal' || s.replace === 'crystal';
+  return about && (sel === 'loupe' || sel === 'cleaner' || sel === 'handPress');
 }
 function frontCrystal() {
   let best = null, area = 0;
@@ -650,6 +705,11 @@ function dressCondition(kind) {
   if (kind === 'bueno') {
     scratch(1.4, -0.6, 2.6, 0.55, 0.55);
     scratch(-1.8, 1.1, 1.7, -0.4, 0.32);
+  }
+  if (kind === 'sucio') {
+    const film = noPick(new THREE.Mesh(new THREE.CircleGeometry(span * 0.46, 40).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0xc2b197, transparent: true, opacity: 0.45, depthWrite: false })));
+    film.position.set(center.x, y - 0.04, center.z);
+    wear.add(film);
   }
   if (kind === 'rayado' || kind === 'roto') {
     const lines = [[-2.4, 0.8, 6.4, 0.35], [1.6, -1.4, 5.2, -0.7], [0.3, 2.1, 4.1, 1.05], [-1.5, -1.8, 7.2, 0.12], [2.6, 0.5, 3.4, -0.45], [-0.5, -0.2, 4.4, 0.85], [1.9, 1.7, 2.8, -1.15]];
@@ -696,6 +756,46 @@ function dressCondition(kind) {
     if (r) { r.rotation.z = 0.85; r.rotation.x = 0.22; r.position.x += 0.35; }
   }
   G.root.add(wear);
+  markDisc(kind);
+}
+function markDisc(kind) {
+  if (!G || !G.parts.crystal) return;
+  const film = G.parts.crystal.getObjectByName('crystalWear');
+  if (!film) return;
+  const show = kind === 'rayado' || kind === 'roto' || kind === 'sucio' || kind === 'agua' || kind === 'bueno';
+  if (!show) { film.visible = false; film.userData.kind = ''; return; }
+  const cv = document.createElement('canvas'); cv.width = 256; cv.height = 256;
+  const ctx = cv.getContext('2d');
+  ctx.clearRect(0, 0, 256, 256);
+  if (kind === 'sucio') {
+    const grd = ctx.createRadialGradient(128, 128, 10, 128, 128, 120);
+    grd.addColorStop(0, 'rgba(210,196,168,0.28)');
+    grd.addColorStop(1, 'rgba(110,90,60,0.82)');
+    ctx.fillStyle = grd; ctx.beginPath(); ctx.arc(128, 128, 124, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = 'rgba(80,62,36,0.45)';
+    for (const [x, y, r] of [[70, 96, 18], [168, 146, 22], [124, 64, 12], [88, 176, 16]]) { ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); }
+  }
+  if (kind === 'agua') {
+    ctx.fillStyle = 'rgba(186,208,204,0.62)';
+    ctx.beginPath(); ctx.arc(128, 128, 124, 0, Math.PI * 2); ctx.fill();
+  }
+  if (kind === 'rayado' || kind === 'roto' || kind === 'bueno') {
+    ctx.strokeStyle = 'rgba(255,248,230,0.96)';
+    ctx.lineCap = 'round';
+    ctx.lineWidth = kind === 'roto' ? 3.2 : kind === 'bueno' ? 1.5 : 2.3;
+    const lines = kind === 'bueno' ? [[78, 154, 154, 118]] : [[36, 70, 220, 150], [28, 170, 200, 60], [100, 30, 150, 230], [18, 110, 236, 96], [64, 210, 196, 44], [120, 24, 148, 232], [48, 48, 214, 196]];
+    for (const [x1, y1, x2, y2] of lines) { ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); }
+    if (kind === 'roto') {
+      ctx.strokeStyle = 'rgba(18,14,10,0.92)'; ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.moveTo(78, 36); ctx.lineTo(136, 128); ctx.lineTo(88, 220); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(136, 128); ctx.lineTo(214, 176); ctx.stroke();
+    }
+  }
+  const map = new THREE.CanvasTexture(cv); map.colorSpace = THREE.SRGBColorSpace;
+  if (film.material.map) film.material.map.dispose();
+  film.material.map = map; film.material.needsUpdate = true;
+  film.userData.kind = kind;
+  film.visible = G.E.st.crystal !== 'in';
 }
 
 // ───────── bandeja y movimientos de piezas ─────────
@@ -714,6 +814,7 @@ function localBox(obj) { // caja de la pieza en su propio marco (sin rotación n
   par.add(obj); obj.position.copy(p); obj.quaternion.copy(q); obj.scale.copy(s); return b;
 }
 async function fxRemove(id, inspect) {
+  if (id === 'crystal') syncCrystal();
   const obj = G.parts[id];
   if (id === 'movement') { await moveWorld(obj, HOLDER_POS.clone().add(new THREE.Vector3(0, 8.4, 0)), new THREE.Quaternion(), new THREE.Vector3(1, 1, 1), 1100, 30); return; }
   if (id === 'caseback' && !G.E.quartz) { const r0 = obj.rotation.y; if (SPEED >= 0.2) await tween(D(500), (k) => { obj.rotation.y = r0 + k * 1.6; }); }
@@ -728,9 +829,10 @@ async function fxInstall(id) {
   const obj = G.parts[id], h = G.home[id];
   h.parent.attach(obj);
   const p0 = obj.position.clone(), q0 = obj.quaternion.clone(), s0 = obj.scale.clone();
-  if (SPEED < 0.2) { obj.position.copy(h.pos); obj.quaternion.copy(h.quat); obj.scale.copy(h.scale); return; }
+  if (SPEED < 0.2) { obj.position.copy(h.pos); obj.quaternion.copy(h.quat); obj.scale.copy(h.scale); if (id === 'crystal') syncCrystal(); return; }
   await tween(D(id === 'movement' ? 1100 : 650), (k) => { obj.position.lerpVectors(p0, h.pos, k); obj.position.y += Math.sin(k * Math.PI) * (id === 'movement' ? 18 : 7); obj.quaternion.slerpQuaternions(q0, h.quat, k); obj.scale.lerpVectors(s0, h.scale, k); });
   if (id === 'caseback' && !G.E.quartz) { const r0 = obj.rotation.y; obj.rotation.y = r0 + 1.6; await tween(D(450), (k) => { obj.rotation.y = r0 + 1.6 * (1 - k); }); }
+  if (id === 'crystal') syncCrystal();
 }
 function screwSlotPos(sid) { const sc = G.E.screws[sid]; const base = trayWorld(slotOf(sc.part)); return base.add(new THREE.Vector3(-6 + sc.i * 2.4, 0.2, 5.6)); }
 function seatScrew(sid) {
@@ -812,6 +914,8 @@ function placePartial(sid) {
 }
 function layoutFromState() {
   const E = G.E;
+  const disc = G.parts.crystal && G.parts.crystal.getObjectByName('crystalDisc');
+  if (disc) disc.visible = true;
   if (E.st.movement === 'out') placeRemoved('movement');
   for (const id of E.history) if (id !== 'movement' && E.st[id] === 'out') placeRemoved(id);
   for (const id of Object.keys(E.st)) if (E.st[id] === 'out' && id !== 'movement' && !E.history.includes(id)) placeRemoved(id);
@@ -830,6 +934,7 @@ function layoutFromState() {
   if (E.replaced.has('coil') && G.MV.sub && G.MV.sub.coilMat) G.MV.sub.coilMat.color.set(0xd88a4a);
   applyReplacedLooks();
   refreshGhosts();
+  syncCrystal();
 }
 async function replayFaults() {
   for (const s of G.E.F.steps.slice(0, G.E.fstep)) if (s.fx) await faultFx(s.fx);
@@ -858,6 +963,7 @@ async function resumeSave(key) {
   const prev = SPEED; SPEED = 0;
   try { await replayFaults(); } finally { SPEED = prev; }
   applyReplacedLooks();
+  syncCrystal();
   G.active = true; sessionLive = true; sel = null; started = true; busy = false;
   $('#partsBtn').hidden = false; closeParts();
   selectTool(null); stampTimer(s.elapsed || 0);
@@ -969,6 +1075,7 @@ function applyReplacedLooks() {
 }
 function showNewPart(id) {
   applyReplacedLooks();
+  if (id === 'crystal') { G.crystalClean = true; syncCrystal(); flashLabel('✓ Cristal nuevo'); return; }
   const label = { battery: '🔋 Pila nueva · 1,55 V', coil: '🧵 Bobina nueva', balance: '✓ Volante nuevo', barrel: '✓ Muelle nuevo' }[id] || '✓ Pieza nueva';
   flashLabel(label);
 }
@@ -980,9 +1087,12 @@ async function faultFx(effect, on) {
     if (f === 'ejeRoto') { S.pivot.material = S.pivot.material.clone(); S.pivot.material.color.set(0xff4444); S.pivot.material.emissive = new THREE.Color(0x550000); flashLabel('⚠ Pivote del eje roto'); }
     if (f === 'bobina') { S.coilMat.color.set(0x5a2e14); flashLabel('⚠ Bobina cortada (∞ Ω)'); }
     if (f === 'bateria') { markBattery(true); flashLabel('🔋 1,21 V · agotada'); }
+    if (f === 'cristalRayado') flashLabel('⚠ Cristal rayado · no se pule, se cambia');
+    if (f === 'cristalSucio') flashLabel('⚠ Película por dentro del cristal');
   }
   if (effect === 'openSpring' && S.spring) { const s = S.spring; await tween(D(450), (k) => { s.rotation.y = -0.9 * k; s.position.x = -0.5 * k; }); }
-  if (effect === 'clean' && S.dirt) { await tween(D(450), (k) => S.dirt.scale.setScalar(1 - k * 0.99)); S.dirt.visible = false; flashLabel('Rubí limpio'); }
+  if (effect === 'clean' && f === 'cristalSucio') { G.crystalClean = true; syncCrystal(); flashLabel('✓ Cristal limpio'); }
+  else if (effect === 'clean' && S.dirt) { await tween(D(450), (k) => S.dirt.scale.setScalar(1 - k * 0.99)); S.dirt.visible = false; flashLabel('Rubí limpio'); }
   if (effect === 'oil') { if (f === 'aceiteSeco') { S.oil.visible = true; S.oil.scale.setScalar(0.01); await tween(D(450), (k) => S.oil.scale.setScalar(Math.max(0.01, k))); if (S.spring) { S.spring.rotation.y = 0; S.spring.position.x = 0; } flashLabel('✓ Gota de 9010 centrada'); } else flashLabel('✓ Lubricado'); }
   if (effect === 'replace') { if (f === 'ejeRoto') { S.pivot.rotation.z = 0; S.pivot.position.x = 0; S.pivot.material = G.MV.sub.staff.material; } if (f === 'muelleDebil') { S.mainspring.material.color.set(0xc7ccd3); S.barrelDrum.material.color.set(0xd4d9df); } flashLabel('✓ Pieza nueva'); }
   if (effect === 'regulate' && S.regulator) { const r0 = S.regulator.rotation.y; await tween(D(500), (k) => (S.regulator.rotation.y = r0 + (0.4 - r0) * k)); flashLabel('Raqueta → «−»'); }
@@ -1267,6 +1377,10 @@ function pick(cx, cy) {
   const ids = [];
   for (const h of hits) {
     if (ids.length && h.distance - firstD > 8) break;
+    if (glassHit(h.object)) {
+      if (wantCrystal() && !ids.includes('crystal')) ids.push('crystal');
+      continue;
+    }
     let id = null;
     for (let n = h.object; n; n = n.parent) if (n.userData.partId) { id = n.userData.partId; break; }
     if (id) { if (!ids.includes(id)) ids.push(id); continue; }
@@ -1661,9 +1775,15 @@ function renderPeriOwn() {
   box.hidden = false;
   box.innerHTML = `<p class="cinzel" style="margin-top:12px">Del peritaje</p>` + mine.map(it => {
     const w = WATCHES[it.watchId];
-    return `<button type="button" class="wcard${playWatch === it.watchId ? ' on' : ''}" data-watch="${esc(it.watchId)}"><b>${esc(w ? w.name : it.claim)}</b><span>${esc(TRUTH_LABEL[it.truth] || it.truth)} · pagaste ${fmtPrice(it.paid)} · vale ${fmtPrice(it.worth)}</span><small>Te lo vendieron como ${esc(it.claim)}. Ábrelo aquí, en Modo libre.</small></button>`;
+    const job = it.repair && FAULTS[it.repair];
+    const note = job ? 'El cristal está rayado. Si te lo quedaste, hay que cambiarlo.' : `Te lo vendieron como ${it.claim}. Ábrelo aquí, en Modo libre.`;
+    return `<button type="button" class="wcard${playWatch === it.watchId && !job ? ' on' : ''}" data-id="${esc(it.id)}"><b>${esc(w ? w.name : it.claim)}</b><span>${esc(TRUTH_LABEL[it.truth] || it.truth)} · pagaste ${fmtPrice(it.paid)} · vale ${fmtPrice(it.worth)}</span><small>${esc(note)}</small></button>`;
   }).join('');
-  box.querySelectorAll('.wcard').forEach(b => b.onclick = () => pickWatch(b.dataset.watch));
+  box.querySelectorAll('.wcard').forEach(b => b.onclick = () => {
+    const it = mine.find(x => x.id === b.dataset.id);
+    if (it && it.repair && FAULTS[it.repair]) startService(it);
+    else if (it) pickWatch(it.watchId);
+  });
 }
 function renderPeriMenu() {
   const host = $('#periList'); if (!host) return;
@@ -1697,7 +1817,11 @@ function renderPeriPanel() {
 }
 function openPeriPanel() {
   if (!peri) return;
-  if (peri.phase === 'inspect' && peri.found.size < 2) { say('Antes, dos miradas: timegrapher, lupa o el fondo. La pista te dice la que falta.'); return; }
+  const needCrystal = peri.phase === 'inspect' && peri.offer.checks.some(c => c.id === 'cristal' && !peri.found.has(c.id));
+  if (peri.phase === 'inspect' && (peri.found.size < 2 || needCrystal)) {
+    say(needCrystal && peri.found.size >= 2 ? nextLook(peri.offer, peri.found) : 'Antes, dos miradas: timegrapher, lupa o el fondo. La pista te dice la que falta.');
+    return;
+  }
   renderPeriPanel();
   $('#periPanel').hidden = false;
 }
@@ -1925,6 +2049,14 @@ async function begin(watchId, faultId, story, opts = {}) {
 }
 function startStory(id) { mode = 'story'; storyCase = STORY.find(c => c.id === id); return begin(storyCase.watch, storyCase.fault, storyCase); }
 function startPlay(w, f) { mode = 'play'; storyCase = null; return begin(w, f, null); }
+function startService(it) {
+  clearTimeout(previewTimer); previewGen++;
+  document.body.classList.remove('buildpeek');
+  mode = 'play'; storyCase = null; peri = null; closePeri();
+  playWatch = it.watchId; playFault = it.repair;
+  const cond = it.repair === 'cristalRayado' ? 'rayado' : it.repair === 'cristalSucio' ? 'sucio' : null;
+  return begin(it.watchId, it.repair, null, { condition: cond });
+}
 
 async function init() {
   book.boot();

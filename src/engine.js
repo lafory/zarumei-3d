@@ -12,8 +12,15 @@ const toolName = (id) => (TOOLS.find(t => t.id === id) || { name: id }).name;
 const mm = (s) => String(s).replace('.', ',') + ' mm';
 
 export function createEngine({ watchId, faultId, story = null, empty = false }) {
-  const W = WATCHES[watchId], C = CALIBERS[W.caliber], F = FAULTS[faultId];
-  const quartz = C.type === 'quartz';
+  const W = WATCHES[watchId], base = CALIBERS[W.caliber], F = FAULTS[faultId];
+  const quartz = base.type === 'quartz';
+  const crystalPart = {
+    id: 'crystal', name: 'el cristal', side: 'face', coveredBy: [], optional: true,
+    tool: 'caseKnife', placeTool: 'handPress',
+    removeMsg: 'Cristal fuera.',
+    placeMsg: 'Cristal prensado.'
+  };
+  const C = { ...base, parts: [...base.parts, crystalPart] };
   const P = {}; C.parts.forEach(p => (P[p.id] = p));
   if (W.case && W.case.caseback === 'snap' && P.caseback && P.caseback.tool === 'caseWrench') {
     P.caseback = { ...P.caseback, name: 'el fondo a presión', tool: 'caseKnife', placeTool: 'caseKnife', placeMsg: 'Fondo cerrado a presión.' };
@@ -52,6 +59,7 @@ export function createEngine({ watchId, faultId, story = null, empty = false }) 
   // ── acceso físico (dónde está el movimiento y hacia dónde mira) ──
   function access(id) {
     const side = P[id] ? P[id].side : 'case';
+    if (side === 'face') return !flags.flipped;
     if (side === 'case') return flags.mvLoc === 'case' && flags.flipped;
     if (side === 'bridge') return (flags.mvLoc === 'case' && flags.flipped && st.caseback === 'out') || (flags.mvLoc === 'holder' && flags.holderSide === 'bridge');
     if (side === 'dial') return flags.mvLoc === 'holder' && flags.holderSide === 'dial';
@@ -59,6 +67,7 @@ export function createEngine({ watchId, faultId, story = null, empty = false }) 
   }
   function accessMsg(id) {
     const side = P[id].side;
+    if (side === 'face') return 'Voltea el reloj boca arriba: el cristal se saca y se prensa por la esfera.';
     if (side === 'dial') return flags.mvLoc === 'case' ? 'Al lado esfera solo se llega con el movimiento <b>fuera de la caja</b>, en el soporte y volteado.' : 'Voltea el movimiento en el soporte (↻) para trabajar en el <b>lado esfera</b>.';
     if (flags.mvLoc === 'holder') return side === 'case' ? 'Eso es de la caja: el movimiento está en el soporte.' : 'Voltea el movimiento en el soporte (↻) para ver el <b>lado puentes</b>.';
     if (!flags.flipped) return 'Voltea el reloj (↻) para trabajar por el fondo.';
@@ -142,6 +151,7 @@ export function createEngine({ watchId, faultId, story = null, empty = false }) 
   function canInstall(id) {
     const p = P[id];
     if (id === 'movement') { if (!flags.flipped) return { info: 'Voltea la caja (↻) para volver a meter el movimiento por el fondo.' }; }
+    else if (p.side === 'face') { if (flags.flipped) return { info: 'Voltea el reloj boca arriba para prensar el cristal.' }; }
     else if (p.side === 'case') { if (flags.mvLoc !== 'case') return { err: `Primero vuelve a meter el movimiento en la caja.`, k: 'wrongOrder' }; if (!flags.flipped) return { info: 'Voltea el reloj (↻) para trabajar por el fondo.' }; }
     else if (!access(id)) return { info: accessMsg(id) };
     for (const r of coversOf(id)) {
@@ -394,6 +404,7 @@ export function createEngine({ watchId, faultId, story = null, empty = false }) 
   // ── PISTA / planificador: siguiente acción correcta ──
   function planLocation(id, mode) {
     const side = P[id].side;
+    if (side === 'face') return flags.flipped ? { button: 'flipWatch' } : null;
     if (side === 'case') {
       if (id === 'movement' && mode === 'install') return flags.flipped ? null : { button: 'flipWatch' };
       if (flags.mvLoc !== 'case') return mode === 'install' ? planInstall('movement') : null;
@@ -458,7 +469,7 @@ export function createEngine({ watchId, faultId, story = null, empty = false }) 
       if (stepReady(s)) return { tool: s.tool, size: s.anySize ? 0.8 : undefined, target: st[s.part] === 'out' && s.on !== 'watch' ? (SUB[s.on] ? { sub: s.on, part: s.part } : { chip: s.part }) : (SUB[s.on] && s.on !== 'watch' ? { sub: s.on, part: s.part } : { part: s.on }) };
       return s.need === 'out' ? planRemove(s.part) : planAccess(s.part);
     }
-    if (F.free && C.parts.some(p => st[p.id] === 'in') && !freeDone) { const nxt = C.parts.find(p => st[p.id] === 'in'); if (nxt) { const a = planRemove(nxt.id); if (a) return a; } }
+    if (F.free && C.parts.some(p => st[p.id] === 'in' && !p.optional) && !freeDone) { const nxt = C.parts.find(p => st[p.id] === 'in' && !p.optional); if (nxt) { const a = planRemove(nxt.id); if (a) return a; } }
     if (F.free) freeDone = true;
     const a = planAssembly(); if (a) return a;
     if (allIn()) { if (!quartz && flags.letdown) return { button: 'wind' }; return { tool: 'timegrapher', target: { part: 'watch' } }; }
@@ -476,7 +487,7 @@ export function createEngine({ watchId, faultId, story = null, empty = false }) 
   function hint() { stats.hints++; score = Math.max(0, score - 2); const a = suggest(); return { action: a, msg: '💡 ' + describe(a) }; }
   function goal() {
     const dp = diagPending(); if (dp) return { phase: 'Diagnóstico', text: `Diagnostica: ${toolName(dp)}` };
-    if (F.free && C.parts.some(p => st[p.id] === 'in' && !removedOnce.has(p.id))) return { phase: 'Desarme', text: 'Sigue quitando. Un tornillo que no gira está debajo de otra pieza.' };
+    if (F.free && C.parts.some(p => !p.optional && st[p.id] === 'in' && !removedOnce.has(p.id))) return { phase: 'Desarme', text: 'Sigue quitando. Un tornillo que no gira está debajo de otra pieza.' };
     const s = curStep(); if (s) return { phase: 'Reparación', text: revealed || fstep > 0 ? s.title : (F.free ? 'Desarma' : 'Encuentra la falla') };
     if (!allIn()) { const total = C.parts.length + Object.keys(screws).length; const done = C.parts.filter(p => st[p.id] === 'in').length + Object.values(screws).filter(x => x.state === 'in').length; return { phase: 'Montaje', text: `Monta: ${done}/${total} piezas y tornillos` }; }
     if (!quartz && flags.letdown) return { phase: 'Montaje', text: 'Da cuerda' };
