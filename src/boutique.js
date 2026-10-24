@@ -13,6 +13,7 @@ import { buildZX60 } from './habana.js';
 import { buildCase } from './case3d.js';
 import { makeTools } from './tools3d.js';
 import { velvetTexture } from './textures.js';
+import { vaticanNow } from './vatican.js';
 
 const $ = (s) => document.querySelector(s);
 let ctx = null; // { M, images }
@@ -96,7 +97,17 @@ function watchModel(id) {
   const mount = new THREE.Group(); mount.rotation.z = Math.PI; mount.add(MV.mv); root.add(mount); root.add(CS.caseback);
   for (const s of Object.values(MV.screws)) s.ghost.visible = false;
   const d = new Date(); const set = (n, v) => { const r = MV.parts[n] && MV.parts[n].getObjectByName('rot'); if (r) r.rotation.y = -v * Math.PI * 2; };
-  set('secHand', 0.62); set('minHand', 0.17); set('hourHand', (10 + 10 / 60) / 12); void d;
+  set('secHand', 0.62); set('minHand', 0.17); set('hourHand', (10 + 10 / 60) / 12);
+  const rc = MV.parts.dial && MV.parts.dial.userData.recta;
+  if (rc) {
+    const v = vaticanNow(d);
+    if (rc.moonTex) rc.moonTex.userData.paint(v.phase);
+    if (rc.day) rc.day.rotation.y = (v.dow / 7) * Math.PI * 2;
+    if (rc.month) rc.month.rotation.y = (v.month / 12) * Math.PI * 2;
+    if (rc.year) rc.year.rotation.y = (1 / rc.yearN) * Math.PI * 2;
+    const g = rc.gmt && rc.gmt.getObjectByName('rot');
+    if (g) g.rotation.y = -(v.h24 / 24) * Math.PI * 2;
+  }
   const g = new THREE.Group(); root.rotation.x = 1.05; root.position.y = 30; g.add(root); return { g, size: 70 };
 }
 function toolModel(id) {

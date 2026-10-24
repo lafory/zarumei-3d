@@ -15,6 +15,9 @@ export function createEngine({ watchId, faultId, story = null, empty = false }) 
   const W = WATCHES[watchId], C = CALIBERS[W.caliber], F = FAULTS[faultId];
   const quartz = C.type === 'quartz';
   const P = {}; C.parts.forEach(p => (P[p.id] = p));
+  if (W.case && W.case.caseback === 'snap' && P.caseback && P.caseback.tool === 'caseWrench') {
+    P.caseback = { ...P.caseback, name: 'el fondo a presión', tool: 'caseKnife', placeTool: 'caseKnife', placeMsg: 'Fondo cerrado a presión.' };
+  }
   const st = {}; C.parts.forEach(p => (st[p.id] = 'in'));
   const screws = {};
   C.parts.forEach(p => (p.screws || []).forEach((s, i) => { screws[`${p.id}#${i}`] = { id: `${p.id}#${i}`, part: p.id, i, s: s.s, k: s.k, lh: !!s.lh, state: 'in', dmg: 0, prog: 0 }; }));

@@ -3,6 +3,7 @@
 import * as THREE from 'three';
 import * as TX from './textures.js';
 import { tag, at, hitProxy, cyl } from './geom.js';
+import { vaticanNow } from './vatican.js';
 
 function handShape(style, len, w) {
   const s = new THREE.Shape();
@@ -18,9 +19,48 @@ export function buildDial(M, images, watch, ys) {
   const { r, kind, date } = watch.dial; const metal = M.metal(watch.hands.metal);
   const dial = tag(new THREE.Group(), 'dial');
   if (kind === 'recta') {
-    const face = new THREE.Mesh(new THREE.PlaneGeometry(21.6, 14.8).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ map: TX.dialTexture('recta', images, 1), roughness: 0.32, metalness: 0.02 }));
-    face.position.y = ys.dial + 1.85; dial.add(face);
-    dial.add(hitProxy(M, 10, 0.4, ys.dial + 1.85));
+    const faceY = ys.dial + 1.85;
+    const apron = new THREE.Mesh(new THREE.PlaneGeometry(22.0, 15.05).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0xf6f1e6, roughness: 0.4, metalness: 0.02 }));
+    apron.position.y = faceY - 0.55; dial.add(apron);
+    const v = vaticanNow();
+    const years = [];
+    for (let y = v.year - 1; y < v.year + 11; y++) years.push(String(y));
+    const discMat = (map) => new THREE.MeshStandardMaterial({ map, roughness: 0.5, metalness: 0.02 });
+    const placeDisc = (words, wx, wz, scale) => {
+      const g = new THREE.Group();
+      const r = 1.55;
+      g.add(new THREE.Mesh(new THREE.CircleGeometry(r, 40).rotateX(-Math.PI / 2), discMat(TX.calendarDiscTexture(words, '#f7f1e4', scale))));
+      g.position.set(wx, faceY - 0.16, wz + r * 0.55);
+      dial.add(g);
+      return g;
+    };
+    const [mx, mz] = TX.rectaWorld(TX.RECTA_DIAL.S / 2, TX.RECTA_DIAL.S / 2 - (4.55 / TX.RECTA_DIAL.H) * TX.RECTA_DIAL.S);
+    const moonTex = TX.moonFaceTexture();
+    moonTex.userData.paint(v.phase);
+    const moon = new THREE.Mesh(new THREE.CircleGeometry(1.08, 40).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ map: moonTex, roughness: 0.42 }));
+    moon.position.set(mx, faceY - 0.12, mz); dial.add(moon);
+    const moonRing = new THREE.Mesh(new THREE.TorusGeometry(1.14, 0.07, 8, 36).rotateX(Math.PI / 2), metal);
+    moonRing.position.set(mx, faceY + 0.05, mz); dial.add(moonRing);
+    const day = placeDisc(['DOM', 'LUN', 'MAR', 'MIE', 'JUE', 'VIE', 'SAB'], -4.15, 2.05, 0.13);
+    const month = placeDisc(['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'], 0, 2.05, 0.13);
+    const year = placeDisc(years, 4.15, 2.05, 0.095);
+    const frame = (w, h, x, z) => {
+      const t = 0.07, y = faceY + 0.05;
+      for (const s of [-1, 1]) {
+        const hz = new THREE.Mesh(new THREE.BoxGeometry(w + t, 0.05, t), metal); hz.position.set(x, y, z + s * h / 2); dial.add(hz);
+        const vt = new THREE.Mesh(new THREE.BoxGeometry(t, 0.05, h), metal); vt.position.set(x + s * w / 2, y, z); dial.add(vt);
+      }
+    };
+    frame(1.96, 1.00, -4.15, 2.05);
+    frame(1.96, 1.00, 0, 2.05);
+    frame(2.44, 1.00, 4.15, 2.05);
+    const face = new THREE.Mesh(new THREE.PlaneGeometry(21.6, 14.8).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ map: TX.dialTexture('recta', images, 1), transparent: true, alphaTest: 0.4, roughness: 0.32, metalness: 0.02 }));
+    face.position.y = faceY; face.renderOrder = 2; dial.add(face);
+    dial.add(hitProxy(M, 10, 0.4, faceY));
+    dial.userData.recta = { moonTex, day, month, year, yearN: years.length, gmt: null };
+    day.rotation.y = (v.dow / 7) * Math.PI * 2;
+    month.rotation.y = (v.month / 12) * Math.PI * 2;
+    year.rotation.y = (1 / years.length) * Math.PI * 2;
     return dial;
   }
   if (watch.grand) {
@@ -74,5 +114,16 @@ export function buildHands(M, watch, ys) {
     if (lume) { const c = new THREE.Mesh(new THREE.CylinderGeometry(0.75, 0.75, 0.1, 20), M.lume); c.position.z = -r * 0.62; inner.add(c); }
     inner.add(cyl(0.5, 0.14, col, 16)); const hp = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.6, r), M.hit); hp.userData.isHit = true; hp.position.z = -r * 0.3; inner.add(hp);
     sec.position.y = ys.sec + lift; }
+  if (watch.dial.kind === 'recta') {
+    const gmt = new THREE.Group();
+    const inner = new THREE.Group(); inner.name = 'rot'; gmt.add(inner);
+    const steel = new THREE.MeshStandardMaterial({ color: 0xd5dbe3, metalness: 0.85, roughness: 0.22 });
+    const len = r * 0.66;
+    inner.add(new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.05, len).translate(0, 0, -len * 0.36), steel));
+    inner.add(at(cyl(0.34, 0.06, steel, 14), 0, 0, 0));
+    gmt.position.y = 0.12;
+    hour.add(gmt);
+    return { hour, min, sec, gmt };
+  }
   return { hour, min, sec };
 }

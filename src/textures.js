@@ -108,12 +108,66 @@ function grandDial(x, R, kind) {
   x.strokeStyle = 'rgba(255,255,255,.45)'; x.beginPath(); x.arc(depth[0], depth[1], R * 0.11, 0, 7); x.stroke();
   x.fillText('PROF.', depth[0], depth[1] + R * 0.16);
 }
-export function calendarDiscTexture(words, color = '#f6f1e6') {
+export function calendarDiscTexture(words, color = '#f6f1e6', scale = 0.18) {
   const S = 512, c = canvas(S), x = c.getContext('2d'), R = S / 2; x.translate(R, R);
   x.fillStyle = color; x.beginPath(); x.arc(0, 0, R, 0, Math.PI * 2); x.fill();
-  x.fillStyle = '#1c140c'; x.font = `bold ${R * 0.18}px Helvetica, Arial`; x.textAlign = 'center'; x.textBaseline = 'middle';
+  x.fillStyle = '#1c140c'; x.font = `bold ${R * scale}px Helvetica, Arial`; x.textAlign = 'center'; x.textBaseline = 'middle';
   words.forEach((w, i) => { x.save(); x.rotate(i / words.length * Math.PI * 2); x.fillText(w, 0, -R * 0.55); x.restore(); });
   return tex(c);
+}
+// Cara de luna para el óculo del Recta. phase 0 = nueva, 0.5 = llena.
+export function moonFaceTexture() {
+  const S = 256, c = canvas(S), x = c.getContext('2d');
+  const stars = [[28, 40], [70, 24], [196, 36], [220, 78], [40, 150], [78, 210], [168, 200], [214, 168], [150, 48], [48, 96]];
+  const t = tex(c);
+  t.userData.paint = (phase) => {
+    const p = ((phase % 1) + 1) % 1;
+    const cx = S / 2, cy = S / 2, R = S * 0.34;
+    x.clearRect(0, 0, S, S);
+    x.fillStyle = '#07111e'; x.fillRect(0, 0, S, S);
+    x.fillStyle = 'rgba(255,248,230,.85)';
+    for (const [sx, sy] of stars) x.fillRect(sx, sy, 2, 2);
+    x.save();
+    x.beginPath(); x.arc(cx, cy, R, 0, Math.PI * 2); x.clip();
+    x.fillStyle = '#f4e2a8'; x.fillRect(cx - R, cy - R, R * 2, R * 2);
+    x.fillStyle = 'rgba(160,120,48,.4)';
+    x.beginPath(); x.arc(cx - R * 0.28, cy - R * 0.12, R * 0.2, 0, 7); x.fill();
+    x.beginPath(); x.arc(cx + R * 0.22, cy + R * 0.28, R * 0.13, 0, 7); x.fill();
+    const k = Math.cos(p * Math.PI * 2);
+    x.fillStyle = '#07111e';
+    x.beginPath();
+    if (p <= 0.5) {
+      x.arc(cx, cy, R, -Math.PI / 2, Math.PI / 2, false);
+      x.ellipse(cx, cy, Math.max(0.01, Math.abs(k)) * R, R, 0, Math.PI / 2, -Math.PI / 2, true);
+    } else {
+      x.arc(cx, cy, R, Math.PI / 2, -Math.PI / 2, false);
+      x.ellipse(cx, cy, Math.max(0.01, Math.abs(k)) * R, R, 0, -Math.PI / 2, Math.PI / 2, true);
+    }
+    x.fill();
+    x.restore();
+    t.needsUpdate = true;
+  };
+  t.userData.paint(0.5);
+  return t;
+}
+// Esfera rectangular del Recta. El canvas es cuadrado y el plano es más ancho que alto:
+// una elipse alta en el canvas se ve redonda en el reloj.
+export const RECTA_DIAL = { W: 21.6, H: 14.8, S: 2048 };
+export function rectaWorld(px, py) {
+  const { W, H, S } = RECTA_DIAL;
+  return [(px / S - 0.5) * W, (py / S - 0.5) * H];
+}
+function punchEllipse(x, cx, cy, rx, ry) {
+  x.save(); x.globalCompositeOperation = 'destination-out'; x.fillStyle = '#000';
+  x.beginPath(); x.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2); x.fill(); x.restore();
+  x.strokeStyle = '#8a6430'; x.lineWidth = 5;
+  x.beginPath(); x.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2); x.stroke();
+}
+function punchRect(x, cx, cy, hw, hh) {
+  x.save(); x.globalCompositeOperation = 'destination-out'; x.fillStyle = '#000';
+  x.fillRect(cx - hw, cy - hh, hw * 2, hh * 2); x.restore();
+  x.strokeStyle = '#8a6430'; x.lineWidth = 5;
+  x.strokeRect(cx - hw, cy - hh, hw * 2, hh * 2);
 }
 export function moonDiscTexture() {
   const S = 512, c = canvas(S), x = c.getContext('2d');
@@ -237,15 +291,49 @@ export function dialTexture(kind, images, day, opts = {}) {
     x.font = `400 ${R * 0.028}px Helvetica, Arial`; x.fillText('QUARTZ', 0, R * 0.46);
   } else if (kind === 'recta') {
     x.setTransform(1, 0, 0, 1, 0, 0);
-    const g = x.createLinearGradient(0, 0, S, S); g.addColorStop(0, '#fbfaf6'); g.addColorStop(1, '#e5dfd4');
+    const g = x.createLinearGradient(0, 0, S, S); g.addColorStop(0, '#fbfaf6'); g.addColorStop(1, '#e7dfd2');
     x.fillStyle = g; x.fillRect(0, 0, S, S);
-    x.strokeStyle = '#1c1c1c'; x.lineWidth = 3;
+    const cx = S / 2, cy = S / 2;
+    const rx = (r) => r / RECTA_DIAL.W * S, ry = (r) => r / RECTA_DIAL.H * S;
+    x.strokeStyle = '#1c1c1c'; x.fillStyle = '#161616'; x.textAlign = 'center'; x.textBaseline = 'middle';
     const romans = ['XII', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI'];
-    x.fillStyle = '#161616'; x.font = `500 ${S * 0.052}px Georgia, serif`; x.textAlign = 'center'; x.textBaseline = 'middle';
-    romans.forEach((t, i) => { const a = (i / 12) * Math.PI * 2 - Math.PI / 2; x.fillText(t, S / 2 + Math.cos(a) * S * 0.3, S / 2 + Math.sin(a) * S * 0.2); });
-    for (let i = 0; i < 60; i++) { const a = i / 60 * Math.PI * 2 - Math.PI / 2; const r1 = S * (i % 5 ? 0.355 : 0.34), r2 = S * 0.375; x.lineWidth = i % 5 ? 2 : 4; x.beginPath(); x.moveTo(S / 2 + Math.cos(a) * r1, S / 2 + Math.sin(a) * r1); x.lineTo(S / 2 + Math.cos(a) * r2, S / 2 + Math.sin(a) * r2); x.stroke(); }
-    x.fillStyle = '#1a1a1a'; x.font = `500 ${S * 0.042}px Georgia, serif`; x.fillText('ZARUMEI', S / 2, S * 0.46);
-    x.font = `400 ${S * 0.02}px Helvetica, Arial`; x.fillStyle = '#6d675f'; x.fillText('QUARTZ', S / 2, S * 0.53);
+    x.font = `500 ${S * 0.042}px Georgia, serif`;
+    romans.forEach((t, i) => {
+      if (i === 0) return;
+      const a = (i / 12) * Math.PI * 2 - Math.PI / 2;
+      x.fillText(t, cx + Math.cos(a) * rx(5.15), cy + Math.sin(a) * ry(5.15));
+    });
+    for (let i = 0; i < 60; i++) {
+      const a = i / 60 * Math.PI * 2 - Math.PI / 2;
+      const r0 = i % 5 ? 5.85 : 5.7, r1 = 6.05;
+      x.lineWidth = i % 5 ? 2 : 4;
+      x.beginPath();
+      x.moveTo(cx + Math.cos(a) * rx(r0), cy + Math.sin(a) * ry(r0));
+      x.lineTo(cx + Math.cos(a) * rx(r1), cy + Math.sin(a) * ry(r1));
+      x.stroke();
+    }
+    x.strokeStyle = '#8a7352'; x.lineWidth = 2;
+    for (let h = 0; h < 24; h++) {
+      const a = h / 24 * Math.PI * 2 - Math.PI / 2;
+      const r0 = h % 6 ? 3.55 : 3.4, r1 = 3.75;
+      x.beginPath();
+      x.moveTo(cx + Math.cos(a) * rx(r0), cy + Math.sin(a) * ry(r0));
+      x.lineTo(cx + Math.cos(a) * rx(r1), cy + Math.sin(a) * ry(r1));
+      x.stroke();
+    }
+    const moon = [cx, cy - ry(4.55)];
+    punchEllipse(x, moon[0], moon[1], rx(1.12), ry(1.12));
+    const wins = [[cx - rx(4.15), cy + ry(2.05), 0.98], [cx, cy + ry(2.05), 0.98], [cx + rx(4.15), cy + ry(2.05), 1.22]];
+    for (const w of wins) punchRect(x, w[0], w[1], rx(w[2]), ry(0.50));
+    x.fillStyle = '#6d624f'; x.font = `500 ${S * 0.018}px Helvetica, Arial`;
+    x.fillText('DÍA', wins[0][0], wins[0][1] - ry(0.72));
+    x.fillText('MES', wins[1][0], wins[1][1] - ry(0.72));
+    x.fillText('AÑO', wins[2][0], wins[2][1] - ry(0.72));
+    x.fillStyle = '#1a1a1a'; x.font = `500 ${S * 0.04}px Georgia, serif`;
+    x.fillText('ZARUMEI', cx, cy - ry(1.15));
+    x.font = `500 ${S * 0.026}px Georgia, serif`; x.fillText('RECTA', cx, cy - ry(0.45));
+    x.fillStyle = '#6d624f'; x.font = `500 ${S * 0.018}px Helvetica, Arial`;
+    x.fillText('SIN PILA  ·  24H VATICANO', cx, cy + ry(0.55));
   } else if (kind === 'diablo' || kind === 'espina' || kind === 'ala' || kind === 'orbital') {
     grandDial(x, R, kind);
   } else if (ART[kind]) {

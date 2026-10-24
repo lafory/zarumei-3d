@@ -25,6 +25,7 @@ import { buildDial, buildHands } from './dialside.js';
 import { makeTools } from './tools3d.js';
 import { ICONS } from './icons.js';
 import { unlock as unlockAudio, play as playSfx, pulse as pulseSfx, setMuted, isMuted } from './audio.js';
+import { vaticanNow } from './vatican.js';
 import * as book from './accounts.js';
 import { BUILD_OPTS, DRAFT_ID, watchFromSpec, loadBuilds, rememberBuild, markBuildReady, isBuildReady, forgetBuild, cleanName, suggestedName, dialFits, caseFits, cieloFits, buildSummary } from './build.js';
 import { OFFERS, VERDICTS, TRUTH_LABEL, offerById, periState, isClosed, inventory, nextLook, takeLooks, quotes, answer, recordDeal } from './peritaje.js';
@@ -1873,6 +1874,18 @@ function loop(now) {
     if (run) { for (const [id, v] of [['secHand', sec / 60], ['minHand', mn / 60], ['hourHand', hr / 12], ['milHand', h24 / 24], ['depthHand', (Math.sin(t * 0.35) * 0.5 + 0.5) * 0.42]]) { const r = P[id] && P[id].getObjectByName('rot'); if (r && E.st[id] === 'in') r.rotation.y = -v * Math.PI * 2; } }
     const needle = P.compassNeedle && P.compassNeedle.getObjectByName('rot'); if (needle && E.st.compassNeedle === 'in') needle.rotation.y = Math.sin(t * 0.25) * 0.18;
     if (P.moonDisc && E.st.moonDisc === 'in') P.moonDisc.rotation.y = t * 0.05;
+    const recta = P.dial && P.dial.userData.recta;
+    if (recta && run) {
+      const v = vaticanNow(d);
+      if (recta.moonTex && recta._phase !== Math.round(v.phase * 200)) { recta._phase = Math.round(v.phase * 200); recta.moonTex.userData.paint(v.phase); }
+      if (E.st.dial === 'in') {
+        if (recta.day) recta.day.rotation.y = (v.dow / 7) * Math.PI * 2;
+        if (recta.month) recta.month.rotation.y = (v.month / 12) * Math.PI * 2;
+        if (recta.year) recta.year.rotation.y = (1 / recta.yearN) * Math.PI * 2;
+      }
+      const gmt = recta.gmt && recta.gmt.getObjectByName('rot');
+      if (gmt && E.st.hourHand === 'in') gmt.rotation.y = -(v.h24 / 24) * Math.PI * 2;
+    }
     if (G.MV.wheel) { const amp = run ? THREE.MathUtils.degToRad(E.amplitude()) : 0; G.MV.wheel.rotation.y = run ? amp * Math.sin(t * Math.PI * 8) : G.MV.wheel.rotation.y * 0.92; }
     if (run && P.escapeWheel) P.escapeWheel.rotation.y = -Math.floor(t * 8) * (Math.PI * 2 / 20) / 2;
     if (run && G.MV.kind === 'tourbillon') {
