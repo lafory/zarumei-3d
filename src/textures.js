@@ -56,16 +56,26 @@ function artDial(x, R, kind, images, opt) {
   minuteTrack(x, R, kind === 'mascara' ? '#f4f4f4' : '#f2efe6', 0.975, 0.935, 0.905);
   if (!opt || !opt.rim) return;
   const mm = (mx, mz) => [mx / 16.2 * R, mz / 16.2 * R];
-  const day = mm(-12.6, -1.4), month = mm(12.6, -1.4), depth = mm(0, 13.2);
+  const day = mm(-12.6, -1.4), month = mm(12.6, -1.4);
   punch(x, day[0], day[1], R * 0.18, R * 0.085, false);
   punch(x, month[0], month[1], R * 0.2, R * 0.085, false);
   x.fillStyle = 'rgba(246,215,138,.92)'; x.font = `600 ${R * 0.026}px Helvetica, Arial`;
   x.textAlign = 'center'; x.textBaseline = 'middle';
   x.fillText('DÍA', day[0], day[1] - R * 0.07);
   x.fillText('MES', month[0], month[1] - R * 0.07);
+  const six = mm(0, 12.6);
   x.strokeStyle = 'rgba(246,215,138,.9)'; x.lineWidth = 4;
-  x.beginPath(); x.arc(depth[0], depth[1], R * 0.085, 0, Math.PI * 2); x.stroke();
-  x.fillText('PROF.', depth[0], depth[1] - R * 0.13);
+  if (opt.compass) {
+    x.beginPath(); x.arc(six[0], six[1], R * 0.11, 0, Math.PI * 2); x.stroke();
+    x.fillText('N', six[0], six[1]);
+  } else if (opt.moon) {
+    punch(x, six[0], six[1], R * 0.12, 0, true);
+    x.fillText('LUNA', six[0], six[1] - R * 0.16);
+  } else {
+    const depth = mm(0, 13.2);
+    x.beginPath(); x.arc(depth[0], depth[1], R * 0.085, 0, Math.PI * 2); x.stroke();
+    x.fillText('PROF.', depth[0], depth[1] - R * 0.13);
+  }
 }
 function grandDial(x, R, kind) {
   const compass = kind !== 'diablo';

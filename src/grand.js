@@ -114,11 +114,12 @@ function placa(M) {
   return g;
 }
 
-function makeBalance(M, x, z) {
+function makeBalance(M, x, z, wheelMat) {
+  const wm = wheelMat || M.goldWheel;
   const balance = tag(new THREE.Group(), 'balance');
   const wheel = new THREE.Group(); wheel.name = 'balanceWheel';
-  wheel.add(new THREE.Mesh(new THREE.TorusGeometry(2.7, 0.26, 10, 40).rotateX(Math.PI / 2), M.goldWheel));
-  for (let k = 0; k < 3; k++) { const arm = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.16, 0.32), M.goldWheel); arm.position.x = 1.3; const p = new THREE.Group(); p.add(arm); p.rotation.y = k * Math.PI * 2 / 3; wheel.add(p); }
+  wheel.add(new THREE.Mesh(new THREE.TorusGeometry(2.7, 0.26, 10, 40).rotateX(Math.PI / 2), wm));
+  for (let k = 0; k < 3; k++) { const arm = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.16, 0.32), wm); arm.position.x = 1.3; const p = new THREE.Group(); p.add(arm); p.rotation.y = k * Math.PI * 2 / 3; wheel.add(p); }
   const staff = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 1.7, 10), M.steel); staff.position.y = 0.45; wheel.add(staff);
   const pivot = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.42, 8), M.steel); pivot.position.y = 1.45; pivot.name = 'pivot'; wheel.add(pivot);
   const pts = []; for (let t = 0; t < 10 * Math.PI; t += 0.15) { const r = 0.45 + t * 0.055; pts.push(new THREE.Vector3(Math.cos(t) * r, 0.4, Math.sin(t) * r)); }
@@ -141,13 +142,35 @@ function makeBalance(M, x, z) {
   return { balance, wheel, sub: { jewel, spring, regulator, dirt, oil, pivot, wheel, staff } };
 }
 
+function heartCam(M) {
+  const s = new THREE.Shape();
+  s.moveTo(0, -1.2);
+  s.bezierCurveTo(1.25, -0.15, 1.05, 1.1, 0, 1.3);
+  s.bezierCurveTo(-1.05, 1.1, -1.25, -0.15, 0, -1.2);
+  const g = tag(new THREE.Group(), 'cam');
+  g.add(new THREE.Mesh(extrudeShape(s, 0.32, 0.02), M.steel));
+  g.add(at(cyl(0.22, 0.5, M.blueScrew, 12), 0, 0.28, 0));
+  g.add(hitProxy(M, 1.45, 0.6, 0.15));
+  return g;
+}
+function shuttleFinger(M) {
+  const g = tag(new THREE.Group(), 'shuttle');
+  g.add(new THREE.Mesh(extrudeShape(polyShape([[0, 0], [2.6, 0.15], [2.8, 0.55], [0.7, 0.7], [0.15, 0.4]]), 0.16, 0.01), M.blueSpring));
+  g.add(at(cyl(0.28, 0.4, M.steel, 10), 0.35, 0.2, 0.3));
+  g.add(hitProxy(M, 1.5, 0.4, 0.1));
+  return g;
+}
+
 export function buildGrand(M, images, watch, cal) {
   const opt = watch.grand, R = 13.1;
+  const noDepth = !!(opt.cam || opt.luna);
+  const gearMat = opt.cam ? M.blueSpring : opt.luna ? M.metal('rose') : M.goldWheel;
   const mv = tag(new THREE.Group(), 'movement'); const parts = {}; const sub = {};
-  const plate = new THREE.Mesh(new THREE.CylinderGeometry(R, R, 1.15, 80), [M.darkSteel, M.plateBrass, M.plateBrass]); plate.position.y = 0.58; mv.add(plate);
+  const plateMats = opt.luna ? [M.metal('rose'), M.metal('rose'), M.metal('rose')] : opt.cam ? [M.darkSteel, M.plate, M.plate] : [M.darkSteel, M.plateBrass, M.plateBrass];
+  const plate = new THREE.Mesh(new THREE.CylinderGeometry(R, R, 1.15, 80), plateMats); plate.position.y = 0.58; mv.add(plate);
   const wheel = (id, x, y, z, r, n) => {
     const w = tag(new THREE.Group(), id);
-    w.add(gearMesh(r, n, 0.16, M.goldWheel, id === 'escapeWheel' ? 0 : 4));
+    w.add(gearMesh(r, n, 0.16, gearMat, id === 'escapeWheel' ? 0 : 4));
     w.add(at(cyl(0.2, 1.0, M.steel, 8), 0, -0.25, 0));
     w.add(hitProxy(M, r + 0.25, 0.5, 0.15));
     at(w, x, y, z); mv.add(w); parts[id] = w; return w;
@@ -161,7 +184,7 @@ export function buildGrand(M, images, watch, cal) {
   wheel('chronoHour', -5.4, 1.42, 4.6, 1.8, 28);
 
   const barrel = tag(new THREE.Group(), 'barrel');
-  barrel.add(new THREE.Mesh(extrudeShape(gearShape(4.6, 64, 0.5, 0), 0.62, 0.02, 12), M.goldWheel));
+  barrel.add(new THREE.Mesh(extrudeShape(gearShape(4.6, 64, 0.5, 0), 0.62, 0.02, 12), gearMat));
   const drumMat = M.steel.clone(); const drum = new THREE.Mesh(new THREE.CylinderGeometry(4.3, 4.3, 0.66, 40), drumMat); drum.position.y = 0.32; barrel.add(drum);
   const spr = []; for (let t = 0; t < 12 * Math.PI; t += 0.22) { const r = 0.9 + t * 0.08; spr.push(new THREE.Vector3(Math.cos(t) * r, 0.7, Math.sin(t) * r)); }
   const mainspring = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(spr), 200, 0.05, 4), new THREE.MeshStandardMaterial({ color: 0x5b4a3a, metalness: 0.7, roughness: 0.6 }));
@@ -190,15 +213,35 @@ export function buildGrand(M, images, watch, cal) {
   pb.add(new THREE.Mesh(extrudeShape(polyShape([[3.6, 2.4], [7.2, 2.2], [7.6, 4.2], [3.8, 4.6]]), 0.55, 0.02), M.bridge));
   pb.add(at(jewelMesh(M, 0.28), 5.2, 0.55, 3.4)); at(pb, 0, 1.95, 0); mv.add(pb); parts.palletBridge = pb;
 
-  const bal = makeBalance(M, 5.4, 8.2); mv.add(bal.balance); parts.balance = bal.balance; Object.assign(sub, bal.sub);
+  const bal = makeBalance(M, 5.4, 8.2, opt.cam || opt.luna ? gearMat : null); mv.add(bal.balance); parts.balance = bal.balance; Object.assign(sub, bal.sub);
 
   const cb = tag(new THREE.Group(), 'chronoBridge');
-  cb.add(new THREE.Mesh(extrudeShape(polyShape([[-7.2, 2.2], [-2, 6.6], [7.2, 6.4], [7.4, 3.2], [2.2, 1.6], [2.4, -1.6], [-2.2, -1.4], [-6.6, 1.2]]), 0.55, 0.03), M.bridgeGilt));
-  cb.add(at(jewelMesh(M, 0.3), 0, 0.55, 0.2)); cb.add(at(jewelMesh(M, 0.28), 5.6, 0.55, 5)); cb.add(at(jewelMesh(M, 0.28), -5.4, 0.55, 4.6));
-  const col = tag(new THREE.Group(), 'columnWheel');
-  col.add(gearMesh(1.35, 12, 0.2, M.steel, 0));
-  for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2; col.add(at(cyl(0.18, 0.45, M.steel, 8), Math.cos(a) * 0.7, 0.25, Math.sin(a) * 0.7)); }
-  col.add(hitProxy(M, 1.5, 0.7, 0.2)); at(col, -2.4, 2.15, 3.2); mv.add(col); parts.columnWheel = col;
+  if (opt.cam) {
+    cb.add(new THREE.Mesh(extrudeShape(polyShape([[-6.2, 1.4], [-1.2, 5.6], [6.4, 5.2], [6.2, 3.4], [1.4, 2.6], [-5.4, 2.2]]), 0.42, 0.02), M.steel));
+    cb.add(new THREE.Mesh(extrudeShape(polyShape([[-2.2, 0.2], [1.6, -0.2], [1.8, 1.2], [-2.4, 1.4]]), 0.42, 0.02), M.steel));
+    cb.add(at(jewelMesh(M, 0.28), 5.6, 0.42, 4.4)); cb.add(at(jewelMesh(M, 0.26), -4.6, 0.42, 3.2));
+  } else if (opt.luna) {
+    const rose = M.metal('rose');
+    for (const [x0, z0, x1, z1] of [[-6.4, 4.6, 6.8, 5.6], [-5.6, 2.4, 6.2, 3.2], [-1.2, 1.2, 1.2, 5.8]]) {
+      const dx = x1 - x0, dz = z1 - z0, len = Math.hypot(dx, dz);
+      const bar = new THREE.Mesh(new THREE.BoxGeometry(len, 0.38, 0.55), rose);
+      bar.position.set((x0 + x1) / 2, 0.2, (z0 + z1) / 2); bar.rotation.y = Math.atan2(dz, dx); cb.add(bar);
+    }
+    cb.add(at(jewelMesh(M, 0.28), 0, 0.4, 2.2)); cb.add(at(jewelMesh(M, 0.26), 5.8, 0.4, 5.0)); cb.add(at(jewelMesh(M, 0.26), -5.4, 0.4, 3.6));
+  } else {
+    cb.add(new THREE.Mesh(extrudeShape(polyShape([[-7.2, 2.2], [-2, 6.6], [7.2, 6.4], [7.4, 3.2], [2.2, 1.6], [2.4, -1.6], [-2.2, -1.4], [-6.6, 1.2]]), 0.55, 0.03), M.bridgeGilt));
+    cb.add(at(jewelMesh(M, 0.3), 0, 0.55, 0.2)); cb.add(at(jewelMesh(M, 0.28), 5.6, 0.55, 5)); cb.add(at(jewelMesh(M, 0.28), -5.4, 0.55, 4.6));
+  }
+  if (opt.cam) {
+    const cam = heartCam(M); at(cam, -2.4, 2.15, 3.2); mv.add(cam); parts.cam = cam;
+    const fin = shuttleFinger(M); at(fin, 0.8, 2.15, 1.4); mv.add(fin); parts.shuttle = fin;
+  } else {
+    const colMat = opt.luna ? M.metal('rose') : M.steel;
+    const col = tag(new THREE.Group(), 'columnWheel');
+    col.add(gearMesh(1.35, 12, 0.2, colMat, 0));
+    for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2; col.add(at(cyl(opt.luna ? 0.22 : 0.18, opt.luna ? 0.7 : 0.45, colMat, 8), Math.cos(a) * 0.7, 0.25, Math.sin(a) * 0.7)); }
+    col.add(hitProxy(M, 1.5, 0.7, 0.2)); at(col, -2.4, 2.15, 3.2); mv.add(col); parts.columnWheel = col;
+  }
   at(cb, 0, 2.45, 0); mv.add(cb); parts.chronoBridge = cb;
   const coupling = tag(new THREE.Group(), 'coupling');
   coupling.add(new THREE.Mesh(extrudeShape(polyShape([[-1, 0], [2.4, 0.3], [2.6, 0.9], [-0.8, 0.7]]), 0.18, 0.01), M.steel));
@@ -212,8 +255,20 @@ export function buildGrand(M, images, watch, cal) {
   auto.add(at(gearMesh(1.5, 24, 0.16, M.goldWheel, 0), -2.4, 0.6, -7.2));
   at(auto, 0, 3.2, 0); mv.add(auto); parts.auto = auto;
   const rotor = tag(new THREE.Group(), 'rotor');
-  const rs = new THREE.Shape(); rs.absarc(0, 0, 12.2, Math.PI, Math.PI * 2, false); rs.absarc(0, 0, 2.1, Math.PI * 2, Math.PI, true); rs.closePath();
-  rotor.add(new THREE.Mesh(extrudeShape(rs, 0.45), new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 1, roughness: 0.25, map: TX.rotorTexture(12.2, watch.rotorText) })));
+  const rs = new THREE.Shape();
+  let rotorMat;
+  if (opt.cam) {
+    rs.absarc(0, 0, 12.2, 0, Math.PI * 2, false); rs.absarc(0, 0, 2.3, 0, Math.PI * 2, true);
+    for (let i = 0; i < 3; i++) { const a = i / 3 * Math.PI * 2 + 0.4; const h = new THREE.Path(); h.absarc(Math.cos(a) * 7.1, Math.sin(a) * 7.1, 2.35, 0, Math.PI * 2, true); rs.holes.push(h); }
+    rotorMat = M.steel;
+  } else if (opt.luna) {
+    rs.absarc(0, 0, 12.3, 0, Math.PI * 2, false); rs.absarc(0, 0, 6.6, 0, Math.PI * 2, true);
+    rotorMat = M.metal('rose');
+  } else {
+    rs.absarc(0, 0, 12.2, Math.PI, Math.PI * 2, false); rs.absarc(0, 0, 2.1, Math.PI * 2, Math.PI, true); rs.closePath();
+    rotorMat = new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 1, roughness: 0.25, map: TX.rotorTexture(12.2, watch.rotorText) });
+  }
+  rotor.add(new THREE.Mesh(extrudeShape(rs, 0.45), rotorMat));
   rotor.add(hitProxy(M, 12.2, 1.0, 0.25)); at(rotor, 0, 4.15, 0); mv.add(rotor); parts.rotor = rotor;
 
   const clamps = tag(new THREE.Group(), 'clamps');
@@ -229,7 +284,9 @@ export function buildGrand(M, images, watch, cal) {
   const ys = { dial: 1.42, hour: 2.05, min: 2.32, sec: 2.58 };
   const metal = M.metal(watch.hands.metal);
   const depthAt = opt.rim ? [0, 13.2] : opt.moon ? [5.6, 5.2] : [0, 7.7];
-  const depthHand = subHand(M, 'depthHand', 3.2, metal, ys.sec + 0.06); depthHand.position.x = depthAt[0]; depthHand.position.z = depthAt[1]; ds.add(depthHand); parts.depthHand = depthHand;
+  if (!noDepth) {
+    const depthHand = subHand(M, 'depthHand', 3.2, metal, ys.sec + 0.06); depthHand.position.x = depthAt[0]; depthHand.position.z = depthAt[1]; ds.add(depthHand); parts.depthHand = depthHand;
+  }
 
   const emblem = (opt.emblem === 'espina' ? espina : opt.emblem === 'ala' ? ala : opt.emblem === 'orbital' ? orbital : opt.emblem === 'sello' ? sello : opt.emblem === 'placa' ? placa : devil)(M);
   emblem.position.y = ys.dial + 0.28;
@@ -239,27 +296,27 @@ export function buildGrand(M, images, watch, cal) {
   if (opt.military) {
     const mil = subHand(M, 'milHand', watch.dial.r * 0.62, metal, ys.hour + 0.12); ds.add(mil); parts.milHand = mil;
     const h24 = tag(new THREE.Group(), 'hour24');
-    h24.add(new THREE.Mesh(extrudeShape(ringShape(4.2, 5.4), 0.12, 0), M.goldWheel));
+    h24.add(new THREE.Mesh(extrudeShape(ringShape(4.2, 5.4), 0.12, 0), gearMat));
     h24.add(hitProxy(M, 5.4, 0.3, 0.1)); h24.position.y = 0.55; ds.add(h24); parts.hour24 = h24;
   }
   if (opt.compass) {
     const bowl = tag(new THREE.Group(), 'compassBowl');
     bowl.add(new THREE.Mesh(new THREE.CylinderGeometry(2.15, 2.25, 0.35, 28), M.metal('gold')));
     bowl.add(new THREE.Mesh(new THREE.CylinderGeometry(1.85, 1.85, 0.08, 24), new THREE.MeshStandardMaterial({ color: 0xf3efe2, roughness: 0.6 })));
-    bowl.add(hitProxy(M, 2.3, 0.5, 0.15)); bowl.position.set(0, ys.dial + 0.2, -8.4); ds.add(bowl); parts.compassBowl = bowl;
+    bowl.add(hitProxy(M, 2.3, 0.5, 0.15)); const cAt = opt.rim ? [0, 12.6] : [0, -8.4]; bowl.position.set(cAt[0], ys.dial + 0.2, cAt[1]); ds.add(bowl); parts.compassBowl = bowl;
     const needle = tag(new THREE.Group(), 'compassNeedle');
     const inner = new THREE.Group(); inner.name = 'rot'; needle.add(inner);
     inner.add(new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.08, 2.6).translate(0, 0.15, -0.3), new THREE.MeshStandardMaterial({ color: 0xc41212, metalness: 0.4, roughness: 0.35 })));
-    inner.add(hitProxy(M, 0.5, 0.4, 0.15)); needle.position.set(0, ys.dial + 0.35, -8.4); ds.add(needle); parts.compassNeedle = needle;
+    inner.add(hitProxy(M, 0.5, 0.4, 0.15)); needle.position.set(cAt[0], ys.dial + 0.35, cAt[1]); ds.add(needle); parts.compassNeedle = needle;
     const cap = tag(new THREE.Group(), 'compassCap');
     cap.add(new THREE.Mesh(new THREE.SphereGeometry(2.05, 20, 12, 0, Math.PI * 2, 0, Math.PI / 2), M.crystal));
-    cap.add(hitProxy(M, 2.1, 0.6, 0.2)); cap.position.set(0, ys.dial + 0.45, -8.4); ds.add(cap); parts.compassCap = cap;
+    cap.add(hitProxy(M, 2.1, 0.6, 0.2)); cap.position.set(cAt[0], ys.dial + 0.45, cAt[1]); ds.add(cap); parts.compassCap = cap;
   }
   if (opt.moon) {
     const moon = tag(new THREE.Group(), 'moonDisc');
     moon.add(new THREE.Mesh(new THREE.CircleGeometry(2.5, 32).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ map: TX.moonDiscTexture(), roughness: 0.45 })));
-    moon.add(hitProxy(M, 2.5, 0.3, 0.05)); moon.position.set(0, 0.5, 7.6); ds.add(moon); parts.moonDisc = moon;
-    const mw = tag(new THREE.Group(), 'moonWheel'); mw.add(gearMesh(1.1, 16, 0.14, M.goldWheel, 0)); mw.add(hitProxy(M, 1.2, 0.3, 0.08)); at(mw, 2.6, 0.35, 6.4); ds.add(mw); parts.moonWheel = mw;
+    moon.add(hitProxy(M, 2.5, 0.3, 0.05)); const moonAt = opt.rim ? [0, 12.6] : [0, 7.6]; moon.position.set(0, 0.5, moonAt[1]); ds.add(moon); parts.moonDisc = moon;
+    const mw = tag(new THREE.Group(), 'moonWheel'); mw.add(gearMesh(1.1, 16, 0.14, gearMat, 0)); mw.add(hitProxy(M, 1.2, 0.3, 0.08)); at(mw, moonAt[1] > 10 ? 2.2 : 2.6, 0.35, moonAt[1] > 10 ? 10.6 : 6.4); ds.add(mw); parts.moonWheel = mw;
   }
 
   const dayAt = opt.rim ? [-12.6, -1.4] : opt.compass ? [-6.6, -3.4] : [0, -9.1];
@@ -277,15 +334,17 @@ export function buildGrand(M, images, watch, cal) {
   jumper.add(new THREE.Mesh(extrudeShape(polyShape([[0, 0], [1.6, 0.3], [1.5, 0.7], [0, 0.4]]), 0.12, 0), M.steel));
   jumper.add(hitProxy(M, 1.0, 0.3, 0.06)); jumper.position.set(dayAt[0] + 2.2, 0.6, dayAt[1]); ds.add(jumper); parts.dayJumper = jumper;
 
-  const membrane = tag(new THREE.Group(), 'membrane');
-  membrane.add(new THREE.Mesh(new THREE.CylinderGeometry(1.7, 1.7, 0.18, 24), new THREE.MeshStandardMaterial({ color: 0x1a1c1e, roughness: 0.9 })));
-  membrane.add(hitProxy(M, 1.8, 0.35, 0.08)); membrane.position.set(depthAt[0], 0.35, depthAt[1]); ds.add(membrane); parts.membrane = membrane;
-  const rack = tag(new THREE.Group(), 'depthRack');
-  rack.add(new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.16, 0.35), M.steel));
-  rack.add(hitProxy(M, 1.3, 0.3, 0.08)); rack.position.set(depthAt[0] + 2.2, 0.42, depthAt[1]); ds.add(rack); parts.depthRack = rack;
-  const pin = tag(new THREE.Group(), 'depthPinion');
-  pin.add(gearMesh(0.7, 10, 0.16, M.steel, 0)); pin.add(hitProxy(M, 0.85, 0.3, 0.08));
-  pin.position.set(depthAt[0] + 1.2, 0.48, depthAt[1] - 1.4); ds.add(pin); parts.depthPinion = pin;
+  if (!noDepth) {
+    const membrane = tag(new THREE.Group(), 'membrane');
+    membrane.add(new THREE.Mesh(new THREE.CylinderGeometry(1.7, 1.7, 0.18, 24), new THREE.MeshStandardMaterial({ color: 0x1a1c1e, roughness: 0.9 })));
+    membrane.add(hitProxy(M, 1.8, 0.35, 0.08)); membrane.position.set(depthAt[0], 0.35, depthAt[1]); ds.add(membrane); parts.membrane = membrane;
+    const rack = tag(new THREE.Group(), 'depthRack');
+    rack.add(new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.16, 0.35), M.steel));
+    rack.add(hitProxy(M, 1.3, 0.3, 0.08)); rack.position.set(depthAt[0] + 2.2, 0.42, depthAt[1]); ds.add(rack); parts.depthRack = rack;
+    const pin = tag(new THREE.Group(), 'depthPinion');
+    pin.add(gearMesh(0.7, 10, 0.16, M.steel, 0)); pin.add(hitProxy(M, 0.85, 0.3, 0.08));
+    pin.position.set(depthAt[0] + 1.2, 0.48, depthAt[1] - 1.4); ds.add(pin); parts.depthPinion = pin;
+  }
 
   const hw = tag(new THREE.Group(), 'hourWheel'); hw.add(gearMesh(2.6, 36, 0.14, M.goldWheel, 0)); hw.add(hitProxy(M, 2.7, 0.35, 0.1)); hw.position.y = 0.4; ds.add(hw); parts.hourWheel = hw;
   const cp = tag(new THREE.Group(), 'cannonPinion'); cp.add(cyl(0.42, 1.5, M.steel, 12)); cp.add(hitProxy(M, 0.7, 0.5, 0.3)); ds.add(cp); parts.cannonPinion = cp;

@@ -122,7 +122,9 @@ export const CALIBERS = {
 };
 
 function grandCaliber(id, name, desc, opt) {
-  const dialCover = ['hourHand', 'emblem', 'depthHand'];
+  const noDepth = !!(opt.cam || opt.luna);
+  const dialCover = ['hourHand', 'emblem'];
+  if (!noDepth) dialCover.push('depthHand');
   if (opt.military) dialCover.push('milHand');
   if (opt.compass) dialCover.push('compassBowl');
   const emblemName = opt.emblem === 'diablo' ? 'la máscara del diablo' : opt.emblem === 'espina' ? 'el cabujón de púas' : opt.emblem === 'ala' ? 'las alas de esmalte' : opt.emblem === 'sello' ? 'el sello del atelier' : opt.emblem === 'placa' ? 'la placa de la esfera' : 'la jaula calada';
@@ -136,8 +138,17 @@ function grandCaliber(id, name, desc, opt) {
     { id: 'clamps', name: 'las bridas de caja', side: 'case', coveredBy: ['caseback'], tool: 'tweezers', screws: [{ s: 1.2, k: 'clamp', p: [-7.4, 1.45, 9.4] }, { s: 1.2, k: 'clamp', p: [9.6, 1.45, -5.2] }] },
     { id: 'movement', name: 'el movimiento', side: 'case', coveredBy: ['stem', 'clamps'], tool: 'holder', placeNeedsDial: true },
     { id: 'auto', name: 'el módulo automático', side: 'bridge', coveredBy: ['rotor'], tool: 'tweezers', screws: [{ s: 1.2, k: 'auto', p: [-7.6, 0.6, -2.2] }, { s: 1.2, k: 'auto', p: [2.4, 0.6, -8.6] }] },
-    { id: 'chronoBridge', name: 'el puente de cronógrafo', side: 'bridge', coveredBy: ['rotor'], tool: 'tweezers', requires: ['letdown'], screws: [{ s: 1.0, k: 'chrono', p: [6.2, 0.6, 4.8] }, { s: 1.0, k: 'chrono', p: [-6.0, 0.6, 3.2] }, { s: 1.0, k: 'chrono', p: [0.4, 0.6, -0.8] }], oil: { when: 'after', lube: '9010', msg: '9010 en los rubíes del cronógrafo.' } },
-    { id: 'columnWheel', name: 'la rueda de columnas', side: 'bridge', coveredBy: ['chronoBridge'], tool: 'tweezers', screws: [{ s: 0.8, k: 'column', p: [0, 0.55, 0] }] },
+    { id: 'chronoBridge', name: 'el puente de cronógrafo', side: 'bridge', coveredBy: ['rotor'], tool: 'tweezers', requires: ['letdown'], screws: opt.cam
+      ? [{ s: 1.0, k: 'chrono', p: [5.6, 0.55, 4.6] }, { s: 1.0, k: 'chrono', p: [-4.8, 0.55, 3.6] }, { s: 1.0, k: 'chrono', p: [-0.6, 0.55, 0.8] }]
+      : opt.luna
+        ? [{ s: 1.0, k: 'chrono', p: [5.4, 0.45, 5.5] }, { s: 1.0, k: 'chrono', p: [-4.0, 0.45, 2.6] }, { s: 1.0, k: 'chrono', p: [0.15, 0.45, 3.9] }]
+        : [{ s: 1.0, k: 'chrono', p: [6.2, 0.6, 4.8] }, { s: 1.0, k: 'chrono', p: [-6.0, 0.6, 3.2] }, { s: 1.0, k: 'chrono', p: [0.4, 0.6, -0.8] }], oil: { when: 'after', lube: '9010', msg: '9010 en los rubíes del cronógrafo.' } },
+    ...(opt.cam ? [
+      { id: 'cam', name: 'la leva de corazón', side: 'bridge', coveredBy: ['chronoBridge'], tool: 'tweezers', screws: [{ s: 0.8, k: 'column', p: [0, 0.42, 0] }] },
+      { id: 'shuttle', name: 'el dedo de la leva', side: 'bridge', coveredBy: ['chronoBridge'], tool: 'tweezers' }
+    ] : [
+      { id: 'columnWheel', name: 'la rueda de columnas', side: 'bridge', coveredBy: ['chronoBridge'], tool: 'tweezers', screws: [{ s: 0.8, k: 'column', p: [0, 0.55, 0] }] }
+    ]),
     { id: 'coupling', name: 'el acoplamiento del cronógrafo', side: 'bridge', coveredBy: ['chronoBridge'], tool: 'tweezers' },
     { id: 'brake', name: 'el freno del cronógrafo', side: 'bridge', coveredBy: ['chronoBridge'], tool: 'tweezers' },
     { id: 'chronoMinute', name: 'el contador de minutos', side: 'bridge', coveredBy: ['chronoBridge'], tool: 'tweezers' },
@@ -191,6 +202,7 @@ function grandCaliber(id, name, desc, opt) {
     { id: 'moonDisc', name: 'el disco de las fases de la luna', side: 'dial', coveredBy: ['dial'], tool: 'tweezers' },
     { id: 'moonWheel', name: 'la rueda de la luna', side: 'dial', coveredBy: ['moonDisc'], tool: 'tweezers' }
   );
+  if (noDepth) for (let i = parts.length - 1; i >= 0; i--) if (parts[i].id === 'depthHand' || parts[i].id === 'membrane' || parts[i].id === 'depthRack' || parts[i].id === 'depthPinion') parts.splice(i, 1);
   return { id, name, type: 'auto', desc, lift: 50, ampOk: [270, 310], parts };
 }
 
@@ -202,7 +214,9 @@ Object.assign(CALIBERS, {
   ZC41: grandCaliber('ZC41', 'ZC-41', 'El ZC-40 más una brújula mecánica sobre la esfera.', { emblem: 'espina', compass: true }),
   ZC42: grandCaliber('ZC42', 'ZC-42', 'Cronógrafo, calendario, profundímetro, brújula y hora militar de 24 h.', { emblem: 'ala', compass: true, military: true }),
   ZC43: grandCaliber('ZC43', 'ZC-43', 'Gran complicación: todo lo anterior y fases de la luna.', { emblem: 'orbital', compass: true, military: true, moon: true }),
-  ZC44: grandCaliber('ZC44', 'ZC-44', 'Cronógrafo mecánico con día, mes y profundímetro. Sin pila. 4 Hz.', { emblem: 'placa', rim: true }),
+  ZC44: grandCaliber('ZC44', 'ZC-44', 'Cronógrafo de rueda de columnas, día, mes y profundímetro. Sin pila. 4 Hz.', { emblem: 'placa', rim: true }),
+  ZC45: grandCaliber('ZC45', 'ZC-45', 'Cronógrafo de leva, día, mes y brújula. Ruedas azuladas, sin profundímetro ni pila.', { emblem: 'placa', rim: true, cam: true, compass: true }),
+  ZC46: grandCaliber('ZC46', 'ZC-46', 'Cronógrafo de columnas en oro rosa, día, mes, luna y hora de 24 h. Sin pila.', { emblem: 'placa', rim: true, luna: true, moon: true, military: true }),
   ZX60: {
     id: 'ZX60', name: 'ZX-60', type: 'tourbillon',
     desc: 'La complicación más larga del taller: turbillón volante, repetición de minutos, calendario, autómatas y joya. 60 piezas, más que el ZC-43. Cuerda manual, 21.600 A/h.',

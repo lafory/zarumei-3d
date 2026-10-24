@@ -108,50 +108,50 @@ export const WATCHES = {
   },
   fiesta: {
     id: 'fiesta', name: 'ZARUMEI Fiesta', caliber: 'ZC44', grand: { emblem: 'placa', rim: true },
-    blurb: 'Cronógrafo mecánico. Día, mes y profundímetro. Sin pila. Oso, puro y ron, NATO de rayas.',
+    blurb: 'Cronógrafo de rueda de columnas. Día, mes y profundímetro. Sin pila. Oso, puro y ron.',
     case: { style: 'chrono', metal: 'gold', r: 21, bezel: 'stars', crownGuards: true, caseback: 'screw', backText: 'ZARUMEI · ZC-44 · CHRONOGRAPHE · JOUR · MOIS · PROFONDEUR · SANS PILE · Nº 070 · ', backMono: 'F' },
     dial: { kind: 'fiesta', r: 16.2, date: false }, hands: { style: 'sword', metal: 'gold' }, bracelet: { style: 'nato', metal: 'gold', stripes: ['#1aa3a8', '#f2d24b', '#e23b2f', '#1f8a3a'] },
     rotorText: 'ZARUMEI · FIESTA'
   },
   cosmos: {
-    id: 'cosmos', name: 'ZARUMEI Cosmos', caliber: 'ZC44', grand: { emblem: 'placa', rim: true },
-    blurb: 'El mismo cronógrafo mecánico, esfera de color y brazalete de resina. Día y mes. Sin pila.',
-    case: { style: 'chrono', metal: 'steel', r: 21, bezel: 'splash', crownGuards: true, caseback: 'screw', backText: 'ZARUMEI · ZC-44 · CHRONOGRAPHE · JOUR · MOIS · PROFONDEUR · SANS PILE · Nº 071 · ', backMono: 'C' },
+    id: 'cosmos', name: 'ZARUMEI Cosmos', caliber: 'ZC45', grand: { emblem: 'placa', rim: true, cam: true, compass: true },
+    blurb: 'Cronógrafo de leva y brújula. Ruedas azuladas, día y mes. Sin profundímetro ni pila.',
+    case: { style: 'chrono', metal: 'steel', r: 21, bezel: 'splash', crownGuards: true, caseback: 'screw', backText: 'ZARUMEI · ZC-45 · LEVA · JOUR · MOIS · BOUSSOLE · SANS PILE · Nº 071 · ', backMono: 'C' },
     dial: { kind: 'cosmos', r: 16.2, date: false }, hands: { style: 'baton', metal: 'steel' }, bracelet: { style: 'resin', metal: 'steel' },
     rotorText: 'ZARUMEI · COSMOS'
   },
   hoja: {
-    id: 'hoja', name: 'ZARUMEI Hoja', caliber: 'ZC44', grand: { emblem: 'placa', rim: true },
-    blurb: 'Hoja irisada, bisel de oro y correa con hojas. Cronógrafo, día y mes. Sin pila.',
-    case: { style: 'chrono', metal: 'steel', crown: 'gold', r: 21, bezel: 'wreath', crownGuards: true, caseback: 'screw', backText: 'ZARUMEI · ZC-44 · CHRONOGRAPHE · JOUR · MOIS · PROFONDEUR · SANS PILE · Nº 072 · ', backMono: 'H' },
+    id: 'hoja', name: 'ZARUMEI Hoja', caliber: 'ZC46', grand: { emblem: 'placa', rim: true, luna: true, moon: true, military: true },
+    blurb: 'Cronógrafo en oro rosa, con luna y hora de 24 h. Día y mes. Sin pila.',
+    case: { style: 'chrono', metal: 'steel', crown: 'gold', r: 21, bezel: 'wreath', crownGuards: true, caseback: 'screw', backText: 'ZARUMEI · ZC-46 · LUNE · 24H · JOUR · MOIS · OR ROSE · SANS PILE · Nº 072 · ', backMono: 'H' },
     dial: { kind: 'hoja', r: 16.2, date: false }, hands: { style: 'leaf', metal: 'gold' }, bracelet: { style: 'alligator', metal: 'gold', dye: 0x1a1a1c, leaves: true },
     rotorText: 'ZARUMEI · HOJA'
   },
   marte: {
-    id: 'marte', name: 'ZARUMEI Marte', caliber: 'ZC44', grand: { emblem: 'placa', rim: true },
-    blurb: 'El oso en Marte, con el rover. Correa terracota. Cronógrafo mecánico, día y mes.',
-    case: { style: 'chrono', metal: 'steel', r: 21, bezel: 'engraved', crownGuards: true, caseback: 'screw', backText: 'ZARUMEI · ZC-44 · CHRONOGRAPHE · JOUR · MOIS · PROFONDEUR · SANS PILE · Nº 073 · ', backMono: 'M' },
+    id: 'marte', name: 'ZARUMEI Marte', caliber: 'ZC45', grand: { emblem: 'placa', rim: true, cam: true, compass: true },
+    blurb: 'El mismo calibre de leva que el Cosmos: brújula, día y mes. Sin pila.',
+    case: { style: 'chrono', metal: 'steel', r: 21, bezel: 'engraved', crownGuards: true, caseback: 'screw', backText: 'ZARUMEI · ZC-45 · LEVA · JOUR · MOIS · BOUSSOLE · SANS PILE · Nº 073 · ', backMono: 'M' },
     dial: { kind: 'marte', r: 16.2, date: false }, hands: { style: 'sword', metal: 'steel' }, bracelet: { style: 'suede', metal: 'steel' },
     rotorText: 'ZARUMEI · MARTE'
   },
   mascara: {
     id: 'mascara', name: 'ZARUMEI Máscara', caliber: 'ZC44', grand: { emblem: 'placa', rim: true },
-    blurb: 'Caja negra y correa partida en blanco y negro. Día, mes y cronógrafo. Sin pila.',
+    blurb: 'Caja negra y correa partida. El ZC-44 de columnas, día, mes y profundímetro.',
     case: { style: 'chrono', metal: 'steel', lacquer: 0x1a1a1c, r: 21, bezel: 'polished', crownGuards: false, caseback: 'screw', backText: 'ZARUMEI · ZC-44 · CHRONOGRAPHE · JOUR · MOIS · PROFONDEUR · SANS PILE · Nº 074 · ', backMono: 'K' },
     dial: { kind: 'mascara', r: 16.2, date: false }, hands: { style: 'baton', metal: 'steel' }, bracelet: { style: 'split', metal: 'steel' },
     rotorText: 'ZARUMEI · MÁSCARA'
   },
   cuerno: {
     id: 'cuerno', name: 'ZARUMEI Cuerno', caliber: 'ZC44', grand: { emblem: 'placa', rim: true },
-    blurb: 'Laca negra, anillo de oro y costura roja. El mismo cronógrafo mecánico, día y mes.',
+    blurb: 'Laca negra, anillo de oro y costura roja. Mismo ZC-44 de columnas.',
     case: { style: 'chrono', metal: 'gold', lacquer: 0x141414, ring: 'gold', r: 21, bezel: 'polished', crownGuards: false, caseback: 'screw', backText: 'ZARUMEI · ZC-44 · CHRONOGRAPHE · JOUR · MOIS · PROFONDEUR · SANS PILE · Nº 075 · ', backMono: 'Q' },
     dial: { kind: 'cuerno', r: 16.2, date: false }, hands: { style: 'sword', metal: 'gold' }, bracelet: { style: 'stitch', metal: 'gold', stitch: 0xc41212 },
     rotorText: 'ZARUMEI · CUERNO'
   },
   onelove: {
-    id: 'onelove', name: 'ZARUMEI One Love', caliber: 'ZC44', grand: { emblem: 'placa', rim: true },
-    blurb: 'Trenzado rojo, oro y verde. Cronógrafo mecánico con día y mes. Sin pila.',
-    case: { style: 'chrono', metal: 'gold', lacquer: 0x141416, r: 21, bezel: 'leaves', crownGuards: true, caseback: 'screw', backText: 'ZARUMEI · ZC-44 · ONE LOVE · CHRONOGRAPHE · JOUR · MOIS · SANS PILE · Nº 076 · ', backMono: 'Z' },
+    id: 'onelove', name: 'ZARUMEI One Love', caliber: 'ZC46', grand: { emblem: 'placa', rim: true, luna: true, moon: true, military: true },
+    blurb: 'El calibre de la Hoja: oro rosa, luna y 24 h. Día y mes. Sin pila.',
+    case: { style: 'chrono', metal: 'gold', lacquer: 0x141416, r: 21, bezel: 'leaves', crownGuards: true, caseback: 'screw', backText: 'ZARUMEI · ZC-46 · LUNE · 24H · JOUR · MOIS · OR ROSE · SANS PILE · Nº 076 · ', backMono: 'Z' },
     dial: { kind: 'onelove', r: 16.2, date: false }, hands: { style: 'sword', metal: 'gold' }, bracelet: { style: 'weave', metal: 'gold' },
     rotorText: 'ZARUMEI · ONE LOVE'
   }
