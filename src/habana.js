@@ -176,7 +176,7 @@ export function buildZX60(M, images, watch, cal) {
   const ys = { dial: 0.55, hour: 1.55, min: 1.7, sec: 1.85 };
   const dial = tag(new THREE.Group(), 'dial');
   const sky = new THREE.Mesh(new THREE.CircleGeometry(13.6, 80).rotateX(-Math.PI / 2), groundMat(watch.habana));
-  sky.position.y = 0.78; dial.add(sky);
+  sky.position.y = 0.78; sky.renderOrder = 1; dial.add(sky);
   const rim = new THREE.Mesh(new THREE.TorusGeometry(13.55, 0.18, 8, 64).rotateX(Math.PI / 2), gold);
   rim.position.y = 0.78; dial.add(rim);
   dial.add(hitProxy(M, 13.5, 0.4, 0.78)); ds.add(dial); parts.dial = dial;

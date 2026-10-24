@@ -116,7 +116,7 @@ export const CALIBERS = {
       { id: 'secondWheel', name: 'la rueda de segundos', side: 'dial', coveredBy: ['trainBridge'], tool: 'tweezers' },
       { id: 'thirdWheel', name: 'la rueda media', side: 'dial', coveredBy: ['trainBridge'], tool: 'tweezers' },
       { id: 'interWheel', name: 'la rueda intermedia', side: 'dial', coveredBy: ['trainBridge'], tool: 'tweezers' },
-      { id: 'dial', name: 'la platina estrellada', side: 'dial', coveredBy: ['timeDial', 'bear', 'bearCage', 'diamond', 'diamondCage', 'trainBridge', 'balance', 'escapeWheel', 'secondWheel', 'thirdWheel', 'interWheel'], tool: 'tweezers', screws: [{ s: 1.0, k: 'dial', p: [0, 0.4, -10.4] }, { s: 1.0, k: 'dial', p: [9.0, 0.4, 5.2] }, { s: 1.0, k: 'dial', p: [-9.0, 0.4, 5.2] }] }
+      { id: 'dial', name: 'la platina estrellada', side: 'dial', coveredBy: ['timeDial', 'bear', 'bearCage', 'diamond', 'diamondCage', 'trainBridge', 'balance', 'escapeWheel', 'secondWheel', 'thirdWheel', 'interWheel'], tool: 'tweezers', screws: [{ s: 1.0, k: 'dial', face: true, p: [0, 0.36, -10.4] }, { s: 1.0, k: 'dial', face: true, p: [9.0, 0.36, 5.2] }, { s: 1.0, k: 'dial', face: true, p: [-9.0, 0.36, 5.2] }] }
     ]
   }
 };
@@ -219,9 +219,9 @@ Object.assign(CALIBERS, {
       { id: 'bear', name: 'el oso Cuba', side: 'dial', coveredBy: ['bearCage'], tool: 'tweezers' },
       { id: 'diamondCage', name: 'la jaula del diamante', side: 'dial', coveredBy: [], tool: 'tweezers', screws: [{ s: 0.8, k: 'cage', p: [0, 0.4, -2.5] }, { s: 0.8, k: 'cage', p: [2.5, 0.4, 0] }, { s: 0.8, k: 'cage', p: [0, 0.4, 2.5] }, { s: 0.8, k: 'cage', p: [-2.5, 0.4, 0] }] },
       { id: 'diamond', name: 'el diamante talla brillante', side: 'dial', coveredBy: ['diamondCage'], tool: 'tweezers' },
-      { id: 'palm', name: 'la palma', side: 'dial', coveredBy: [], tool: 'tweezers', screws: [{ s: 0.8, k: 'auto', p: [0, 0.35, 0] }] },
+      { id: 'palm', name: 'la palma', side: 'dial', coveredBy: [], tool: 'tweezers', screws: [{ s: 0.8, k: 'auto', p: [0.78, 0.08, 0.22] }] },
       { id: 'colibri', name: 'el colibrí', side: 'dial', coveredBy: [], tool: 'tweezers', screws: [{ s: 0.8, k: 'auto', p: [0, 0.2, 0] }] },
-      { id: 'castle', name: 'el Morro', side: 'dial', coveredBy: [], tool: 'tweezers', screws: [{ s: 0.8, k: 'auto', p: [0, 0.25, 0] }] },
+      { id: 'castle', name: 'el Morro', side: 'dial', coveredBy: [], tool: 'tweezers', screws: [{ s: 0.8, k: 'auto', p: [0.7, 1.9, 0] }] },
       { id: 'bee', name: 'la abeja', side: 'dial', coveredBy: [], tool: 'tweezers', screws: [{ s: 0.8, k: 'auto', p: [0, 0.15, 0] }] },
       { id: 'trainBridge', name: 'el puente de diamantes', side: 'dial', coveredBy: [], tool: 'tweezers', screws: [{ s: 1.0, k: 'bridge', p: [1.2, 0.55, 0] }, { s: 1.0, k: 'bridge', p: [-0.6, 0.55, 1.05] }, { s: 1.0, k: 'bridge', p: [-0.6, 0.55, -1.05] }], oil: { when: 'after', lube: '9010', msg: '9010 en los rubíes del rodaje, bajo el puente.' } },
       { id: 'balance', name: 'la jaula del turbillón', side: 'dial', coveredBy: [], tool: 'tweezers', requires: ['letdown'], inspect: true, screws: [{ s: 1.0, k: 'cage', p: [2.15, 1.05, 0.15] }, { s: 1.0, k: 'cage', p: [-2.15, 1.05, 0.15] }, { s: 1.0, k: 'cage', p: [0, 1.05, -2.35] }] },
@@ -233,7 +233,7 @@ Object.assign(CALIBERS, {
       { id: 'thirdWheel', name: 'la rueda media', side: 'dial', coveredBy: ['trainBridge'], tool: 'tweezers' },
       { id: 'interWheel', name: 'la rueda intermedia', side: 'dial', coveredBy: ['trainBridge'], tool: 'tweezers' },
       { id: 'centerWheel', name: 'la rueda de centro', side: 'dial', coveredBy: ['trainBridge'], tool: 'tweezers' },
-      { id: 'dial', name: 'la platina calada', side: 'dial', coveredBy: ['secHand', 'minHand', 'hourHand', 'timeDial', 'bear', 'bearCage', 'diamond', 'diamondCage', 'palm', 'colibri', 'castle', 'bee', 'trainBridge', 'balance', 'fixedWheel', 'cageEscape', 'cagePallet', 'escapeWheel', 'secondWheel', 'thirdWheel', 'interWheel', 'centerWheel'], tool: 'tweezers', screws: [{ s: 1.0, k: 'dial', p: [0, 0.42, -11.2] }, { s: 1.0, k: 'dial', p: [9.2, 0.42, 5.4] }, { s: 1.0, k: 'dial', p: [-9.2, 0.42, 5.4] }] },
+      { id: 'dial', name: 'la platina calada', side: 'dial', coveredBy: ['secHand', 'minHand', 'hourHand', 'timeDial', 'bear', 'bearCage', 'diamond', 'diamondCage', 'palm', 'colibri', 'castle', 'bee', 'trainBridge', 'balance', 'fixedWheel', 'cageEscape', 'cagePallet', 'escapeWheel', 'secondWheel', 'thirdWheel', 'interWheel', 'centerWheel'], tool: 'tweezers', screws: [{ s: 1.0, k: 'dial', face: true, p: [0, 0.88, -10.4] }, { s: 1.0, k: 'dial', face: true, p: [9.2, 0.88, 5.4] }, { s: 1.0, k: 'dial', face: true, p: [-9.2, 0.88, 5.4] }] },
       { id: 'repeaterSlide', name: 'la corredera de la repetición', side: 'dial', coveredBy: ['dial'], tool: 'tweezers', screws: [{ s: 0.8, k: 'sub', p: [-0.75, 0.2, 0] }, { s: 0.8, k: 'sub', p: [0.75, 0.2, 0] }] },
       { id: 'rack', name: 'la cremallera de los minutos', side: 'dial', coveredBy: ['repeaterSlide'], tool: 'tweezers' },
       { id: 'snail', name: 'el caracol de minutos', side: 'dial', coveredBy: ['rack'], tool: 'tweezers' },

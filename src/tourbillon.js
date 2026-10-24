@@ -119,7 +119,7 @@ export function buildZT18(M, images, watch, cal) {
   const ys = { dial: 0.42, hour: 1.55, min: 1.72, sec: 1.88 };
   const dial = tag(new THREE.Group(), 'dial');
   const skyMat = new THREE.MeshStandardMaterial({ map: TX.galaxyTexture(watch.astral.sky), roughness: 0.92, metalness: 0.02, emissive: new THREE.Color(watch.astral.sky === 'blue' ? 0x061433 : 0x1a0830), emissiveIntensity: 0.12 });
-  const sky = new THREE.Mesh(new THREE.CircleGeometry(13.5, 96).rotateX(-Math.PI / 2), skyMat); sky.position.y = 0.22; dial.add(sky);
+  const sky = new THREE.Mesh(new THREE.CircleGeometry(13.5, 96).rotateX(-Math.PI / 2), skyMat); sky.position.y = 0.22; sky.renderOrder = 1; dial.add(sky);
   dial.add(new THREE.Mesh(new THREE.TorusGeometry(13.5, 0.2, 8, 80).rotateX(Math.PI / 2), gold));
   dial.add(hitProxy(M, 13.5, 0.4, 0.25)); ds.add(dial); parts.dial = dial;
 
