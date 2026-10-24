@@ -68,7 +68,7 @@ scene.environmentIntensity = 1.05;
 const camera = new THREE.PerspectiveCamera(23, 1, 1, 1500);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true; controls.dampingFactor = 0.08; controls.enablePan = true; controls.screenSpacePanning = true; controls.panSpeed = 0.55;
-controls.maxPolarAngle = 1.25; controls.minPolarAngle = 0.08; controls.rotateSpeed = 0.55; controls.zoomSpeed = 0.65;
+controls.maxPolarAngle = 1.25; controls.minPolarAngle = 0.08; controls.rotateSpeed = 0.55; controls.zoomSpeed = 1.15;
 scene.add(new THREE.HemisphereLight(0xf4efe6, 0x16120e, 0.08));
 // La forma del metal la da el entorno. Estas luces solo modelan y proyectan la sombra de contacto.
 const spot = new THREE.SpotLight(0xfff4e6, 4200, 520, 0.62, 1, 2); spot.position.set(28, 160, 54); spot.target.position.set(0, 4, 4); scene.add(spot, spot.target);
@@ -284,7 +284,8 @@ async function focusPart(id) {
   const dir = cfg.dir.clone().normalize();
   const toPos = w.clone().add(dir.multiplyScalar(dist));
   markView(vname);
-  controls.minDistance = dist * 0.45;
+  // The shot stays at watch distance. Two fingers can still come in to screw scale.
+  controls.minDistance = 10;
   controls.maxDistance = dist * 2.6;
   controls._sphericalDelta.set(0, 0, 0); controls._panOffset.set(0, 0, 0); controls._scale = 1;
   if (SPEED < 0.2) { camera.position.copy(toPos); controls.target.copy(w); controls.update(); positionFloatingTool(); return; }
@@ -307,7 +308,7 @@ async function setView(v, instant = false) {
   view = v; const cfg = VIEWS[v](), dist = fitDistance(cfg.size, v !== 'tray');
   const toPos = cfg.target.clone().add(cfg.dir.clone().normalize().multiplyScalar(dist));
   const close = narrowStage();
-  controls.minDistance = dist * (close ? 0.16 : 0.3);
+  controls.minDistance = 10;
   controls.maxDistance = dist * (close ? 3.6 : 2.4);
   markView(v);
   controls._sphericalDelta.set(0, 0, 0); controls._panOffset.set(0, 0, 0); controls._scale = 1;
