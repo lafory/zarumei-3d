@@ -4,6 +4,8 @@
 // caja, esa esfera o ese rotor ya dicen en 3D.
 // Inventario, ojo del taller y tratos: localStorage de este teléfono. zarumei.peritaje.v1
 import { fmtPrice } from './data/boutique.js';
+import { WATCHES } from './data/watches.js';
+import { CALIBERS } from './data/calibers.js';
 
 const KEY = 'zarumei.peritaje.v1';
 
@@ -14,10 +16,25 @@ export const VERDICTS = [
   { id: 'franken', label: 'Franken' }
 ];
 
-export const TRUTH_LABEL = { real: 'Real', fake: 'Falso', modified: 'Modificado', franken: 'Franken' };
+export const CONDITIONS = [
+  { id: 'nuevo', label: 'Nuevo' },
+  { id: 'bueno', label: 'Buen estado' },
+  { id: 'rayado', label: 'Rayado' },
+  { id: 'agua', label: 'Daño de agua' },
+  { id: 'roto', label: 'Pieza rota' }
+];
+
+export const TRUTH_LABEL = {
+  real: 'Real', fake: 'Falso', modified: 'Modificado', franken: 'Franken',
+  nuevo: 'Nuevo', bueno: 'Buen estado', rayado: 'Rayado', agua: 'Daño de agua', roto: 'Pieza rota'
+};
+
+export function verdictsFor(offer) {
+  return offer && offer.estado ? CONDITIONS : VERDICTS;
+}
 
 // any: marcas que deja el banco (tg, loupe:pieza, remove:pieza, meter:pieza).
-export const OFFERS = [
+const CLASSIC = [
   {
     id: 'mesa-cuba',
     truth: 'real',
@@ -100,7 +117,107 @@ export const OFFERS = [
   }
 ];
 
+// estado = lo que es. claim = lo que dice el vendedor (casi siempre un grado mejor).
+// El precio de mesa no es el de boutique: es lo que se paga en el banco, con el saldo del taller.
+const TIER = {
+  rose: 1400, lira: 1600, recta: 1900,
+  cuba: 2000, miami: 2600, octava: 2300, ancla: 2800,
+  mascara: 2700, diablo: 3000, cuerno: 2900, fiesta: 3200, marte: 3300, cosmos: 3400, espina: 3600,
+  ala: 4300, hoja: 4500, orbital: 4700, onelove: 4900,
+  astralCuba: 6000, astralMiami: 6400, verano: 6600, nacar: 7000, noche: 7800
+};
+const MULT = { nuevo: 1, bueno: 0.72, rayado: 0.5, agua: 0.34, roto: 0.28 };
+const DICHO = {
+  nuevo: 'nuevo, sin estrenar',
+  bueno: 'en buen estado',
+  rayado: 'con un roce de nada',
+  agua: 'seco y sano',
+  roto: 'entero, solo hay que regularlo'
+};
+// [watchId, estado, claim, fault, story]
+const MESA = [
+  ['ala', 'nuevo', 'nuevo', 'sinFalla', 'De la vitrina. «Ni una muñeca. El film sigue puesto».'],
+  ['lira', 'nuevo', 'nuevo', 'sinFalla', 'Regalo que no se estrenó. «Los papeles van en el cajón».'],
+  ['fiesta', 'nuevo', 'nuevo', 'sinFalla', 'Lo sacó de la caja para una foto y lo guardó. Dice que está virgen.'],
+  ['noche', 'nuevo', 'nuevo', 'sinFalla', 'Pieza de colección. «Sin uso, precio de casa».'],
+  ['miami', 'bueno', 'nuevo', 'sinFalla', 'De Brickell. «Dos cenas y al cajón. Está nuevo».'],
+  ['ancla', 'bueno', 'nuevo', 'sinFalla', 'La dueña: «Casi sin uso. Como salió de la casa».'],
+  ['hoja', 'bueno', 'nuevo', 'sinFalla', 'Un mes guardado. «Impecable, ni lo puse en hora».'],
+  ['octava', 'bueno', 'nuevo', 'sinFalla', '«Me quedaba grande. No llegó a la muñeca».'],
+  ['orbital', 'bueno', 'nuevo', 'sinFalla', 'Exhibición, dice. Pide precio de pieza sin estrenar.'],
+  ['cuba', 'rayado', 'bueno', 'sinFalla', 'Buceo de verdad. «Está bien. Un roce en el bisel, nada más».'],
+  ['diablo', 'rayado', 'bueno', 'sinFalla', 'Uso de diario. «Se ve entero. El rojo es así de fábrica».'],
+  ['cosmos', 'rayado', 'bueno', 'sinFalla', '«Lo dejé en el escritorio. Unas marcas, pero está sano».'],
+  ['mascara', 'rayado', 'bueno', 'sinFalla', 'Unos meses en la muñeca. «El negro disimula. Buen estado».'],
+  ['recta', 'rayado', 'bueno', 'sinFalla', 'Oro de vestir. «Un par de citas. Ni se nota».'],
+  ['verano', 'agua', 'bueno', 'humedad', 'Del yate. «Se paró. Con cuerda vuelve. Por fuera está seco».'],
+  ['marte', 'agua', 'bueno', 'humedad', '«Se me olvidó en la ducha. Ya lo sequé. Está bien».'],
+  ['rose', 'agua', 'bueno', 'humedad', '«El cuarzo se paró. Será la pila. La caja está nueva».'],
+  ['cuerno', 'agua', 'bueno', 'humedad', 'Playa en Key Biscayne. «Lo sequé enseguida. El oro no se daña».'],
+  ['espina', 'agua', 'bueno', 'humedad', 'La lancha. «Se mojó un momento. Funciona, solo hay que darle cuerda».'],
+  ['astralMiami', 'roto', 'bueno', 'ejeRoto', 'Golpe en el mostrador. «Se atrasa. Es regularlo, el turbillón está entero».'],
+  ['astralCuba', 'roto', 'bueno', 'ejeRoto', '«Se cayó de la mesita. Si lo agitas, late. Nada roto».'],
+  ['nacar', 'roto', 'bueno', 'ejeRoto', 'Golpe en el bisel. «El turbillón está entero, me lo juró el que lo trae».'],
+  ['onelove', 'roto', 'bueno', 'ejeRoto', '«El segundero se ve raro. Por lo demás está nuevo».' ]
+];
+
 const snap = (n) => Math.max(50, Math.round(n / 10) * 10);
+
+function mesaChecks(w, estado) {
+  const quartz = CALIBERS[w.caliber].type === 'quartz';
+  const snapBack = w.case.caseback === 'snap';
+  const backHint = snapBack
+    ? 'Voltea el reloj y abre el fondo a presión con la cuchilla.'
+    : 'Voltea el reloj y abre el fondo roscado con la llave.';
+  const tg = {
+    nuevo: quartz ? 'Impulsos limpios de cuarzo. No hay desgaste que medir.' : 'Marcha sana y amplitud alta. Esto no se ha llevado.',
+    bueno: quartz ? 'Cuarzo estable. Uso corto, nada que reparar.' : 'En marcha, amplitud sana. Uso leve: no está nuevo, tampoco enfermo.',
+    rayado: 'Late bien. El desgaste no está en el calibre: está en la caja y el cristal.',
+    agua: 'Silencio. No es la cuerda ni la pila: este silencio es de agua dentro.',
+    roto: 'Parado de golpe. La traza no arranca: el volante no está entero.'
+  }[estado];
+  const cara = {
+    nuevo: 'Film de taller todavía en el cristal, y la etiqueta. Ni una raya.',
+    bueno: 'Un roce fino de puño. No está nuevo: está sano, y se nota.',
+    rayado: 'Varias rayas en el cristal y en el canto. Se usó de verdad.',
+    agua: 'El cristal está empañado por dentro. Hay gotas. Eso no es polvo.',
+    roto: 'El segundero está doblado. El golpe llegó más adentro que la caja.'
+  }[estado];
+  const out = [
+    { id: 'tg', any: ['tg'], hint: 'Pon el timegrapher y toca el reloj.', text: tg },
+    { id: 'cara', any: ['loupe:dial', 'loupe:hourHand', 'loupe:minHand', 'loupe:secHand'], hint: 'Lupa sobre la esfera, el cristal o las agujas.', text: cara }
+  ];
+  if (estado === 'agua') out.push({ id: 'fondo', any: ['remove:caseback'], hint: backHint, text: 'Al abrir: verdín en el canto del movimiento. Entró agua y se quedó.' });
+  if (estado === 'roto') out.push({ id: 'eje', any: ['loupe:secHand', 'loupe:balance'], hint: 'Lupa en el segundero. Si abres el fondo, en el volante.', text: 'Segundero doblado. El eje del volante no sobrevivió el golpe.' });
+  return out;
+}
+
+function mesaOffers() {
+  return MESA.map(([id, estado, claim, fault, story]) => {
+    const w = WATCHES[id];
+    const base = TIER[id];
+    const fair = snap(base * MULT[estado]);
+    return {
+      id: 'estado-' + id,
+      estado,
+      fault,
+      truth: estado,
+      watchId: id,
+      fair,
+      floor: snap(fair * 0.84),
+      floorBlind: snap(base * MULT[claim] * 1.05),
+      claim: {
+        title: w.name,
+        line: 'Dice que está ' + DICHO[claim],
+        story,
+        ask: snap(base * MULT[claim] * 1.22)
+      },
+      checks: mesaChecks(w, estado)
+    };
+  });
+}
+
+export const OFFERS = [...CLASSIC, ...mesaOffers()];
 
 export function offerById(id) { return OFFERS.find(o => o.id === id) || null; }
 

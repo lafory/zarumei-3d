@@ -28,7 +28,7 @@ import { unlock as unlockAudio, play as playSfx, pulse as pulseSfx, setMuted, is
 import { vaticanNow } from './vatican.js';
 import * as book from './accounts.js';
 import { BUILD_OPTS, DRAFT_ID, watchFromSpec, loadBuilds, rememberBuild, markBuildReady, isBuildReady, forgetBuild, cleanName, suggestedName, dialFits, caseFits, cieloFits, buildSummary } from './build.js';
-import { OFFERS, VERDICTS, TRUTH_LABEL, offerById, periState, isClosed, inventory, nextLook, takeLooks, quotes, answer, recordDeal } from './peritaje.js';
+import { OFFERS, TRUTH_LABEL, offerById, periState, isClosed, inventory, nextLook, takeLooks, quotes, answer, recordDeal, verdictsFor } from './peritaje.js';
 import { localStock, makeCode, cleanCode, openRoom } from './dealroom.js';
 
 const $ = (s) => document.querySelector(s);
@@ -604,6 +604,7 @@ function buildWorld(watchId, faultId, story, opts = {}) {
   const E = createEngine({ watchId, faultId, story, empty: !!opts.empty });
   G = { W, cal, MV, CS, root, mvMount, mvObj: MV.mv, parts, home, E, slots: {}, nextSlot: 0, extra: [], amp: 0 };
   initFaultVisuals();
+  if (opts.condition) dressCondition(opts.condition);
   if (opts.empty) layoutFromState();
   else refreshGhosts();
 }
@@ -612,6 +613,89 @@ function initFaultVisuals() {
   if (f === 'aceiteSeco' && S.dirt) { S.dirt.visible = true; S.dirt.material.color.set(0x7a5a24); }
   if (f === 'ejeRoto' && S.pivot) { S.pivot.rotation.z = 0.9; S.pivot.position.x = 0.25; }
   if (f === 'desregulado' && S.regulator) S.regulator.rotation.y = 0.62;
+}
+function frontCrystal() {
+  let best = null, area = 0;
+  G.root.updateWorldMatrix(true, true);
+  G.root.traverse(o => {
+    if (!o.isMesh || o.material !== M.crystal) return;
+    const b = new THREE.Box3().setFromObject(o);
+    const a = (b.max.x - b.min.x) * (b.max.z - b.min.z);
+    if (a > area) { area = a; best = b; }
+  });
+  return best;
+}
+// Marcas del peritaje, encima del reloj de verdad. No interceptan los toques.
+function dressCondition(kind) {
+  if (!G || !kind) return;
+  const box = frontCrystal();
+  if (!box) return;
+  const noPick = (m) => { m.raycast = () => {}; m.userData.noPick = true; m.renderOrder = 8; return m; };
+  const center = new THREE.Vector3();
+  box.getCenter(center); center.y = box.max.y;
+  G.root.worldToLocal(center);
+  const y = center.y + 0.05;
+  const span = Math.min(box.max.x - box.min.x, box.max.z - box.min.z);
+  const s = THREE.MathUtils.clamp(span / 30, 0.62, 1.2);
+  const wear = new THREE.Group(); wear.name = 'wear';
+  const hair = new THREE.MeshBasicMaterial({ color: 0xfff6e4, transparent: true, opacity: 0.92, depthWrite: false });
+  const scratch = (x, z, len, rot, opacity) => {
+    const mat = opacity === 0.92 ? hair : hair.clone();
+    if (opacity !== 0.92) mat.opacity = opacity;
+    const m = noPick(new THREE.Mesh(new THREE.BoxGeometry(0.07 * s, 0.02, len * s), mat));
+    m.position.set(center.x + x * s, y, center.z + z * s);
+    m.rotation.y = rot;
+    wear.add(m);
+  };
+  if (kind === 'bueno') {
+    scratch(1.4, -0.6, 2.6, 0.55, 0.55);
+    scratch(-1.8, 1.1, 1.7, -0.4, 0.32);
+  }
+  if (kind === 'rayado' || kind === 'roto') {
+    const lines = [[-2.4, 0.8, 6.4, 0.35], [1.6, -1.4, 5.2, -0.7], [0.3, 2.1, 4.1, 1.05], [-1.5, -1.8, 7.2, 0.12], [2.6, 0.5, 3.4, -0.45], [-0.5, -0.2, 4.4, 0.85], [1.9, 1.7, 2.8, -1.15]];
+    for (const l of lines) scratch(l[0], l[1], l[2], l[3], kind === 'roto' ? 0.8 : 0.95);
+    if (kind === 'roto') {
+      const crack = new THREE.MeshBasicMaterial({ color: 0x14110c, transparent: true, opacity: 0.9, depthWrite: false });
+      for (const [x, z, len, rot] of [[0.5, 0.3, 8.2, 0.32], [-0.7, -0.5, 6.2, -0.78]]) {
+        const m = noPick(new THREE.Mesh(new THREE.BoxGeometry(0.1 * s, 0.03, len * s), crack));
+        m.position.set(center.x + x * s, y + 0.02, center.z + z * s); m.rotation.y = rot; wear.add(m);
+      }
+    }
+  }
+  if (kind === 'agua') {
+    const dx = (box.max.x - box.min.x) * 0.78;
+    const dz = (box.max.z - box.min.z) * 0.78;
+    const flat = G.W.case.style === 'tank' || dz < dx * 0.82;
+    const fogGeo = flat ? new THREE.PlaneGeometry(dx, dz).rotateX(-Math.PI / 2) : new THREE.CircleGeometry(Math.min(dx, dz) * 0.5, 48).rotateX(-Math.PI / 2);
+    const fog = noPick(new THREE.Mesh(fogGeo, new THREE.MeshPhysicalMaterial({ color: 0xc5d4cc, transparent: true, opacity: 0.58, roughness: 0.08, metalness: 0, depthWrite: false })));
+    fog.position.set(center.x, y - 0.06, center.z); wear.add(fog);
+    const dropMat = new THREE.MeshPhysicalMaterial({ color: 0xe7f4f8, transparent: true, opacity: 0.72, roughness: 0.04, metalness: 0, depthWrite: false });
+    for (const [x, z, r] of [[-2.4, 1.2, 0.55], [1.8, -1.0, 0.38], [0.5, 2.4, 0.28], [-0.8, -2.1, 0.22]]) {
+      const d = noPick(new THREE.Mesh(new THREE.SphereGeometry(r * s, 12, 8), dropMat));
+      d.scale.y = 0.42; d.position.set(center.x + x * s, y + 0.02, center.z + z * s); wear.add(d);
+    }
+    const rust = new THREE.MeshStandardMaterial({ color: 0x3d6b40, roughness: 0.9, metalness: 0.04 });
+    for (const [x, z] of [[5.4, 2.2], [-3.6, 4.8], [1.2, -5.8]]) {
+      const spot = noPick(new THREE.Mesh(new THREE.SphereGeometry(0.48, 10, 8), rust));
+      spot.scale.y = 0.35; spot.position.set(x, 1.15, z); G.mvObj.add(spot);
+    }
+  }
+  if (kind === 'nuevo') {
+    const film = noPick(new THREE.Mesh(new THREE.TorusGeometry(Math.max(3.4, span * 0.28), 0.08, 6, 56).rotateX(Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.7, depthWrite: false })));
+    film.position.set(center.x, y + 0.03, center.z); wear.add(film);
+    const cv = document.createElement('canvas'); cv.width = 256; cv.height = 128;
+    const g = cv.getContext('2d'); g.fillStyle = '#f4efe2'; g.fillRect(0, 0, 256, 128);
+    g.strokeStyle = '#8a6828'; g.lineWidth = 8; g.strokeRect(10, 10, 236, 108);
+    g.fillStyle = '#1a140c'; g.font = '600 46px Georgia, serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('NUEVO', 128, 64);
+    const map = new THREE.CanvasTexture(cv); map.colorSpace = THREE.SRGBColorSpace;
+    const tag = noPick(new THREE.Mesh(new THREE.PlaneGeometry(3.8 * s, 1.9 * s), new THREE.MeshStandardMaterial({ map, roughness: 0.75, metalness: 0 })));
+    tag.rotation.x = -Math.PI / 2; tag.position.set(center.x, y + 0.08, center.z + Math.min(span * 0.22, 5.2)); wear.add(tag);
+  }
+  if (kind === 'roto' && G.parts.secHand) {
+    const r = G.parts.secHand.getObjectByName('rot');
+    if (r) { r.rotation.z = 0.85; r.rotation.x = 0.22; r.position.x += 0.35; }
+  }
+  G.root.add(wear);
 }
 
 // ───────── bandeja y movimientos de piezas ─────────
@@ -1564,7 +1648,10 @@ function periObserve(r) {
   }
   if (tap && tap.tool === 'meter' && tap.id) tags.push('meter:' + tap.id);
   const fresh = takeLooks(peri.offer, peri.found, tags);
-  if (fresh.length) say((r.msg ? r.msg + '<br>' : '') + fresh.map(t => `<b>${esc(t)}</b>`).join('<br>'), 'good');
+  if (fresh.length) {
+    const base = (r.msg || '').replace(/:\s*se ve bien, sin daños visibles\.?/i, '.');
+    say((base ? base + '<br>' : '') + fresh.map(t => `<b>${esc(t)}</b>`).join('<br>'), 'good');
+  }
   updateBar();
 }
 function renderPeriOwn() {
@@ -1584,7 +1671,11 @@ function renderPeriMenu() {
   const rep = $('#periRep');
   if (rep) rep.textContent = `Ojo del taller ${db.rep}/100 · saldo ${fmtPrice(wallet.balance)} · en este teléfono`;
   const open = OFFERS.filter(o => !isClosed(o.id));
-  host.innerHTML = open.length ? open.map(o => `<button type="button" class="casecard" data-offer="${esc(o.id)}"><div><b>${esc(o.claim.title)}</b><span>${esc(o.claim.line)} · pide ${fmtPrice(o.claim.ask)}</span></div><div class="ticket">${esc(o.claim.story)}</div></button>`).join('') : '<p class="small">Hoy no queda nadie en la mesa. Lo que ya compraste está en Modo libre, bajo «Del peritaje».</p>';
+  const card = (o) => `<button type="button" class="casecard" data-offer="${esc(o.id)}"><div><b>${esc(o.claim.title)}</b><span>${esc(o.claim.line)} · pide ${fmtPrice(o.claim.ask)}</span></div><div class="ticket">${esc(o.claim.story)}</div></button>`;
+  const block = (title, list) => list.length ? `<p class="cinzel" style="margin-top:14px">${title}</p>` + list.map(card).join('') : '';
+  const auth = open.filter(o => !o.estado);
+  const mesa = open.filter(o => o.estado).slice().sort((a, b) => a.claim.title.localeCompare(b.claim.title, 'es'));
+  host.innerHTML = open.length ? block('Autenticidad', auth) + block('Estado · todos los relojes', mesa) : '<p class="small">Hoy no queda nadie en la mesa. Lo que ya compraste está en Modo libre, bajo «Del peritaje».</p>';
   host.querySelectorAll('[data-offer]').forEach(b => b.onclick = () => startPeritaje(b.dataset.offer));
 }
 function renderPeriPanel() {
@@ -1601,7 +1692,8 @@ function renderPeriPanel() {
     body.innerHTML = `<p class="cinzel">${esc(o.claim.title)}</p><p class="periLine">${esc(peri.lastLine || '')}</p><p class="small">Saldo ${fmtPrice(wallet.balance)} · ronda ${peri.round + 1} de 4</p>${clues}<div class="optrow">${bid('mid', 'Pago hasta', q.mid)}${bid('low', 'Puedo bajar a', q.low)}${bid('hard', 'Solo puedo pagar', q.hard)}${bid('close', 'Sube un poco y lo cierro', q.close)}<button type="button" class="fchip" data-bid="walk">Me levanto</button></div>`;
     return;
   }
-  body.innerHTML = `<p class="cinzel">${esc(o.claim.title)}</p><p class="small">${esc(o.claim.line)} · pide ${fmtPrice(o.claim.ask)}</p><p class="periLine">${esc(o.claim.story)}</p>${clues}<p class="cinzel">Veredicto</p><div class="optrow">${VERDICTS.map(v => `<button type="button" class="fchip${peri.verdict === v.id ? ' on' : ''}" data-verdict="${v.id}">${v.label}</button>`).join('')}</div>`;
+  const choices = verdictsFor(o);
+  body.innerHTML = `<p class="cinzel">${esc(o.claim.title)}</p><p class="small">${esc(o.claim.line)} · pide ${fmtPrice(o.claim.ask)}</p><p class="periLine">${esc(o.claim.story)}</p>${clues}<p class="cinzel">Veredicto</p><div class="optrow">${choices.map(v => `<button type="button" class="fchip${peri.verdict === v.id ? ' on' : ''}" data-verdict="${v.id}">${v.label}</button>`).join('')}</div>`;
 }
 function openPeriPanel() {
   if (!peri) return;
@@ -1616,7 +1708,7 @@ function finishPeri(paid, walked, line) {
   if (!walked) wallet.add(-paid);
   peri.phase = 'done';
   const truth = TRUTH_LABEL[peri.offer.truth];
-  const yours = VERDICTS.find(v => v.id === peri.verdict).label;
+  const yours = verdictsFor(peri.offer).find(v => v.id === peri.verdict).label;
   peri.doneHtml = `${line} ${res.note} Tú dijiste ${yours}; era ${truth}. Ojo del taller ${res.rep}/100 (${res.delta >= 0 ? '+' : ''}${res.delta}).${walked ? '' : ` Pagaste ${fmtPrice(paid)}. Queda en Modo libre.`}`;
   periBtnLabel();
   renderPeriPanel();
@@ -1645,7 +1737,7 @@ function startPeritaje(offerId) {
   document.body.classList.remove('buildpeek');
   peri = { offer, found: new Set(), phase: 'inspect', verdict: null, round: 0, lastLine: '', doneHtml: '' };
   mode = 'peritaje'; storyCase = null;
-  return begin(offer.watchId, 'sinFalla', null);
+  return begin(offer.watchId, offer.fault || 'sinFalla', null, { condition: offer.estado || null });
 }
 let playWatch = 'miami', playFault = 'sinFalla', portraitsWanted = false;
 document.querySelectorAll('.tab').forEach(t => t.onclick = () => showTab(t.dataset.tab));
@@ -1922,7 +2014,7 @@ window.__game = {
   get peri() { return peri ? { phase: peri.phase, found: [...peri.found], verdict: peri.verdict, offer: peri.offer.id, round: peri.round } : null; },
   get state() { if (!G) return null; const E = G.E; return { watch: E.W.id, fault: E.F.id, score: E.score, finished: E.finished, goal: E.goal(), flags: { ...E.flags }, stats: { ...E.stats }, out: Object.keys(E.st).filter(k => E.st[k] === 'out'), screwsOut: Object.values(E.screws).filter(s => s.state !== 'in').length, fstep: E.fstep }; },
   get info() { const i = renderer.info.render; return { calls: i.calls, triangles: i.triangles, geometries: renderer.info.memory.geometries, textures: renderer.info.memory.textures }; },
-  startStory, startPlay, openMenu, openLanding, closeLanding, setSpeed: (s) => (SPEED = s), setView: (v) => setView(v),
+  startStory, startPlay, startPeritaje, openMenu, openLanding, closeLanding, setSpeed: (s) => (SPEED = s), setView: (v) => setView(v),
   selectTool: (id) => selectTool(id), setSize,
   suggest: () => G.E.suggest(), describe: (a) => G.E.describe(a),
   screwPose(sid) {

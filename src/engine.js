@@ -65,6 +65,7 @@ export function createEngine({ watchId, faultId, story = null, empty = false }) 
     return `Primero abre ${name('caseback')}.`;
   }
   const running = () => {
+    if (F.id === 'humedad') return false;
     if (quartz) {
       const need = ['battery', 'circuit', 'coil', 'trainBridge', 'stepRotor', 'secondWheel', 'thirdWheel', 'fifthWheel', 'centerWheel'];
       if (!need.every(i => st[i] === 'in')) return false;
@@ -78,7 +79,10 @@ export function createEngine({ watchId, faultId, story = null, empty = false }) 
     return true;
   };
   function tgRead() {
-    if (!running()) return { none: true, note: quartz ? 'Sin impulsos del motor: <b>no funciona</b>.' : (flags.letdown ? 'Sin cuerda: el muelle real está descargado.' : 'Sin tic-tac: el reloj está <b>parado</b>.') };
+    if (!running()) {
+      if (F.id === 'humedad') return { none: true, note: 'Silencio total. No es falta de cuerda: hay <b>agua dentro</b>.' };
+      return { none: true, note: quartz ? 'Sin impulsos del motor: <b>no funciona</b>.' : (flags.letdown ? 'Sin cuerda: el muelle real está descargado.' : 'Sin tic-tac: el reloj está <b>parado</b>.') };
+    }
     if (!faultFixed() && F.tg && F.tg.before) return F.tg.before;
     return quartz ? TG_OK.quartz : (F.free ? F.tg.before : TG_OK.auto);
   }

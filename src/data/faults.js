@@ -80,6 +80,13 @@ export const FAULTS = {
     ],
     lessons: ['Si la pila está bien y no hay impulsos, se mide la bobina: circuito abierto = bobina cortada.', 'Antes de tocar el circuito se quita la pila.']
   },
+  humedad: {
+    id: 'humedad', name: 'Agua dentro', short: 'Agua', calibers: ['mesa'],
+    symptom: '"Se paró después del mar."',
+    tg: { before: null },
+    steps: [],
+    lessons: ['El agua se ve en el cristal empañado y en el verdín. No vuelve con cuerda ni con una pila nueva.']
+  },
   sinFalla: {
     id: 'sinFalla', name: 'Sin falla · desarme libre', short: 'Libre', calibers: ['auto', 'quartz', 'tourbillon'], free: true,
     symptom: 'Práctica libre: desarma todo lo que quieras y vuelve a montarlo.',

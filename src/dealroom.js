@@ -8,7 +8,7 @@ import { inventory, dropInventory, receiveInventory } from './peritaje.js';
 
 const BROKERS = ['wss://broker.hivemq.com:8884/mqtt', 'wss://broker.emqx.io:8084/mqtt'];
 const STUN = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
-const TRUTHS = ['real', 'fake', 'modified', 'franken'];
+const TRUTHS = ['real', 'fake', 'modified', 'franken', 'nuevo', 'bueno', 'rayado', 'agua', 'roto'];
 
 export function makeCode() {
   const A = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';

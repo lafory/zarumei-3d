@@ -406,7 +406,7 @@ body:not(.land) #landScroll{display:none!important}
     </div>
     <div id="periPane" hidden>
       <p class="cinzel" style="margin-top:12px">Mesa de peritaje</p>
-      <p class="small">Te dejan un reloj y un cuento. Lo miras en el banco con la lupa, el timegrapher y el fondo. Luego das el veredicto y, si quieres, cierras el precio. El saldo y lo que compras quedan en este teléfono.</p>
+      <p class="small">Te dejan un reloj y un cuento. Unos son de verdad y otros no. Y cada reloj de la casa puede llegar nuevo, en buen estado, rayado, con agua dentro o con una pieza rota. Lupa, timegrapher y el fondo. Luego el veredicto y, si quieres, el precio. Queda en este teléfono.</p>
       <p class="small" id="periRep"></p>
       <div id="dealBox">
         <p class="cinzel">Deal Room</p>
@@ -496,7 +496,7 @@ body:not(.land) #landScroll{display:none!important}
   <div id="bqDetail" hidden><button class="lux" id="bqBack">← Volver</button><div id="bqStage"></div><div id="bqInfo"></div></div>
 </div>
 
-<script src="game.js?v=recta1"></script>
+<script src="game.js?v=peri1"></script>
 <script>
 setInterval(function(){var g=window.__game;if(!g||!g.started)return;var el=document.getElementById('timer');if(!el._t0)el._t0=Date.now();if(document.getElementById('endOverlay').hidden){var e=Math.floor((Date.now()-el._t0)/1000);el.textContent=Math.floor(e/60)+':'+String(e%60).padStart(2,'0');}},500);
 document.getElementById('menuTop').onclick=function(){ if (window.__game && __game.openMenu) __game.openMenu(); else document.getElementById('intro').hidden=false; };
