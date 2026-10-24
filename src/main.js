@@ -138,12 +138,10 @@ function fitDistance(sz, contain) {
   if (!contain && aspect < 0.92) return vert * 1.06;
   return Math.max(vert, horiz) * 1.05;
 }
-function workSize(sz) { return narrowStage() ? sz * 0.74 : sz; }
-function workDir() { return narrowStage() ? new THREE.Vector3(0, 0.78, 1) : new THREE.Vector3(0, 1, 0.5); }
 const VIEWS = {
-  front: () => ({ target: new THREE.Vector3(0, 4, 4), size: workSize(G && G.W.case.style === 'slim' ? 46 : G && G.W.case.style === 'astral' ? 50 : 52), dir: workDir() }),
-  back: () => ({ target: new THREE.Vector3(0, 3, 2), size: workSize(46), dir: workDir() }),
-  holder: () => ({ target: HOLDER_POS.clone().add(new THREE.Vector3(0, 10, 0)), size: workSize(36), dir: narrowStage() ? new THREE.Vector3(0, 0.92, 0.88) : new THREE.Vector3(0, 1, 0.45) }),
+  front: () => ({ target: new THREE.Vector3(0, 4, 4), size: G && G.W.case.style === 'slim' ? 46 : G && G.W.case.style === 'astral' ? 50 : 52, dir: new THREE.Vector3(0, 1, 0.5) }),
+  back: () => ({ target: new THREE.Vector3(0, 3, 2), size: 46, dir: new THREE.Vector3(0, 1, 0.5) }),
+  holder: () => ({ target: HOLDER_POS.clone().add(new THREE.Vector3(0, 10, 0)), size: 36, dir: new THREE.Vector3(0, 1, 0.45) }),
   mat: () => ({ target: INSPECT_POS.clone().add(new THREE.Vector3(0, 2.2, 0)), size: 13, dir: new THREE.Vector3(0, 1, 0.42) }),
   tray: () => {
     const dir = narrowStage() ? new THREE.Vector3(0, 0.72, 0.95) : new THREE.Vector3(0, 1, 0.38);
@@ -271,30 +269,23 @@ function homeWorld(id) {
   h.parent.updateWorldMatrix(true, false);
   return h.pos.clone().applyMatrix4(h.parent.matrixWorld);
 }
-function focusSpan(id) {
-  const obj = G.parts[id];
-  if (!obj) return 16;
-  const box = new THREE.Box3().setFromObject(obj);
-  const sz = box.getSize(new THREE.Vector3());
-  const raw = Math.max(sz.x, sz.z);
-  if (!isFinite(raw) || raw < 0.4) return 16;
-  if (id === 'movement' || id === 'caseback' || id === 'dial') return Math.min(44, Math.max(22, raw * 1.15));
-  if (raw < 8) return 15;
-  if (raw < 18) return raw * 2.05;
-  return Math.min(36, raw * 1.25);
+function focusSpan() {
+  if (G && G.E && G.E.flags.mvLoc === 'holder') return 44;
+  return 58;
 }
 async function focusPart(id) {
   if (!G || view === 'libre' || !G.home[id]) return;
   const w = homeWorld(id);
   if (!w) return;
   const gen = ++focusGen;
-  const span = focusSpan(id);
-  const dir = (narrowStage() ? new THREE.Vector3(0.28, 0.8, 1) : new THREE.Vector3(0.22, 1, 0.78)).normalize();
-  const dist = fitDistance(span);
+  const vname = workView();
+  const cfg = VIEWS[vname]();
+  const dist = fitDistance(Math.max(cfg.size, focusSpan()), true);
+  const dir = cfg.dir.clone().normalize();
   const toPos = w.clone().add(dir.multiplyScalar(dist));
-  markView(workView());
-  controls.minDistance = Math.max(6, dist * 0.32);
-  controls.maxDistance = Math.max(dist * 4.4, 90);
+  markView(vname);
+  controls.minDistance = dist * 0.45;
+  controls.maxDistance = dist * 2.6;
   controls._sphericalDelta.set(0, 0, 0); controls._panOffset.set(0, 0, 0); controls._scale = 1;
   if (SPEED < 0.2) { camera.position.copy(toPos); controls.target.copy(w); controls.update(); positionFloatingTool(); return; }
   const p0 = camera.position.clone(), t0v = controls.target.clone();
@@ -313,7 +304,7 @@ async function setView(v, instant = false) {
   const shot = view === 'libre' ? libreShot : null;
   if (view === 'libre') stopLibre();
   if (!VIEWS[v]) v = 'front';
-  view = v; const cfg = VIEWS[v](), dist = fitDistance(cfg.size, v === 'tg');
+  view = v; const cfg = VIEWS[v](), dist = fitDistance(cfg.size, v !== 'tray');
   const toPos = cfg.target.clone().add(cfg.dir.clone().normalize().multiplyScalar(dist));
   const close = narrowStage();
   controls.minDistance = dist * (close ? 0.16 : 0.3);
@@ -1357,7 +1348,7 @@ async function chipTap(id, force) {
     const pre = G.E.placeCheck(id, sel, size);
     if (pre && pre.seek) {
       showSeat(id); renderTray(); sfx('seat');
-      say(`Tienes <b>${G.E.name(id)}</b>. La cámara se acerca: toca el <b>anillo dorado</b>. Un dedo gira, dos pellizcan.`);
+      say(`Tienes <b>${G.E.name(id)}</b>. Toca el <b>anillo dorado</b> en el reloj. Un dedo gira, dos pellizcan.`);
       focusPart(id);
       return;
     }
@@ -1426,7 +1417,6 @@ $('#hintBtn').onclick = () => {
   if (a.target && a.target.chip) { const c = document.querySelector(`.chip[data-chip="${a.target.chip}"]`); if (c) c.classList.add('hint'); if (seatMode && a.tool !== 'oiler' && a.tool !== 'screwdriver') say(h.msg + ' Luego toca el <b>anillo dorado</b> donde va.'); }
   if (a.target && a.target.screw && G.E.screws[a.target.screw]) focusPart(G.E.screws[a.target.screw].part);
   else if (a.target && a.target.chip && G.home[a.target.chip]) focusPart(a.target.chip);
-  else if (a.target && a.target.part && a.target.part !== 'watch' && a.target.part !== 'movement' && G.home[a.target.part] && focusSpan(a.target.part) <= 24) focusPart(a.target.part);
   const obj = a.target && (a.target.screw ? G.MV.screws[a.target.screw].obj : G.parts[a.target.part || a.target.sub]);
   if (obj && a.target.part !== 'movement') highlight(obj);
 };
