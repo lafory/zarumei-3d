@@ -133,7 +133,7 @@ const VIEWS = {
   loupe: () => ({ target: loupeTarget.c, size: Math.max(7, loupeTarget.r * 2.1), dir: new THREE.Vector3(0, 1, 0.42) }),
   tg: () => { const c = new THREE.Vector3(), n = new THREE.Vector3(0, 0, 1); T.screen.getWorldPosition(c); n.applyQuaternion(T.screen.getWorldQuaternion(new THREE.Quaternion())); return { target: c.add(new THREE.Vector3(-6, -2, 0)), size: 62, dir: n.add(new THREE.Vector3(0, 0.35, 0)) }; }
 };
-const VIEW_NAMES = { front: 'esfera', back: 'fondo / movimiento', holder: 'movimiento en el soporte', mat: 'alfombrilla de inspección', tray: 'bandeja de piezas', loupe: 'lupa x10', tg: 'timegrapher', libre: 'libre' };
+const VIEW_NAMES = { front: 'esfera', back: 'fondo', holder: 'soporte', mat: 'alfombrilla de inspección', tray: 'bandeja de piezas', loupe: 'lupa x10', tg: 'timegrapher', libre: 'libre' };
 let fly = null, fovFade = 0, libreFrom = null, libreShot = null;
 const FLY_SPEED = 90;
 function flyLook() {
@@ -280,6 +280,7 @@ async function setView(v, instant = false) {
   if (v === 'libre') { startLibre(); return; }
   const shot = view === 'libre' ? libreShot : null;
   if (view === 'libre') stopLibre();
+  if (v === 'watch') v = G && G.E.flags.flipped ? 'back' : 'front'; // ⌚: el lado que de verdad está arriba
   if (!VIEWS[v]) v = 'front';
   view = v; const cfg = VIEWS[v](), dist = fitDistance(cfg.size, v !== 'tray');
   const toPos = cfg.target.clone().add(cfg.dir.clone().normalize().multiplyScalar(dist));
@@ -1540,7 +1541,7 @@ function paintWho() {
   bar.hidden = false;
   $('#whoName').textContent = u.name;
   $('#whoRole').textContent = u.role === 'admin' ? 'Administrador' : u.role === 'guest' ? 'Invitado' : 'Relojero';
-  $('#whoStat').textContent = `${u.stats.watches} relojes · más rápido ${book.fmtMs(u.stats.bestMs)} · ★ ${u.stats.bestScore}`;
+  $('#whoStat').textContent = `${u.stats.watches} ${u.stats.watches === 1 ? 'reloj' : 'relojes'}${u.stats.bestMs ? ' · récord ' + book.fmtMs(u.stats.bestMs) : ''} · ★ ${u.stats.bestScore}`;
 }
 function renderSaves() {
   const box = $('#saveList'); if (!box) return;

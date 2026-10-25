@@ -116,7 +116,7 @@ export function createEngine({ watchId, faultId, story = null, empty = false }) 
     return R('info', 'Toca la <b>pila</b> o la <b>bobina</b> con las puntas del multímetro (abre el fondo).');
   }
   function diagTool(tool, target) {
-    if (tool === 'timegrapher') { diagDone.add('timegrapher'); const r = tgRead(); const fx = [{ fx: 'tg', reading: r }]; const fin = checkFinish(); if (fin) fx.push(fin); return R('info', r.none ? '📉 ' + r.note : `📈 ${r.quartz ? '' : (r.rate > 0 ? '+' : '') + r.rate + ' s/día · ' + r.amp + '°'}`, fx); }
+    if (tool === 'timegrapher') { diagDone.add('timegrapher'); const r = tgRead(); const fx = [{ fx: 'tg', reading: r }]; const fin = checkFinish(); if (fin) fx.push(fin); return R('info', r.none ? '📉 ' + r.note : `📈 ${r.quartz ? 'Cuarzo: un impulso por segundo, marcha ' + (r.rate >= 0 ? '+' : '') + (r.rate ?? 0) + ' s/día. Funciona.' : (r.rate > 0 ? '+' : '') + r.rate + ' s/día · ' + r.amp + '°'}`, fx); }
     if (tool === 'compass') { diagDone.add('compass'); const mag = F.compass && !faultFixed(); return R('info', mag ? '🧭 ¡La aguja <b>gira</b> al acercarla! El reloj está <b>magnetizado</b>.' : '🧭 La aguja no se mueve: <b>no está magnetizado</b>. (El magnetismo suele <b>adelantar</b> el reloj).', [{ fx: 'compass', mag }]); }
     return null;
   }
@@ -487,7 +487,7 @@ export function createEngine({ watchId, faultId, story = null, empty = false }) 
   function hint() { stats.hints++; score = Math.max(0, score - 2); const a = suggest(); return { action: a, msg: '💡 ' + describe(a) }; }
   function goal() {
     const dp = diagPending(); if (dp) return { phase: 'Diagnóstico', text: `Diagnostica: ${toolName(dp)}` };
-    if (F.free && C.parts.some(p => !p.optional && st[p.id] === 'in' && !removedOnce.has(p.id))) return { phase: 'Desarme', text: 'Sigue quitando. Un tornillo que no gira está debajo de otra pieza.' };
+    if (F.free && C.parts.some(p => !p.optional && st[p.id] === 'in' && !removedOnce.has(p.id))) return { phase: 'Desarme', text: removedOnce.size ? 'Sigue quitando. Un tornillo que no gira está debajo de otra pieza.' : 'Desarma libremente: voltea el reloj (↻) y empieza por el fondo.' };
     const s = curStep(); if (s) return { phase: 'Reparación', text: revealed || fstep > 0 ? s.title : (F.free ? 'Desarma' : 'Encuentra la falla') };
     if (!allIn()) { const total = C.parts.length + Object.keys(screws).length; const done = C.parts.filter(p => st[p.id] === 'in').length + Object.values(screws).filter(x => x.state === 'in').length; return { phase: 'Montaje', text: `Monta: ${done}/${total} piezas y tornillos` }; }
     if (!quartz && flags.letdown) return { phase: 'Montaje', text: 'Da cuerda' };

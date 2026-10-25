@@ -6,7 +6,7 @@ function ac() {
   const AC = window.AudioContext || window.webkitAudioContext;
   if (!AC) return null;
   if (!ctx) {
-    ctx = new AC();
+    try { ctx = new AC(); } catch (e) { return null; } // iOS puede negar el dispositivo de audio
     master = ctx.createGain();
     master.gain.value = muted ? 0 : 0.8;
     master.connect(ctx.destination);
@@ -19,7 +19,7 @@ function ac() {
 }
 export function unlock() {
   const c = ac();
-  if (c && c.state === 'suspended') c.resume();
+  if (c && c.state === 'suspended') { try { const p = c.resume(); if (p && p.catch) p.catch(() => {}); } catch (e) { /* iOS: InvalidStateError al arrancar el audio */ } }
 }
 export function isMuted() { return muted; }
 export function setMuted(v) {
