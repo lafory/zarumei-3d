@@ -297,7 +297,7 @@ function alligator(body, y, z0, dye) {
 }
 function bracelet(body, M, watch, k, y, z0, w) {
   const B = watch.bracelet, pol = M.metal(B.metal), br = M.metal(B.metal, true);
-  if (B.style === 'oyster') {
+  if (B.style === 'trio') {
     const sG = new THREE.BoxGeometry(6.6, 3.0, 5.2), mG = new THREE.CylinderGeometry(1.6, 1.6, 7.6, 20).rotateZ(Math.PI / 2);
     for (const s of [-1, 1]) for (let i = 0; i < 6; i++) {
       const z = s * (z0 + i * 5.6), yy = y - i * i * 0.06;

@@ -9,7 +9,26 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ZARUMEI 3D">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<meta name="description" content="ZARUMEI 3D: simulador de relojería en 3D. Desarma pieza a pieza relojes de lujo con herramientas de relojero, encuentra la falla, repárala y vuelve a montarlo. Para iPhone, iPad y navegador.">
+<meta name="author" content="Maison LA FORY · Tools &amp; Jewelry">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ZARUMEI 3D · Maison LA FORY">
+<meta property="og:title" content="ZARUMEI 3D · Atelier de Relojería">
+<meta property="og:description" content="Desarma, repara y monta relojes de lujo pieza a pieza, con herramientas de relojero. Gratis en el navegador.">
+<meta property="og:url" content="https://lafory.github.io/zarumei-3d/">
+<meta property="og:image" content="https://lafory.github.io/zarumei-3d/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="es_ES">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="ZARUMEI 3D · Atelier de Relojería">
+<meta name="twitter:description" content="Desarma, repara y monta relojes de lujo pieza a pieza.">
+<meta name="twitter:image" content="https://lafory.github.io/zarumei-3d/og.jpg">
+<link rel="canonical" href="https://lafory.github.io/zarumei-3d/">
 <script>/* el manifiesto solo por http(s): desde file:// el navegador lo bloquea por CORS */ if (/^https?:/.test(location.protocol)) { var l = document.createElement('link'); l.rel = 'manifest'; l.href = 'manifest.json'; document.head.appendChild(l); }</script>
 <title>ZARUMEI 3D · Atelier de Relojería · Maison LA FORY</title>
 <link rel="stylesheet" href="fonts.css">
@@ -300,7 +319,11 @@ body:not(.land) #landScroll{display:none!important}
 </style>
 </head>
 <body>
-<div id="loading">ZARUMEI 3D</div>
+<div id="loading"><span>ZARUMEI 3D</span><small id="loadingTxt" style="font-family:var(--serif);font-style:italic;letter-spacing:.04em;font-size:14px;color:var(--muted);text-transform:none">Preparando el atelier…</small></div>
+<noscript><p style="position:fixed;left:0;right:0;bottom:30px;text-align:center;color:#d9b45e;z-index:40">ZARUMEI 3D necesita JavaScript y WebGL.</p></noscript>
+<script>/* si algo falla al arrancar (p. ej. sin WebGL), mensaje claro en vez de una pantalla negra */
+window.addEventListener('error', function (e) { var t = document.getElementById('loadingTxt'), l = document.getElementById('loading'); if (l && !l.hidden && t) t.textContent = /webgl|context/i.test(String(e.message)) ? 'Tu navegador no tiene WebGL activado: prueba con Safari o Chrome actualizados.' : 'No se pudo cargar el juego. Recarga la página.'; });
+</script>
 <div id="app">
   <header>
     <div class="brand"><img id="headLogo" alt="LA FORY"><div><b class="foil">ZARUMEI</b><small>3D · La bóveda</small></div></div>
@@ -497,6 +520,7 @@ body:not(.land) #landScroll{display:none!important}
 </div>
 
 <script src="game.js?v=zoom1"></script>
+<script>/* sin conexión: service worker (red primero, caché de respaldo), solo por https */ if ('serviceWorker' in navigator && location.protocol === 'https:') addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });</script>
 <script>
 setInterval(function(){var g=window.__game;if(!g||!g.started)return;var el=document.getElementById('timer');if(!el._t0)el._t0=Date.now();if(document.getElementById('endOverlay').hidden){var e=Math.floor((Date.now()-el._t0)/1000);el.textContent=Math.floor(e/60)+':'+String(e%60).padStart(2,'0');}},500);
 document.getElementById('menuTop').onclick=function(){ if (window.__game && __game.openMenu) __game.openMenu(); else document.getElementById('intro').hidden=false; };

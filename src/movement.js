@@ -1,4 +1,4 @@
-// Movimientos procedurales: ZR-28 (automático tipo 2824/SW200) y ZQ-11 (cuarzo fino tipo Ronda 762 / Miyota GL20).
+// Movimientos procedurales: ZR-28 (automático de 4 Hz) y ZQ-11 (cuarzo fino extraplano), diseños propios ZARUMEI.
 // Coordenadas locales del movimiento: lado puentes = +Y, la tija sale por −X. El grupo dialSide está girado
 // 180° en Z, así que dentro de él las coordenadas coinciden con las del reloj (esfera = +Y, 12h = −Z, 3h = +X).
 import * as THREE from 'three';

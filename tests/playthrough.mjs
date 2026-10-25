@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import fs from 'node:fs';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const URL = process.env.URL || 'file://' + ROOT + '/index.html';
+const URL = process.env.URL || 'file://' + ROOT + '/index.html?test=1';
 const SHOTS = ROOT + '/shots/'; fs.mkdirSync(SHOTS, { recursive: true });
 const b = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 const ctx = await b.newContext({ ...devices['iPhone 13'] });

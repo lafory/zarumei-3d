@@ -9,7 +9,7 @@
 //   requires: estados necesarios para quitarla (letdown = muelle real descargado, protector = protector de esfera puesto).
 //   action: acción especial con la misma herramienta (p. ej. descargar el muelle real en el cliquet).
 //   oil: lubricación obligatoria al montar · when 'after' (tras montar y atornillar) o 'before' (en la bandeja).
-// Las referencias entre paréntesis son de la lista de piezas ETA 2824-2 donde las conocemos con certeza.
+// Las referencias entre paréntesis siguen la numeración habitual de piezas de relojería (nomenclatura estándar).
 // ─────────────────────────────────────────────────────────────────────────────
 
 const HANDS_DIAL = (dialScrews) => [
@@ -22,7 +22,7 @@ const HANDS_DIAL = (dialScrews) => [
 export const CALIBERS = {
   ZR28: {
     id: 'ZR28', name: 'ZR-28', type: 'auto',
-    desc: 'Automático, 4 Hz (28.800 A/h), 25 rubíes, Ø 25,6 mm. Arquitectura tipo ETA 2824-2 / Sellita SW200-1.',
+    desc: 'Automático, 4 Hz (28.800 A/h), 25 rubíes, Ø 25,6 mm. Arquitectura clásica de automático suizo con rotor central.',
     lift: 50, ampOk: [270, 310],
     parts: [
       { id: 'caseback', name: 'el fondo roscado', side: 'case', coveredBy: [], tool: 'caseWrench', oil: { when: 'before', lube: 'grasa de silicona', msg: 'Grasa de silicona en la junta del fondo.' } },
@@ -63,7 +63,7 @@ export const CALIBERS = {
   },
   ZQ11: {
     id: 'ZQ11', name: 'ZQ-11', type: 'quartz',
-    desc: 'Cuarzo fino de 3 agujas, 32.768 Hz, motor paso a paso, pila SR626SW (377), Ø 23,3 mm, 2,5 mm de alto. Arquitectura tipo Ronda 762 / Miyota GL20.',
+    desc: 'Cuarzo fino de 3 agujas, 32.768 Hz, motor paso a paso, pila SR626SW (377), Ø 23,3 mm, 2,5 mm de alto. Arquitectura de cuarzo extraplano de tres agujas.',
     parts: [
       { id: 'caseback', name: 'el fondo a presión', side: 'case', coveredBy: [], tool: 'caseKnife', placeTool: 'caseKnife', oil: { when: 'before', lube: 'grasa de silicona', msg: 'Grasa de silicona en la junta del fondo.' }, placeMsg: 'Fondo cerrado a presión (en un taller, con prensa de fondos).' },
       { id: 'stem', name: 'la tija y corona', side: 'case', coveredBy: ['caseback'], tool: 'screwdriver', anySize: true, placeTool: 'tweezers', removeMsg: 'Presionaste el pulsador de la tirette y salió la corona.' },

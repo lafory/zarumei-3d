@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import fs from 'node:fs';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const URL = process.env.URL || 'file://' + ROOT + '/index.html';
+const URL = process.env.URL || 'file://' + ROOT + '/index.html?test=1';
 const OUT = ROOT + '/shots/protector/'; fs.mkdirSync(OUT, { recursive: true });
 const bt = process.env.ENGINE === 'webkit' ? webkit : chromium;
 const b = await bt.launch(bt === chromium ? { args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] } : {});

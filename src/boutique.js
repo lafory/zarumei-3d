@@ -248,4 +248,4 @@ export function openBoutique() {
   document.querySelectorAll('.bqnav button').forEach(b => b.onclick = () => document.getElementById('bq-' + b.dataset.cat).scrollIntoView({ behavior: 'smooth', block: 'start' }));
   setTimeout(() => makeThumbs(PRODUCTS), 60);
 }
-window.__boutique = { open: openBoutique, detail: (id) => openDetail(PRODUCTS.find(p => p.id === id)), close: () => { closeDetail(); $('#boutique').hidden = true; }, get ready() { return PRODUCTS.every(p => thumbs[p.id]); }, wallet };
+if (/[?&]test=1\b/.test(location.search)) window.__boutique = { open: openBoutique, detail: (id) => openDetail(PRODUCTS.find(p => p.id === id)), close: () => { closeDetail(); $('#boutique').hidden = true; }, get ready() { return PRODUCTS.every(p => thumbs[p.id]); }, wallet };

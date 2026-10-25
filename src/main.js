@@ -2218,7 +2218,8 @@ function loop(now) {
 
 // ───────── API de pruebas (Playwright) ─────────
 function screenOfObj(o, dy = 0) { const p = new THREE.Vector3(); let hp = null; o.traverse(c => { if (!hp && c.userData.isHit && visibleChain(c)) hp = c; }); (hp || o).getWorldPosition(p); p.y += dy; p.project(camera); const r = renderer.domElement.getBoundingClientRect(); return { x: r.left + (p.x + 1) / 2 * r.width, y: r.top + (1 - p.y) / 2 * r.height }; }
-window.__game = {
+const TEST_MODE = /[?&]test=1\b/.test(location.search);
+const testAPI = {
   get started() { return started; }, get busy() { return busy || !!tweens.length; }, get view() { return view; }, get fps() { return fps; },
   get fov() { return camera.fov; }, get flying() { return view === 'libre'; },
   get peri() { return peri ? { phase: peri.phase, found: [...peri.found], verdict: peri.verdict, offer: peri.offer.id, round: peri.round } : null; },
@@ -2253,4 +2254,5 @@ window.__game = {
   },
   pick: (x, y) => pick(x, y), workView, hoverAt, get hovered() { return hovered === 'watch' ? 'watch' : hovered ? 'part' : null; }, get dpr() { return renderer.getPixelRatio(); }, get hq() { return hq; }, get seat() { return seatMode; }, setHQ, setSeat: setSeatMode, fsSupported, toggleFullscreen, get glOK() { return !!renderer.getContext(); }
 };
+if (TEST_MODE) window.__game = testAPI; // solo con ?test=1: en producción no se expone nada
 init().catch(err => { console.error(err); $('#loading').textContent = 'Error al cargar: ' + err.message; });

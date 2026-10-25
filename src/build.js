@@ -194,7 +194,7 @@ export function watchFromSpec(id, spec, name) {
     },
     dial: { kind: dialKind, r: dialR, date: n.caliber === 'ZR28' && !!DIAL_DATE[n.dial] },
     hands: { style: n.hands, metal },
-    bracelet: { style: style === 'slim' || style === 'pilot' || style === 'astral' ? 'alligator' : 'oyster', metal },
+    bracelet: { style: style === 'slim' || style === 'pilot' || style === 'astral' ? 'alligator' : 'trio', metal },
     rotorText: 'ZARUMEI · ATELIER'
   };
   if (grand) w.grand = grand;

@@ -53,9 +53,9 @@ Para terminar hay que dar cuerda y hacer la prueba final en el timegrapher. La p
 ## Relojes y calibres (datos en `src/data/`)
 | Reloj | Caja | Calibre |
 |---|---|---|
-| ZARUMEI Oro «Miami» | Buceo de 40 mm en oro amarillo, bisel grabado, fondo roscado, brazalete Oyster | **ZR-28**, automático de 4 Hz (arquitectura tipo ETA 2824-2 / SW200-1) |
+| ZARUMEI Oro «Miami» | Buceo de 40 mm en oro amarillo, bisel grabado, fondo roscado, brazalete de tres eslabones | **ZR-28**, automático de 4 Hz (diseño propio, rotor central) |
 | ZARUMEI «Cuba Azul» | Buceo de 41 mm en acero, bisel de cerámica azul, esfera azul con rayos de sol y el oso de la bandera | **ZR-28** |
-| ZARUMEI Rosé Slim | Reloj de vestir extraplano de 38 mm en oro rosa, fondo a presión, esfera blanca, índices de bastón y brazalete de eslabones | **ZQ-11**, cuarzo fino (tipo Ronda 762 / Miyota GL20) |
+| ZARUMEI Rosé Slim | Reloj de vestir extraplano de 38 mm en oro rosa, fondo a presión, esfera blanca, índices de bastón y brazalete de eslabones | **ZQ-11**, cuarzo fino (diseño propio extraplano) |
 | ZARUMEI Astral «Miami» | Turbillón de oro, nebulosa violeta, oso Miami, diamante en jaula, correa de aligátor | **ZT-18**, turbillón manual |
 | ZARUMEI Astral «Cuba» | Turbillón de oro, cielo azul, jaula de volante, oso Cuba, diamante, correa de aligátor | **ZT-18**, turbillón manual |
 | ZARUMEI Nácar | Buceo de acero, bisel de cerámica negra, nácar calado | **ZX-60**, 60 piezas, turbillón manual |
@@ -118,3 +118,14 @@ Repositorio `lafory/zarumei-3d`, con GitHub Pages desde la rama `main` (raíz). 
 - **Geometría:** es procedural y estilizada, no CAD a escala exacta. El arte de la esfera Rosé tiene pequeñas manchas donde se borraron las agujas impresas.
 - **Timegrapher:** muestra valores de diseño por falla, no una simulación física.
 - **Rendimiento:** se midió con WebGL por software (SwiftShader), así que los FPS no son representativos. Faltan pruebas en dispositivos reales.
+
+## Créditos
+
+- Diseño, personajes ZARUMEI, arte de esferas y textos: **Maison LA FORY · Tools & Jewelry**.
+- Motor 3D: [three.js](https://threejs.org) (licencia MIT).
+- Tipografías: Cinzel, Cormorant Garamond y Jost (SIL Open Font License 1.1), servidas localmente.
+- Relojes, calibres (ZR-28, ZQ-11, ZT-18, ZX-60…) y herramientas son diseños y nombres propios de ficción.
+
+## Licencia
+
+© 2026 Maison LA FORY. Todos los derechos reservados. Consulta [LICENSE](LICENSE).
