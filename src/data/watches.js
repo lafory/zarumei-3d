@@ -18,7 +18,7 @@ export const WATCHES = {
     id: 'rose', name: 'ZARUMEI Rosé Slim', caliber: 'ZQ11',
     blurb: 'Reloj de vestir extraplano, 38 mm, acero con baño de oro rosa, esfera blanca y brazalete de eslabones.',
     case: { style: 'slim', metal: 'rose', r: 19, bezel: 'polished', crownGuards: false, caseback: 'snap', backText: 'ZARUMEI · QUARTZ · STAINLESS STEEL · IP ROSE GOLD · 3 ATM · ', backMono: 'Z' },
-    dial: { kind: 'rose', r: 15.6, date: false }, hands: { style: 'leaf', metal: 'rose' }, bracelet: { style: 'multilink', metal: 'rose' }
+    dial: { kind: 'rose', r: 14.45, date: false }, hands: { style: 'leaf', metal: 'rose' }, bracelet: { style: 'multilink', metal: 'rose' }
   },
   astralMiami: {
     id: 'astralMiami', name: 'ZARUMEI Astral «Miami»', caliber: 'ZT18',
@@ -80,7 +80,7 @@ export const WATCHES = {
     id: 'lira', name: 'ZARUMEI Lira', caliber: 'ZQ11', maison: true,
     blurb: 'Vestir extraplano en oro, esfera crema y agujas hoja. Mismos tornillos que el Rosé: cuarzo ZQ-11.',
     case: { style: 'slim', metal: 'gold', r: 19, bezel: 'polished', crownGuards: false, caseback: 'snap', backText: 'ZARUMEI · LIRA · QUARTZ · ORO 18K · 3 ATM · Nº 052 · ', backMono: 'L' },
-    dial: { kind: 'lira', r: 15.4, date: false }, hands: { style: 'leaf', metal: 'gold' }, bracelet: { style: 'alligator', metal: 'gold' }
+    dial: { kind: 'lira', r: 14.45, date: false }, hands: { style: 'leaf', metal: 'gold' }, bracelet: { style: 'alligator', metal: 'gold' }
   },
   recta: {
     id: 'recta', name: 'ZARUMEI Recta', caliber: 'ZR28', maison: true,

@@ -73,11 +73,23 @@ export function makeTools(M, images, movR = 12.8) {
     const knob = new THREE.Mesh(new THREE.CylinderGeometry(4, 4, 4, 32), plastic(0x161616)); knob.position.y = 7; g.add(knob);
     const d = flatDecal(7, engrave); d.rotation.x = -Math.PI / 2; d.position.y = 9.05; g.add(d);
     models.caseWrench = g; }
-  // Lupa
+  // Lupa de relojero ×10: copa de cuerno (carey) con estriado, aro de oro que sujeta la lente biconvexa y filete grabado LA FORY
   { const g = new THREE.Group();
-    const body = new THREE.Mesh(new THREE.CylinderGeometry(6, 7, 8, 32, 1, true), plastic(0x111111)); body.material.side = THREE.DoubleSide; body.position.y = 8; g.add(body);
-    const lens = new THREE.Mesh(new THREE.CylinderGeometry(5.8, 5.8, 0.6, 32), new THREE.MeshPhysicalMaterial({ color: 0xbfe4ff, transparent: true, opacity: 0.35, roughness: 0 })); lens.position.y = 4.4; g.add(lens);
-    g.add(wrapDecal(7.0, 5, print, 8));
+    const tc = document.createElement('canvas'); tc.width = tc.height = 256; const x = tc.getContext('2d');
+    x.fillStyle = '#3a1a08'; x.fillRect(0, 0, 256, 256);
+    for (let i = 0; i < 140; i++) { const r = 6 + Math.random() * 26; const gr = x.createRadialGradient(0, 0, 0, 0, 0, r); const c = ['rgba(176,96,30,', 'rgba(120,58,16,', 'rgba(214,140,60,', 'rgba(30,12,4,'][i % 4]; gr.addColorStop(0, c + '.55)'); gr.addColorStop(1, c + '0)'); x.save(); x.translate(Math.random() * 256, Math.random() * 256); x.scale(1, 0.5 + Math.random()); x.fillStyle = gr; x.beginPath(); x.arc(0, 0, r, 0, Math.PI * 2); x.fill(); x.restore(); }
+    const horn = new THREE.MeshPhysicalMaterial({ map: new THREE.CanvasTexture(tc), roughness: 0.28, metalness: 0, clearcoat: 1, clearcoatRoughness: 0.08 }); horn.map.colorSpace = THREE.SRGBColorSpace; horn.side = THREE.DoubleSide;
+    const prof = [[5.2, 4.2], [5.5, 5.0], [5.9, 7.0], [6.6, 9.6], [7.3, 11.6], [7.5, 12.2], [7.0, 12.4]].map(([r, y]) => new THREE.Vector2(r, y));
+    const cup = new THREE.Mesh(new THREE.LatheGeometry(prof, 48), horn); g.add(cup);
+    for (let k = 0; k < 36; k++) { const a = k / 36 * Math.PI * 2; const r = new THREE.Mesh(new THREE.BoxGeometry(0.28, 1.6, 0.5), horn); r.position.set(Math.cos(a) * 7.35, 11.2, Math.sin(a) * 7.35); r.rotation.y = -a; g.add(r); }
+    const gold = new THREE.MeshStandardMaterial({ color: 0xe2b85c, metalness: 1, roughness: 0.18 });
+    const bez = new THREE.Mesh(new THREE.CylinderGeometry(5.75, 5.95, 1.6, 48, 1, true), gold); bez.material.side = THREE.DoubleSide; bez.position.y = 4.4; g.add(bez);
+    for (const y of [3.6, 5.2]) { const t = new THREE.Mesh(new THREE.TorusGeometry(5.85, 0.22, 10, 48).rotateX(Math.PI / 2), gold); t.position.y = y; g.add(t); }
+    const rim = new THREE.Mesh(new THREE.TorusGeometry(7.25, 0.32, 10, 48).rotateX(Math.PI / 2), gold); rim.position.y = 12.3; g.add(rim);
+    const glass = new THREE.MeshPhysicalMaterial({ color: 0xeef8ff, metalness: 0, roughness: 0, transparent: true, opacity: 0.32, depthWrite: false, // sin transmission: evita un pase de render extra en móvil
+       clearcoat: 1, envMapIntensity: 1.4 });
+    for (const sy of [1, -1]) { const cap = new THREE.Mesh(new THREE.SphereGeometry(14, 40, 8, 0, Math.PI * 2, 0, Math.asin(5.7 / 14)), glass); if (sy < 0) cap.rotation.x = Math.PI; cap.position.y = 4.4 + sy * (0.25 - 14 * Math.cos(Math.asin(5.7 / 14))); cap.renderOrder = 4; g.add(cap); }
+    g.add(wrapDecal(6.2, 3.2, print, 8.0));
     models.loupe = g; }
   // Aceitera
   { const g = new THREE.Group();

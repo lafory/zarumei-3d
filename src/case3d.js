@@ -60,7 +60,7 @@ export function buildCase(M, watch, movR) {
       const ring = new THREE.Mesh(new THREE.TorusGeometry(16.35 * k, 0.22, 8, 96).rotateX(Math.PI / 2), M.metal('gold'));
       ring.position.y = 3.55; body.add(ring);
     }
-    const crystal = new THREE.Mesh(new THREE.CylinderGeometry(16.1 * k, 16.1 * k, 0.8, 96), M.crystal); crystal.position.y = 3.3; crystal.renderOrder = 5; crystal.name = 'crystalGlass'; crystal.userData.crystalGlass = true; body.add(crystal);
+    const crystal = new THREE.Mesh(new THREE.CylinderGeometry(16.1 * k, 16.1 * k, 0.6, 96), M.crystal); crystal.position.y = 3.4; crystal.renderOrder = 5; crystal.name = 'crystalGlass'; crystal.userData.crystalGlass = true; body.add(crystal); // por encima de la pila de agujas
     const bs = watch.bracelet.style, zS = 21.5 * k + 5.6, yS = -2.2;
     if (bs === 'alligator') { alligator(body, yS, zS, watch.bracelet.dye); if (watch.bracelet.leaves) leafApplique(body, yS, zS); }
     else if (bs === 'nato') nato(body, yS, zS, watch.bracelet.stripes);
@@ -109,7 +109,7 @@ export function buildCase(M, watch, movR) {
       body.add(sc, slot);
     }
     const crystal = new THREE.Mesh(new THREE.CylinderGeometry(14.6 * kk, 14.6 * kk, 0.5, 64), M.crystal);
-    crystal.position.y = 3.2; crystal.renderOrder = 5; crystal.name = 'crystalGlass'; crystal.userData.crystalGlass = true; body.add(crystal);
+    crystal.position.y = 3.45; crystal.renderOrder = 5; crystal.name = 'crystalGlass'; crystal.userData.crystalGlass = true; body.add(crystal); // sobre la pila de agujas
     bracelet(body, M, watch, kk, -1.5, 16.4 * kk + 4, 8);
     dims = { cbY: -4.35, yFront: 5.7, yBack: 3.35 };
   } else if (C.style === 'tank') {
@@ -120,15 +120,15 @@ export function buildCase(M, watch, movR) {
     rail(4.4, 0.9, 22, 12.8, -3.35, 0);
     rail(21.2, 0.9, 3.8, 0, -3.35, -9.1);
     rail(21.2, 0.9, 3.8, 0, -3.35, 9.1);
-    rail(3.6, 6.2, 22, -13.2, -0.15, 0);
-    rail(3.6, 6.2, 22, 13.2, -0.15, 0);
-    rail(22.8, 6.2, 3.1, 0, -0.15, -9.45);
-    rail(22.8, 6.2, 3.1, 0, -0.15, 9.45);
-    rail(26.4, 0.7, 2.3, 0, 3.2, -8.55);
-    rail(26.4, 0.7, 2.3, 0, 3.2, 8.55);
-    rail(2.4, 0.7, 14.8, -12.2, 3.2, 0);
-    rail(2.4, 0.7, 14.8, 12.2, 3.2, 0);
-    const crystal = new THREE.Mesh(new THREE.BoxGeometry(22.2, 0.28, 15.2), M.crystal); crystal.position.y = 3.55; crystal.renderOrder = 5; crystal.name = 'crystalGlass'; crystal.userData.crystalGlass = true; body.add(crystal);
+    rail(3.6, 7.6, 22, -13.2, 0.55, 0);
+    rail(3.6, 7.6, 22, 13.2, 0.55, 0);
+    rail(22.8, 7.6, 3.1, 0, 0.55, -9.45);
+    rail(22.8, 7.6, 3.1, 0, 0.55, 9.45);
+    rail(26.4, 0.7, 2.3, 0, 4.6, -8.55);
+    rail(26.4, 0.7, 2.3, 0, 4.6, 8.55);
+    rail(2.4, 0.7, 14.8, -12.2, 4.6, 0);
+    rail(2.4, 0.7, 14.8, 12.2, 4.6, 0);
+    const crystal = new THREE.Mesh(new THREE.BoxGeometry(22.2, 0.28, 15.2), M.crystal); crystal.position.y = 4.95; crystal.renderOrder = 5; crystal.name = 'crystalGlass'; crystal.userData.crystalGlass = true; body.add(crystal); // marco y cristal más altos: la placa Recta y sus agujas quedan bajo el cristal (antes lo atravesaban)
     for (const s of [-1, 1]) { const lug = new THREE.Mesh(new THREE.BoxGeometry(14, 2.6, 3.6), gold); lug.position.set(0, -1.1, s * 12.4); body.add(lug); }
     const crown = new THREE.Mesh(new THREE.CylinderGeometry(1.15, 1.2, 1.7, 16).rotateZ(Math.PI / 2), gold); crown.position.set(16.2, 0.2, 0); body.add(crown);
     const cab = new THREE.Mesh(new THREE.SphereGeometry(0.55, 14, 10), new THREE.MeshPhysicalMaterial({ color: 0x1a3f86, roughness: 0.08, metalness: 0.15, clearcoat: 1 }));
@@ -156,7 +156,9 @@ export function buildCase(M, watch, movR) {
     const spacer = new THREE.Mesh(new THREE.LatheGeometry(V2([[movR + 0.1, -2.6], [15.3 * k, -2.6], [15.3 * k, -0.1], [movR + 0.1, -0.1]]), 96), new THREE.MeshStandardMaterial({ color: 0xf2f2f0, roughness: 0.7 })); spacer.material.side = THREE.DoubleSide; body.add(spacer);
     const bz = new THREE.Mesh(new THREE.LatheGeometry(V2([[15.2, 1.3], [18.6, 1.3], [18.5, 1.8], [17.6, 2.2], [15.2, 2.25]], k), 128), metal.clone()); bz.material.side = THREE.DoubleSide; body.add(bz);
     for (const s of [-1, 1]) for (const xx of [-7.6, 7.6]) { const lug = new THREE.Mesh(new THREE.BoxGeometry(2.6, 2.6, 5.2), metal); lug.position.set(xx, -0.4, s * 19.4 * k); lug.rotation.x = s * 0.18; body.add(lug); }
-    const crystal = new THREE.Mesh(new THREE.SphereGeometry(40, 64, 8, 0, Math.PI * 2, 0, Math.asin(15.3 * k / 40)), M.crystal); crystal.position.y = 2.25 - 40; crystal.renderOrder = 5; crystal.name = 'crystalGlass'; crystal.userData.crystalGlass = true; body.add(crystal);
+    // cristal abombado bajo: el borde asienta sobre el bisel (antes quedaba por debajo de la esfera)
+    const rc = 15.3 * k, sag = 0.5, Rs = (rc * rc + sag * sag) / (2 * sag);
+    const crystal = new THREE.Mesh(new THREE.SphereGeometry(Rs, 96, 6, 0, Math.PI * 2, 0, Math.asin(rc / Rs)), M.crystal); crystal.position.y = 2.05 + sag - Rs; crystal.renderOrder = 5; crystal.name = 'crystalGlass'; crystal.userData.crystalGlass = true; body.add(crystal);
     // La Lira (y Build · Vestir) piden correa. bracelet() no conoce el aligátor y la pintaba de eslabones.
     if (watch.bracelet && watch.bracelet.style === 'alligator') alligator(body, -0.9, 19.4 * k + 3.6, watch.bracelet.dye);
     else bracelet(body, M, watch, k, -0.9, 19.4 * k + 3.6, 6.6);

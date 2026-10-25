@@ -2229,7 +2229,9 @@ const testAPI = {
     if (target.chip) { const c = document.querySelector(`.chip[data-chip="${target.chip}"]`); if (!c) return null; c.scrollIntoView({ inline: 'center' }); const r = c.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2, chip: true }; }
     const id = target.sub || target.part; const o = id === 'watch' ? G.root : (G.parts[id] || (G.MV.sub && G.MV.sub[id])); if (!o) return null; return screenOfObj(o, id === 'jewel' ? 0.1 : 0);
   },
-  pick: (x, y) => pick(x, y), workView, hoverAt, get hovered() { return hovered === 'watch' ? 'watch' : hovered ? 'part' : null; }, get dpr() { return renderer.getPixelRatio(); }, get hq() { return hq; }, get seat() { return seatMode; }, setHQ, setSeat: setSeatMode, fsSupported, toggleFullscreen, get glOK() { return !!renderer.getContext(); }
+  pick: (x, y) => pick(x, y), workView, hoverAt, get hovered() { return hovered === 'watch' ? 'watch' : hovered ? 'part' : null; }, get dpr() { return renderer.getPixelRatio(); }, get hq() { return hq; }, get seat() { return seatMode; }, setHQ, setSeat: setSeatMode, fsSupported, toggleFullscreen, get glOK() { return !!renderer.getContext(); },
+  // solo auditoría (pruebas): acceso a la escena
+  get _G() { return G; }, _THREE: THREE, _scene: scene, _camera: camera, _controls: controls, _render: () => renderer.render(scene, camera),
 };
 if (TEST_MODE) window.__game = testAPI; // solo con ?test=1: en producción no se expone nada
 init().catch(err => { console.error(err); $('#loading').textContent = 'Error al cargar: ' + err.message; });

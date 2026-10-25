@@ -46,7 +46,7 @@ export const CALIBERS = {
       { id: 'escapeWheel', name: 'la rueda de escape (705)', side: 'bridge', coveredBy: ['trainBridge', 'palletFork'], tool: 'tweezers' },
       { id: 'interWheel', name: 'la rueda intermedia (203)', side: 'bridge', coveredBy: ['trainBridge'], tool: 'tweezers' },
       // lado esfera (coordenadas del grupo dialSide: +Y hacia la esfera, 12h = −Z, 3h = +X)
-      ...HANDS_DIAL([{ s: 0.8, k: 'dial', face: true, p: [-9.1, 1.48, 9.1] }, { s: 0.8, k: 'dial', face: true, p: [9.1, 1.48, -9.1] }]),
+      ...HANDS_DIAL([{ s: 0.8, k: 'dial', face: true, p: [-9.1, 1.8, 9.1] }, { s: 0.8, k: 'dial', face: true, p: [9.1, 1.8, -9.1] }]),
       { id: 'datePlate', name: 'la placa sujeta-fecha', side: 'dial', coveredBy: ['dial'], tool: 'tweezers', screws: [{ s: 1.0, k: 'date', p: [9.6, 1.2, -5.5] }, { s: 1.0, k: 'date', p: [-9.6, 1.2, -5.5] }, { s: 1.0, k: 'date', p: [0, 1.2, 11.0] }] },
       { id: 'dateDisc', name: 'el disco de fecha', side: 'dial', coveredBy: ['datePlate'], tool: 'tweezers' },
       { id: 'hourWheel', name: 'la rueda de horas', side: 'dial', coveredBy: ['datePlate'], tool: 'tweezers' },
@@ -68,7 +68,7 @@ export const CALIBERS = {
       { id: 'caseback', name: 'el fondo a presión', side: 'case', coveredBy: [], tool: 'caseKnife', placeTool: 'caseKnife', oil: { when: 'before', lube: 'grasa de silicona', msg: 'Grasa de silicona en la junta del fondo.' }, placeMsg: 'Fondo cerrado a presión (en un taller, con prensa de fondos).' },
       { id: 'stem', name: 'la tija y corona', side: 'case', coveredBy: ['caseback'], tool: 'screwdriver', anySize: true, placeTool: 'tweezers', removeMsg: 'Presionaste el pulsador de la tirette y salió la corona.' },
       { id: 'movement', name: 'el movimiento', side: 'case', coveredBy: ['stem'], tool: 'holder', placeNeedsDial: true },
-      { id: 'batteryClamp', name: 'la brida de la pila', side: 'bridge', coveredBy: ['caseback'], tool: 'tweezers', screws: [{ s: 0.8, k: 'clampQ', p: [-8.9, 2.5, 6.1] }] },
+      { id: 'batteryClamp', name: 'la brida de la pila', side: 'bridge', coveredBy: ['caseback'], tool: 'tweezers', screws: [{ s: 0.8, k: 'clampQ', p: [-8.6, 2.5, 5.9] }] },
       { id: 'battery', name: 'la pila SR626SW', side: 'bridge', coveredBy: ['batteryClamp'], tool: 'plasticTweezers' },
       { id: 'circuit', name: 'el circuito con el cuarzo', side: 'bridge', coveredBy: ['battery'], tool: 'tweezers', screws: [{ s: 1.0, k: 'circuit', p: [9.4, 0.32, 1.0] }] },
       { id: 'coil', name: 'la bobina con su estátor', side: 'bridge', coveredBy: ['circuit'], tool: 'tweezers', screws: [{ s: 1.0, k: 'coil', p: [8.6, 1.0, -6.3] }] },

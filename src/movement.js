@@ -16,8 +16,10 @@ export function screwsFor(M, cal, parts) {
     const ghost = screwMesh(M, s.s, true); ghost.userData.screwGhost = sid; ghost.visible = false;
     // El agujero es pequeño: el toque acepta un área más ancha para poder volver a meter el tornillo.
     const gh = hitProxy(M, Math.max(2.2, s.s * 1.7), 1.8, 0.45); gh.userData.screwGhost = sid; ghost.add(gh);
+    // Recta: la esfera es una placa rectangular elevada; sus dos tornillos de esfera van en las esquinas de la placa, no en el círculo
+    const rp = p.id === 'dial' && host.userData.recta ? [[-9.9, host.userData.rectaFaceY ?? s.p[1], 6.3], [9.9, host.userData.rectaFaceY ?? s.p[1], -6.3]][i % 2] : null;
     for (const o of [g, ghost]) {
-      o.position.set(...s.p);
+      o.position.set(...(rp || s.p));
       if (s.face) o.scale.setScalar(1.7);
       if (s.radial) {
         const d = new THREE.Vector3(s.p[0], 0, s.p[2]);
@@ -39,10 +41,12 @@ export function screwsFor(M, cal, parts) {
   });
   return out;
 }
-export function stemGroup(M, R, metal, y, crownR = 3.1, crownL = 3.6) {
+// caseOuter: radio exterior de la carrura → la corona queda pegada a su tubo (no flotando); por defecto, la posición de siempre
+export function stemGroup(M, R, metal, y, crownR = 3.1, crownL = 3.6, caseOuter = R + 6.55) {
   const stem = tag(new THREE.Group(), 'stem');
-  const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 9.6, 12).rotateZ(Math.PI / 2), M.steel); rod.position.set(-R - 3.6, 0, 0); stem.add(rod);
-  const crown = new THREE.Mesh(new THREE.CylinderGeometry(crownR, crownR, crownL, 28).rotateZ(Math.PI / 2), metal); crown.position.set(-R - 6.6 - crownL / 2 - 1, 0, 0); stem.add(crown);
+  const cx = caseOuter + 1.05 + crownL / 2, rodL = cx - (R - 1.2);
+  const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, rodL, 12).rotateZ(Math.PI / 2), M.steel); rod.position.set(-(R - 1.2) - rodL / 2, 0, 0); stem.add(rod);
+  const crown = new THREE.Mesh(new THREE.CylinderGeometry(crownR, crownR, crownL, 28).rotateZ(Math.PI / 2), metal); crown.position.set(-cx, 0, 0); stem.add(crown);
   for (let k = 0; k < 16; k++) { const fl = new THREE.Mesh(new THREE.BoxGeometry(crownL * 0.9, 0.22, 0.22), metal); const a = k / 16 * Math.PI * 2; fl.position.set(crown.position.x, Math.cos(a) * crownR, Math.sin(a) * crownR); stem.add(fl); }
   stem.add(at(hitProxy(M, crownR + 0.4, crownL + 1).rotateZ(Math.PI / 2), crown.position.x, 0, 0));
   const push = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 0.5, 16), M.steel); push.position.set(-R + 3.0, y > 0.6 ? 0.8 : 0.5, 2.6); stem.add(push);
@@ -53,10 +57,11 @@ export function stemGroup(M, R, metal, y, crownR = 3.1, crownL = 3.6) {
 // ───────────────────────── ZR-28 ─────────────────────────
 // Protector de esfera: lámina plástica con ranura que se desliza SOBRE la esfera y BAJO las agujas
 // (las palancas apoyan en ella). Nunca intercepta los toques (noPick) para no tapar las agujas.
+const caseOuterOf = (watch) => watch.case.style === 'diver' ? watch.case.r : watch.case.style === 'slim' ? watch.case.r * 0.95 : undefined; // otras cajas: posición de siempre
 export function makeProtector(M, watch, ys) {
   if (watch.dial.kind === 'recta') {
     const m = new THREE.Mesh(new THREE.PlaneGeometry(20.4, 13.6).rotateX(-Math.PI / 2), M.protector);
-    m.position.y = ys.dial + 1.98; m.visible = false; m.renderOrder = 3; m.userData.noPick = true; m.raycast = () => {};
+    m.position.y = ys.dial + 1.58; m.visible = false; m.renderOrder = 3; m.userData.noPick = true; m.raycast = () => {};
     return m;
   }
   const g = new THREE.RingGeometry(1.1, watch.dial.r - 0.6, 64, 1, 0.12, Math.PI * 2 - 0.24).rotateX(-Math.PI / 2);
@@ -73,7 +78,8 @@ export function buildZR28(M, images, watch, cal) {
     const w = tag(new THREE.Group(), id);
     w.add(gearMesh(r, n, 0.18, M.goldWheel, id === 'escapeWheel' ? 0 : 4));
     const pin = new THREE.Mesh(gearMesh(0.6, 8, 0.5, M.steel, 0).geometry, M.steel); pin.position.y = -0.3; w.add(pin);
-    w.add(at(cyl(0.22, 1.2, M.steel, 10), 0, -0.2, 0));
+    w.add(at(cyl(0.22, 1.6, M.steel, 10), 0, 0.25, 0)); // eje: pivote en el rubí de la platina y en el del puente
+    if (id === 'secondWheel') w.add(at(cyl(0.16, 4.2, M.steel, 10), 0, -2.1, 0)); // eje largo que cruza la platina y lleva el segundero
     w.add(hitProxy(M, r + 0.3, 0.6, 0.3));
     at(w, x, 1.35, z); mv.add(w); parts[id] = w;
   }
@@ -101,12 +107,12 @@ export function buildZR28(M, images, watch, cal) {
   pf.add(hitProxy(M, 1.6, 0.5, 0.2)); pf.rotation.y = -0.6; at(pf, 4.6, 1.4, 4.4); mv.add(pf); parts.palletFork = pf;
   const pb = tag(new THREE.Group(), 'palletBridge'); pb.add(new THREE.Mesh(extrudeShape(polyShape([[1.6, 3.0], [6.4, 2.8], [7.0, 4.5], [2.4, 5.2]]), 0.7), M.bridge)); pb.add(at(jewelMesh(M, 0.32), 4.4, 0.7, 4.0)); at(pb, 0, 2.0, 0); mv.add(pb); parts.palletBridge = pb;
   // volante + espiral + puente con amortiguador, raqueta (regulador) y pivote
-  const BX = 4.6, BZ = 8.6;
+  const BX = 4.4, BZ = 8.1; // dentro de Ø 25,6 mm (antes los tornillos del volante salían de la platina)
   const balance = tag(new THREE.Group(), 'balance');
   const wheel = new THREE.Group(); wheel.name = 'balanceWheel';
-  wheel.add(new THREE.Mesh(new THREE.TorusGeometry(3.2, 0.3, 10, 48).rotateX(Math.PI / 2), M.goldWheel));
-  for (let k = 0; k < 3; k++) { const arm = new THREE.Mesh(new THREE.BoxGeometry(3.1, 0.2, 0.4), M.goldWheel); arm.position.x = 1.55; const p = new THREE.Group(); p.add(arm); p.rotation.y = k * Math.PI * 2 / 3; wheel.add(p); }
-  for (let k = 0; k < 8; k++) { const sc = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.5, 8).rotateZ(Math.PI / 2), M.goldWheel); const a = k / 8 * Math.PI * 2; sc.position.set(Math.cos(a) * 3.55, 0, Math.sin(a) * 3.55); sc.rotation.y = -a; wheel.add(sc); }
+  wheel.add(new THREE.Mesh(new THREE.TorusGeometry(3.0, 0.28, 10, 48).rotateX(Math.PI / 2), M.goldWheel));
+  for (let k = 0; k < 3; k++) { const arm = new THREE.Mesh(new THREE.BoxGeometry(2.9, 0.2, 0.4), M.goldWheel); arm.position.x = 1.45; const p = new THREE.Group(); p.add(arm); p.rotation.y = k * Math.PI * 2 / 3; wheel.add(p); }
+  for (let k = 0; k < 8; k++) { const sc = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.5, 8).rotateZ(Math.PI / 2), M.goldWheel); const a = k / 8 * Math.PI * 2; sc.position.set(Math.cos(a) * 3.3, 0, Math.sin(a) * 3.3); sc.rotation.y = -a; wheel.add(sc); }
   const staff = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 2.0, 10), M.steel); staff.position.y = 0.5; wheel.add(staff);
   const pivot = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.5, 8), M.steel); pivot.position.y = 1.7; pivot.name = 'pivot'; wheel.add(pivot);
   const pts = []; for (let t = 0; t < 12 * Math.PI; t += 0.12) { const r = 0.5 + t * 0.062; pts.push(new THREE.Vector3(Math.cos(t) * r, 0.45, Math.sin(t) * r)); }
@@ -131,7 +137,7 @@ export function buildZR28(M, images, watch, cal) {
   regulator.add(at(boxHit(M, 2.0, 0.6, 1.4), 2.6, 0, 0)); regulator.position.set(0, 1.25, -0.2); regulator.rotation.y = 0.4; balance.add(regulator);
   // índice +/− grabado
   const idx = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.02, 0.8), M.darkSteel); idx.position.set(3.4, 1.22, -1.6); balance.add(idx);
-  balance.add(hitProxy(M, 3.6, 1.6, 0.4)); at(balance, BX, 2.0, BZ); mv.add(balance); parts.balance = balance;
+  balance.add(hitProxy(M, 3.5, 1.6, 0.4)); at(balance, BX, 2.0, BZ); mv.add(balance); parts.balance = balance;
   Object.assign(sub, { jewel, spring, regulator, dirt, oil, pivot, wheel, staff });
   // módulo automático
   const auto = tag(new THREE.Group(), 'auto');
@@ -144,22 +150,23 @@ export function buildZR28(M, images, watch, cal) {
   const rs = new THREE.Shape(); rs.absarc(0, 0, 12.4, Math.PI, Math.PI * 2, false); rs.absarc(0, 0, 2.2, Math.PI * 2, Math.PI, true); rs.closePath();
   rotor.add(new THREE.Mesh(extrudeShape(rs, 0.5), new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 1, roughness: 0.25, map: TX.rotorTexture(12.4, watch.rotorText) })));
   const heavy = new THREE.Mesh(extrudeShape(ringShape(10.8, 12.6, Math.PI, Math.PI * 2), 0.9), M.metal(watch.case.metal)); heavy.position.y = -0.2; rotor.add(heavy);
-  rotor.add(at(cyl(2.3, 0.8, M.steel, 32), 0, -0.2, 0));
+  rotor.add(at(cyl(2.3, 0.8, M.steel, 32), 0, 0.2, 0)); // buje: el tornillo del rotor apoya en él
   rotor.add(hitProxy(M, 12.4, 1.2, 0.3)); rotor.rotation.y = 0.35; at(rotor, 0, 4.25, 0); mv.add(rotor); parts.rotor = rotor;
   // bridas de caja (2) — fijan el movimiento al aro de la caja
   const clamps = tag(new THREE.Group(), 'clamps');
   for (const [x, z] of [[-7.2, 10.0], [10.4, -6.0]]) { const d = new THREE.Vector3(x, 0, z).normalize(); const tab = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.4, 4.0), M.darkSteel); tab.position.set(x + d.x * 1.3, 1.4, z + d.z * 1.3); tab.rotation.y = Math.atan2(-d.z, d.x) + Math.PI / 2; clamps.add(tab); clamps.add(at(boxHit(M, 3.2, 1.2, 4.6), tab.position.x, 1.5, tab.position.z)); }
   mv.add(clamps); parts.clamps = clamps;
-  parts.stem = stemGroup(M, R, M.metal(watch.case.metal), 0.7); mv.add(parts.stem);
+  parts.stem = watch.case.style === 'tank' ? stemGroup(M, R, M.metal(watch.case.metal), 0.7, 1.25, 1.8, 14.25) /* Recta: la corona es la pequeña de la caja, no una suelta 5 mm más allá */ : stemGroup(M, R, M.metal(watch.case.metal), 0.7, 3.1, 3.6, caseOuterOf(watch)); mv.add(parts.stem);
 
   // ── lado esfera ──
   const ds = new THREE.Group(); ds.name = 'dialSide'; ds.rotation.z = Math.PI; mv.add(ds);
-  const ys = { dial: 1.4, hour: 1.95, min: 2.2, sec: 2.45 };
-  const dp = tag(new THREE.Group(), 'datePlate'); dp.add(at(new THREE.Mesh(extrudeShape(ringShape(6.2, 11.4), 0.25, 0.03, 48), M.steel), 0, 0.95, 0)); dp.add(hitProxy(M, 11.4, 0.5, 1.07)); ds.add(dp); parts.datePlate = dp;
-  const dd = tag(new THREE.Group(), 'dateDisc'); const ring = new THREE.Mesh(new THREE.RingGeometry(9.8, 12.6, 96).rotateX(-Math.PI / 2), M.whiteDisc); ring.position.y = 0.9; dd.add(ring); dd.add(hitProxy(M, 12.6, 0.3, 0.85)); dd.rotation.y = 0.2; ds.add(dd); parts.dateDisc = dd;
-  { const uv = ring.geometry.attributes.uv, pos = ring.geometry.attributes.position; for (let i = 0; i < uv.count; i++) uv.setXY(i, pos.getX(i) / 25.2 + 0.5, -pos.getZ(i) / 25.2 + 0.5); }
-  const hw = tag(new THREE.Group(), 'hourWheel'); hw.add(at(gearMesh(3.0, 40, 0.15, M.goldWheel, 0), 0, 0.55, 0)); hw.add(at(cyl(0.75, 1.35, M.goldWheel, 16), 0, 0.55, 0)); hw.add(hitProxy(M, 3.1, 0.5, 0.65)); ds.add(hw); parts.hourWheel = hw;
-  const cp = tag(new THREE.Group(), 'cannonPinion'); cp.add(cyl(0.5, 1.95, M.steel, 12, 0.2)); cp.add(at(gearMesh(1.1, 14, 0.25, M.steel, 0), 0, 0.2, 0)); cp.add(hitProxy(M, 1.2, 0.6, 0.3)); ds.add(cp); parts.cannonPinion = cp;
+  // pila del lado esfera (mm sobre la platina): fecha 0,7 · placa sujeta-fecha 0,8–1,0 (+ cabezas de tornillo 0,46) · esfera 1,5–1,8 · agujas 2,35 / 2,6 / 2,85 · cristal desde 3,1
+  const ys = { dial: 1.8, hour: 2.35, min: 2.6, sec: 2.85 };
+  const dp = tag(new THREE.Group(), 'datePlate'); dp.add(at(new THREE.Mesh(extrudeShape(ringShape(6.2, 11.4), 0.2, 0.03, 48), M.steel), 0, 0.8, 0)); dp.add(hitProxy(M, 11.4, 0.5, 0.9)); ds.add(dp); parts.datePlate = dp;
+  const dd = tag(new THREE.Group(), 'dateDisc'); const ring = new THREE.Mesh(new THREE.RingGeometry(9.4, 11.7, 96).rotateX(-Math.PI / 2), M.whiteDisc); ring.position.y = 0.72; dd.add(ring); dd.add(hitProxy(M, 11.7, 0.3, 0.7)); dd.rotation.y = 0.2; ds.add(dd); parts.dateDisc = dd;
+  { const uv = ring.geometry.attributes.uv, pos = ring.geometry.attributes.position; for (let i = 0; i < uv.count; i++) uv.setXY(i, pos.getX(i) / 23.4 + 0.5, -pos.getZ(i) / 23.4 + 0.5); }
+  const hw = tag(new THREE.Group(), 'hourWheel'); hw.add(at(gearMesh(3.0, 40, 0.15, M.goldWheel, 0), 0, 0.55, 0)); hw.add(at(cyl(0.75, ys.hour - 0.55, M.goldWheel, 16), 0, (0.55 + ys.hour) / 2, 0)); hw.add(hitProxy(M, 3.1, 0.5, 0.65)); ds.add(hw); parts.hourWheel = hw; // cañón de horas: llega hasta la aguja de horas
+  const cp = tag(new THREE.Group(), 'cannonPinion'); cp.add(cyl(0.5, ys.min - 0.2, M.steel, 12, 0.2)); cp.add(at(gearMesh(1.1, 14, 0.25, M.steel, 0), 0, 0.2, 0)); cp.add(hitProxy(M, 1.2, 0.6, 0.3)); ds.add(cp); parts.cannonPinion = cp; // piñón de cañón: lleva la aguja de minutos
   const mw = tag(new THREE.Group(), 'minuteWheel'); mw.add(gearMesh(2.2, 32, 0.15, M.goldWheel, 0)); mw.add(at(gearMesh(0.7, 10, 0.25, M.steel, 0), 0, 0.15, 0)); mw.add(hitProxy(M, 2.3, 0.5, 0.2)); at(mw, -3.6, 0.2, 3.0); ds.add(mw); parts.minuteWheel = mw;
   const ddr = tag(new THREE.Group(), 'dateDriver'); ddr.add(gearMesh(2.4, 36, 0.15, M.goldWheel, 3)); ddr.add(at(new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.15, 1.4), M.steel), 0, 0.15, -2.6)); ddr.add(hitProxy(M, 2.6, 0.5, 0.15)); at(ddr, 3.4, 0.45, 4.4); ds.add(ddr); parts.dateDriver = ddr;
   const kp = tag(new THREE.Group(), 'keylessPlate'); kp.add(at(new THREE.Mesh(extrudeShape(polyShape([[5.5, -4], [11.8, -3.4], [12.2, 1.5], [9.5, 4.6], [6.2, 1.2]]), 0.2, 0.03), M.steel), 0, 0.5, 0)); kp.add(at(boxHit(M, 6, 0.5, 8), 9, 0.6, 0.2)); ds.add(kp); parts.keylessPlate = kp;
@@ -168,7 +175,7 @@ export function buildZR28(M, images, watch, cal) {
   const stl = tag(new THREE.Group(), 'stopLever'); stl.add(at(new THREE.Mesh(extrudeShape(polyShape([[3, -6.4], [8.2, -4.6], [8.0, -4.0], [3.2, -5.6]]), 0.15, 0.01), M.darkSteel), 0, 0.05, 0)); stl.add(at(boxHit(M, 5.6, 0.5, 2.2), 5.6, 0.15, -5.2)); ds.add(stl); parts.stopLever = stl;
   const sp = tag(new THREE.Group(), 'slidingPinion'); sp.add(at(new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 1.6, 12).rotateZ(Math.PI / 2), M.steel), 9.6, 0.1, 0)); sp.add(at(boxHit(M, 2, 1, 1.4), 9.6, 0.1, 0)); ds.add(sp); parts.slidingPinion = sp;
   const wp = tag(new THREE.Group(), 'windingPinion'); wp.add(at(new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.8, 1.0, 14).rotateZ(Math.PI / 2), M.steel), 11.4, 0.1, 0)); wp.add(at(boxHit(M, 1.4, 1.2, 1.8), 11.4, 0.1, 0)); ds.add(wp); parts.windingPinion = wp;
-  parts.dial = buildDial(M, images, watch, ys); ds.add(parts.dial);
+  parts.dial = buildDial(M, images, watch, ys, { r: R - 0.65, bottom: -0.9, a: [Math.PI / 4, Math.PI * 5 / 4] }); ds.add(parts.dial);
   const H = buildHands(M, watch, ys); ds.add(H.hour, H.min, H.sec); parts.hourHand = H.hour; parts.minHand = H.min; parts.secHand = H.sec;
   if (H.gmt && parts.dial.userData.recta) parts.dial.userData.recta.gmt = H.gmt;
   const protector = makeProtector(M, watch, ys); ds.add(protector);
@@ -184,7 +191,7 @@ export function buildZQ11(M, images, watch, cal) {
   const plate = new THREE.Mesh(new THREE.CylinderGeometry(R, R, 0.9, 96), [M.darkSteel, M.plateBrass, M.plateBrass]); plate.position.y = 0.45; mv.add(plate);
   const pcbArea = new THREE.Mesh(new THREE.CylinderGeometry(R - 0.3, R - 0.3, 0.05, 64, 1, false, 0, Math.PI * 2), M.plateBrass); pcbArea.position.y = 0.92; mv.add(pcbArea);
   // rodaje (bajo el puente)
-  const wheel = (id, x, y, z, r, n, mat = M.goldWheel) => { const w = tag(new THREE.Group(), id); w.add(gearMesh(r, n, 0.14, mat, r > 1.6 ? 4 : 0)); w.add(at(cyl(0.18, 0.9, M.steel, 8), 0, -0.3, 0)); w.add(hitProxy(M, r + 0.3, 0.5, 0.2)); at(w, x, y, z); mv.add(w); parts[id] = w; return w; };
+  const wheel = (id, x, y, z, r, n, mat = M.goldWheel) => { const w = tag(new THREE.Group(), id); w.add(gearMesh(r, n, 0.14, mat, r > 1.6 ? 4 : 0)); w.add(at(cyl(0.18, 1.1, M.steel, 8), 0, 0.15, 0)); if (id === 'secondWheel') w.add(at(cyl(0.14, 2.9, M.steel, 8), 0, -1.45, 0)); w.add(hitProxy(M, r + 0.3, 0.5, 0.2)); at(w, x, y, z); mv.add(w); parts[id] = w; return w; };
   wheel('centerWheel', 0, 0.95, 0, 2.8, 48); wheel('secondWheel', 0, 1.25, 0, 1.6, 30); wheel('thirdWheel', -3.2, 1.0, -4.8, 2.0, 36); wheel('fifthWheel', -6.2, 1.25, -2.6, 1.4, 24);
   const sr = tag(new THREE.Group(), 'stepRotor'); const mag = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 0.9, 0.5, 20), M.magnet); mag.position.y = 0.25; sr.add(mag); sr.add(at(gearMesh(0.45, 6, 0.2, M.steel, 0), 0, 0.5, 0)); sr.add(hitProxy(M, 1.2, 0.8, 0.3)); at(sr, -6.5, 1.0, -6.0); mv.add(sr); parts.stepRotor = sr; sub.stepRotorMag = sr;
   const tb = tag(new THREE.Group(), 'trainBridge');
@@ -210,19 +217,19 @@ export function buildZQ11(M, images, watch, cal) {
   // pila + brida
   const bat = tag(new THREE.Group(), 'battery'); const cell = new THREE.Mesh(new THREE.CylinderGeometry(3.4, 3.4, 2.1, 40), [M.batterySide, M.battery, M.batterySide]); cell.position.y = 1.05; bat.add(cell); bat.add(hitProxy(M, 3.5, 2.4, 1.05)); at(bat, -5.5, 0.2, 5.0); mv.add(bat); parts.battery = bat; sub.batteryCell = cell;
   const bc = tag(new THREE.Group(), 'batteryClamp');
-  const strap = new THREE.Mesh(extrudeShape(polyShape([[-6.5, 2.6], [-4.4, 2.6], [-8.0, 7.0], [-9.8, 6.6]]), 0.2, 0.02), M.steel); strap.position.y = 2.3; bc.add(strap);
-  const post = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.6, 1.6), M.steel); post.position.set(-8.9, 1.7, 6.1); bc.add(post);
+  const strap = new THREE.Mesh(extrudeShape(polyShape([[-6.5, 2.6], [-4.4, 2.6], [-7.8, 6.8], [-9.4, 6.3]]), 0.2, 0.02), M.steel); strap.position.y = 2.3; bc.add(strap);
+  const post = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.6, 1.6), M.steel); post.position.set(-8.6, 1.7, 5.9); bc.add(post);
   bc.add(at(boxHit(M, 4, 0.8, 5), -7, 2.4, 4.8)); mv.add(bc); parts.batteryClamp = bc;
-  parts.stem = stemGroup(M, R, M.metal(watch.case.metal), 0.45, 2.0, 2.6); mv.add(parts.stem);
+  parts.stem = stemGroup(M, R, M.metal(watch.case.metal), 0.45, 2.0, 2.6, caseOuterOf(watch)); mv.add(parts.stem);
   // ── lado esfera ──
   const ds = new THREE.Group(); ds.name = 'dialSide'; ds.rotation.z = Math.PI; mv.add(ds);
   const ys = { dial: 1.0, hour: 1.25, min: 1.45, sec: 1.65 };
-  const hw = tag(new THREE.Group(), 'hourWheel'); hw.add(at(gearMesh(2.6, 36, 0.15, M.goldWheel, 0), 0, 0.35, 0)); hw.add(at(cyl(0.7, 0.85, M.goldWheel, 16), 0, 0.35, 0)); hw.add(at(cyl(0.45, 1.55, M.steel, 12), 0, 0.0, 0)); hw.add(hitProxy(M, 2.7, 0.5, 0.45)); ds.add(hw); parts.hourWheel = hw;
+  const hw = tag(new THREE.Group(), 'hourWheel'); hw.add(at(gearMesh(2.6, 36, 0.15, M.goldWheel, 0), 0, 0.35, 0)); hw.add(at(cyl(0.7, ys.hour - 0.35, M.goldWheel, 16), 0, (0.35 + ys.hour) / 2, 0)); hw.add(at(cyl(0.45, ys.min, M.steel, 12), 0, ys.min / 2, 0)); hw.add(hitProxy(M, 2.7, 0.5, 0.45)); ds.add(hw); parts.hourWheel = hw;
   const mw = tag(new THREE.Group(), 'minuteWheel'); mw.add(gearMesh(1.9, 28, 0.14, M.goldWheel, 0)); mw.add(at(gearMesh(0.6, 9, 0.2, M.steel, 0), 0, 0.14, 0)); mw.add(hitProxy(M, 2.0, 0.5, 0.2)); at(mw, -3.0, 0.15, 2.4); ds.add(mw); parts.minuteWheel = mw;
   const kp = tag(new THREE.Group(), 'keylessPlate'); kp.add(at(new THREE.Mesh(extrudeShape(polyShape([[5, -3.2], [10.8, -2.6], [11.0, 1.8], [8.6, 4.4], [5.6, 1.2]]), 0.17, 0.02), M.steel), 0, 0.25, 0)); kp.add(at(boxHit(M, 6, 0.5, 7.6), 8.2, 0.35, 0.6)); ds.add(kp); parts.keylessPlate = kp;
   const yk = tag(new THREE.Group(), 'yoke'); yk.add(at(new THREE.Mesh(extrudeShape(polyShape([[6.8, 0.6], [9.8, 1.5], [9.3, 2.8], [6.4, 1.8]]), 0.15, 0.01), M.steel), 0, 0.05, 0)); yk.add(at(boxHit(M, 3.8, 0.4, 2.6), 8.1, 0.12, 1.7)); ds.add(yk); parts.yoke = yk;
   const sl = tag(new THREE.Group(), 'settingLever'); sl.add(at(new THREE.Mesh(extrudeShape(polyShape([[5.6, -2.2], [9.6, -1.4], [9.4, -0.5], [5.9, -1.2]]), 0.15, 0.01), M.steel), 0, 0.05, 0)); sl.add(at(boxHit(M, 4.4, 0.4, 2), 7.6, 0.12, -1.3)); ds.add(sl); parts.settingLever = sl;
-  parts.dial = buildDial(M, images, watch, ys); ds.add(parts.dial);
+  parts.dial = buildDial(M, images, watch, ys, { r: R - 0.9, bottom: -0.7, a: [Math.PI / 4, Math.PI * 5 / 4] }); ds.add(parts.dial);
   const H = buildHands(M, watch, ys); ds.add(H.hour, H.min, H.sec); parts.hourHand = H.hour; parts.minHand = H.min; parts.secHand = H.sec;
   const protector = makeProtector(M, watch, ys); ds.add(protector);
   const screws = screwsFor(M, cal, parts);

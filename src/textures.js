@@ -239,7 +239,7 @@ export function dialTexture(kind, images, day, opts = {}) {
   if (kind === 'miami') {
     x.fillStyle = '#0b0b0b'; x.beginPath(); x.arc(0, 0, R, 0, Math.PI * 2); x.fill();
     x.save(); x.beginPath(); x.arc(0, 0, R * 0.93, 0, Math.PI * 2); x.clip();
-    const k = 1.08; x.drawImage(images.dial, -R * k, -R * k, 2 * R * k, 2 * R * k); x.restore();
+    const k = 1.08, dy = R * 0.075; x.drawImage(images.dial, -R * k, -R * k + dy, 2 * R * k, 2 * R * k); x.restore(); // arte un poco más abajo: «ZARUMEI» queda bajo el índice de las 12, como en un reloj real
     const g = x.createLinearGradient(-R, -R, R, R); g.addColorStop(0, '#fff0b8'); g.addColorStop(.5, '#d9a945'); g.addColorStop(1, '#8a5f17');
     x.lineWidth = R * 0.075; x.strokeStyle = g; x.beginPath(); x.arc(0, 0, R * 0.965, 0, Math.PI * 2); x.stroke();
     minuteTrack(x, R, '#4a3108'); dateWindow(x, R, day);

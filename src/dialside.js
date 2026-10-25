@@ -15,11 +15,12 @@ function handShape(style, len, w) {
   s.closePath();
   const g = new THREE.ExtrudeGeometry(s, { depth: 0.14, bevelEnabled: false }); g.rotateX(-Math.PI / 2); return g;
 }
-export function buildDial(M, images, watch, ys) {
+// feet: { r, bottom, a: [ángulos] } → pies de esfera que entran en la platina (los aprietan los tornillos de pie)
+export function buildDial(M, images, watch, ys, feet = { r: 10.8, bottom: ys.dial - 1.5, a: [0.785, 3.927] }) {
   const { r, kind, date } = watch.dial; const metal = M.metal(watch.hands.metal);
   const dial = tag(new THREE.Group(), 'dial');
   if (kind === 'recta') {
-    const faceY = ys.dial + 1.85;
+    const faceY = ys.dial + 1.45; // la pila del ZR-28 subió 0,4 mm: la placa Recta queda a la misma altura bajo el cristal
     const apron = new THREE.Mesh(new THREE.PlaneGeometry(22.0, 15.05).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0xf6f1e6, roughness: 0.4, metalness: 0.02 }));
     apron.position.y = faceY - 0.55; dial.add(apron);
     const v = vaticanNow();
@@ -57,7 +58,7 @@ export function buildDial(M, images, watch, ys) {
     const face = new THREE.Mesh(new THREE.PlaneGeometry(21.6, 14.8).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ map: TX.dialTexture('recta', images, 1), transparent: true, alphaTest: 0.4, roughness: 0.32, metalness: 0.02 }));
     face.position.y = faceY; face.renderOrder = 2; dial.add(face);
     dial.add(hitProxy(M, 10, 0.4, faceY));
-    dial.userData.recta = { moonTex, day, month, year, yearN: years.length, gmt: null };
+    dial.userData.recta = { moonTex, day, month, year, yearN: years.length, gmt: null }; dial.userData.rectaFaceY = faceY + 0.02;
     day.rotation.y = (v.dow / 7) * Math.PI * 2;
     month.rotation.y = (v.month / 12) * Math.PI * 2;
     year.rotation.y = (1 / years.length) * Math.PI * 2;
@@ -74,7 +75,7 @@ export function buildDial(M, images, watch, ys) {
   face.position.y = ys.dial; face.renderOrder = 1; dial.add(face);
   const edge = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 0.3, 96, 1, true), M.darkSteel); edge.position.y = ys.dial - 0.15; dial.add(edge);
   const under = new THREE.Mesh(new THREE.CircleGeometry(r, 64).rotateX(Math.PI / 2), M.brassDial || M.darkSteel); under.position.y = ys.dial - 0.3; dial.add(under);
-  for (const a of [0.8, 3.9]) { const foot = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 1.2, 8), M.goldWheel); foot.position.set(Math.cos(a) * 10.8, ys.dial - 0.9, Math.sin(a) * 10.8); dial.add(foot); }
+  { const top = ys.dial - 0.3, len = top - feet.bottom; for (const a of feet.a) { const foot = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, len, 8), M.goldWheel); foot.position.set(Math.cos(a) * feet.r, top - len / 2, Math.sin(a) * feet.r); dial.add(foot); } }
   const idx = (kind === 'rose' || kind === 'lira' || kind === 'octava') ? 'baton' : kind;
   const ri = r * 0.815, y = ys.dial + 0.22;
   for (let h = 1; h <= 12; h++) {
@@ -86,7 +87,7 @@ export function buildDial(M, images, watch, ys) {
       if (h === 12) for (const dx of [-0.55, 0.55]) { const b = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.3, len), metal); b.position.set(dx, y, -ri); dial.add(b); }
       else put(new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.3, len), metal));
     } else if (h === 12) {
-      if (kind === 'miami') for (const dx of [-0.75, 0.75]) { const b = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.45, 3.0), metal); b.position.set(dx, y, -13.0); dial.add(b); }
+      if (kind === 'miami') for (const dx of [-0.7, 0.7]) { const b = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.45, 2.3), metal); b.position.set(dx, y, -r * 0.84); dial.add(b); const l = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.48, 1.7), M.lume); l.position.set(dx, y + 0.01, -r * 0.84); dial.add(l); }
       else { const t = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 1.6, 0.45, 3), metal); t.rotation.y = Math.PI / 2; t.position.set(0, y, -ri); t.scale.z = 1.3; dial.add(t); const l = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.1, 0.5, 3), M.lume); l.rotation.y = Math.PI / 2; l.position.set(0, y + 0.03, -ri); l.scale.z = 1.3; dial.add(l); }
     } else if (h % 3 === 0) { put(new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.45, 3.0), metal)); const l = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.48, 2.3), M.lume); put(l); }
     else { const d = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.85, 0.45, 20), metal); d.position.set(x, y, z); dial.add(d); const l = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 0.48, 16), M.lume); l.position.set(x, y + 0.02, z); dial.add(l); }
@@ -96,7 +97,7 @@ export function buildDial(M, images, watch, ys) {
 }
 export function buildHands(M, watch, ys) {
   const st = watch.hands.style, metal = M.metal(watch.hands.metal), r = watch.dial.kind === 'recta' ? 11.2 : watch.dial.r, lume = st !== 'leaf' && st !== 'dauphine';
-  const lift = watch.dial.kind === 'recta' ? 1.85 : 0;
+  const lift = watch.dial.kind === 'recta' ? 1.45 : 0;
   const hw = st === 'leaf' || st === 'dauphine' ? 1.15 : st === 'arrow' ? 1.35 : 1.5;
   const mk = (id, len, w, y) => {
     const g = tag(new THREE.Group(), id); const inner = new THREE.Group(); inner.name = 'rot'; g.add(inner);

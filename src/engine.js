@@ -70,8 +70,8 @@ export function createEngine({ watchId, faultId, story = null, empty = false }) 
     if (side === 'face') return 'Voltea el reloj boca arriba: el cristal se saca y se prensa por la esfera.';
     if (side === 'dial') return flags.mvLoc === 'case' ? 'Al lado esfera solo se llega con el movimiento <b>fuera de la caja</b>, en el soporte y volteado.' : 'Voltea el movimiento en el soporte (↻) para trabajar en el <b>lado esfera</b>.';
     if (flags.mvLoc === 'holder') return side === 'case' ? 'Eso es de la caja: el movimiento está en el soporte.' : 'Voltea el movimiento en el soporte (↻) para ver el <b>lado puentes</b>.';
-    if (!flags.flipped) return 'Voltea el reloj (↻) para trabajar por el fondo.';
-    return `Primero abre ${name('caseback')}.`;
+    if (!flags.flipped) return side === 'bridge' && st.caseback === 'in' ? `${cap(name(id))} está dentro de la caja, bajo ${name('caseback')}: voltea el reloj (↻) y abre primero el fondo.` : 'Voltea el reloj (↻) para trabajar por el fondo.';
+    return `${cap(name(id))} está bajo ${name('caseback')}: ábrelo primero.`;
   }
   const running = () => {
     if (F.id === 'humedad') return false;
@@ -340,7 +340,7 @@ export function createEngine({ watchId, faultId, story = null, empty = false }) 
     sc.prog = 0;
     if (!tightening) { sc.state = 'out'; const left = screwsIn(sc.part).length; return R('good', `🔩 Tornillo fuera → bandeja.${left ? ` Quedan ${left}.` : ` ${cap(name(sc.part))} ya se puede levantar.`}`, [{ fx: 'unscrew', screw: sid }]); }
     sc.state = 'in'; sc.dmg = 0; const left = screwsOf(sc.part).length - screwsIn(sc.part).length; if (!left) armed = null;
-    let msg = `🔩 Tornillo puesto.${left ? ` Faltan ${left}.` : ` ${cap(name(sc.part))} atornillado.`}`;
+    let msg = `🔩 Tornillo puesto.${left ? ` Faltan ${left}.` : ` Ya no faltan tornillos en ${name(sc.part)}.`}`;
     if (!left && oilPending(sc.part)) msg += ` Lubrica: ${P[sc.part].oil.msg}`;
     const fx = [];
     if ((amount || 0) >= 0.99) fx.push({ fx: 'turn', screw: sid, dir: 1, prog: 1, lift: 0 });
