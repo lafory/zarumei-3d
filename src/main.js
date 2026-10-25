@@ -1,5 +1,6 @@
 // ZARUMEI · Taller de Relojería 3D — LA FORY Tools & Jewelry
 import * as THREE from 'three';
+import { makeStudioEnv } from './envmap.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
@@ -77,32 +78,7 @@ Object.assign(sun.shadow.camera, { left: -140, right: 140, top: 140, bottom: -14
 const lamp = new THREE.PointLight(0xffe6c8, 180, 220, 2); lamp.position.set(-28, 48, 30); scene.add(lamp);
 const rim = new THREE.DirectionalLight(0xc5d2e4, 0.38); rim.position.set(-90, 28, -80); scene.add(rim);
 
-function studioEnvMap() {
-  const env = new THREE.Scene();
-  const geo = new THREE.BoxGeometry(); geo.deleteAttribute('uv');
-  const room = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: 0x161310, side: THREE.BackSide }));
-  room.scale.set(48, 26, 48); room.position.y = 1; env.add(room);
-  const floor = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: 0x090807 }));
-  floor.position.set(0, -8, 0); floor.scale.set(40, 0.4, 40); env.add(floor);
-  const panel = (hex, gain, x, y, z, sx, sy, sz) => {
-    const m = new THREE.MeshBasicMaterial();
-    m.color.setHex(hex).multiplyScalar(gain);
-    const mesh = new THREE.Mesh(geo, m);
-    mesh.position.set(x, y, z); mesh.scale.set(sx, sy, sz); env.add(mesh);
-  };
-  panel(0xfff6ec, 1.0, 0, 13, 2, 26, 0.28, 18);
-  panel(0xfffaf4, 2.4, 1.2, 9.2, 4.2, 8, 0.1, 2.2);
-  panel(0xfff1df, 2.5, 10, 6.5, 8, 0.16, 9, 5.5);
-  panel(0xd5e2f2, 1.25, -12, 5, 2, 0.16, 6, 4);
-  panel(0xe7eef8, 1.5, 0, 5.2, -14, 9, 2.4, 0.12);
-  const prev = renderer.toneMapping;
-  renderer.toneMapping = THREE.NoToneMapping;
-  const pmrem = new THREE.PMREMGenerator(renderer);
-  const map = pmrem.fromScene(env, 0.012).texture;
-  pmrem.dispose();
-  renderer.toneMapping = prev;
-  return map;
-}
+function studioEnvMap() { return makeStudioEnv(renderer); }
 
 let composer = null, bokehPass = null;
 function ensureDof() {

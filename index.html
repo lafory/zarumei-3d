@@ -261,6 +261,7 @@ body:not(.land) #landScroll{display:none!important}
 #bqInfo h2{margin:2px 0;font-family:var(--serif);font-weight:500;font-size:28px}#bqInfo .line{margin:0;color:var(--muted);font-family:var(--serif);font-style:italic;font-size:15px}#bqInfo p,#bqInfo li{font-size:13.5px;line-height:1.45}#bqInfo li::marker{color:var(--gold)}
 .buy{display:flex;align-items:center;justify-content:space-between;gap:10px;border-top:1px solid var(--hair);border-bottom:1px solid var(--hair);padding:10px 0;margin-top:8px}
 #bqBack{position:absolute;top:calc(env(safe-area-inset-top) + 10px);left:10px;z-index:3}
+#bqDetClose{position:absolute;top:calc(env(safe-area-inset-top) + 10px);right:10px;z-index:3}
 
 /* ───── pantalla completa / PWA ───── */
 .fsBtn{font-size:13px;line-height:1}.fsBtn.on{box-shadow:0 0 10px rgba(217,180,94,.5)}
@@ -516,7 +517,7 @@ window.addEventListener('error', function (e) { var t = document.getElementById(
     <div id="bqSections"></div>
     <p class="small" style="text-align:center;margin-top:18px">Colección ficticia del juego. Se adquiere con los honorarios que cobras en el taller.</p>
   </div>
-  <div id="bqDetail" hidden><button class="lux" id="bqBack">← Volver</button><div id="bqStage"></div><div id="bqInfo"></div></div>
+  <div id="bqDetail" hidden><button class="lux" id="bqBack">← Volver</button><button class="lux" id="bqDetClose" title="Cerrar la boutique" aria-label="Cerrar la boutique">✕</button><div id="bqStage"></div><div id="bqInfo"></div></div>
 </div>
 
 <script src="game.js?v=zoom1"></script>

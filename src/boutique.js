@@ -1,8 +1,8 @@
 // Boutique LA FORY: vitrinas con foco sobre terciopelo, fichas con precio y vista de detalle 3D giratoria.
 // Un solo WebGLRenderer pequeño, creado al abrir la boutique (miniaturas en caché, detalle a demanda).
 import * as THREE from 'three';
+import { makeStudioEnv } from './envmap.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { PRODUCTS, BOUTIQUE_CATS, fmtPrice } from './data/boutique.js';
 import { WATCHES } from './data/watches.js';
 import { CALIBERS } from './data/calibers.js';
@@ -30,9 +30,9 @@ export function initBoutique(c) { ctx = c; }
 function setup() {
   if (R) return;
   R = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
-  R.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5)); R.outputColorSpace = THREE.SRGBColorSpace; R.toneMapping = THREE.ACESFilmicToneMapping; R.toneMappingExposure = 0.95;
+  R.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5)); R.outputColorSpace = THREE.SRGBColorSpace; R.toneMapping = THREE.ACESFilmicToneMapping; R.toneMappingExposure = 1.1;
   scene = new THREE.Scene();
-  env = new THREE.PMREMGenerator(R).fromScene(new RoomEnvironment(), 0.03).texture; scene.environment = env; scene.environmentIntensity = 0.7;
+  env = makeStudioEnv(R); scene.environment = env; scene.environmentIntensity = 1.6; // mismo estudio que el banco: con la sala blanca el oro y el acero se veían crema
   camera = new THREE.PerspectiveCamera(30, 1, 1, 2000);
   scene.add(new THREE.HemisphereLight(0xfff3df, 0x1a0b0e, 0.35));
   const spot = new THREE.SpotLight(0xfff0d0, 2.0, 0, 0.5, 0.9, 0); spot.position.set(20, 160, 60); scene.add(spot, spot.target);
@@ -131,7 +131,10 @@ function show(p) {
 async function makeThumbs(list) {
   setup(); const sz = 300; R.setSize(sz, sz, false); camera.aspect = 1; camera.updateProjectionMatrix(); controls.autoRotate = false;
   for (const p of list) {
-    if (thumbs[p.id]) continue; show(p); holder.rotation.y = -0.45; controls.update(); R.render(scene, camera); thumbs[p.id] = R.domElement.toDataURL('image/webp', 0.85);
+    if (thumbs[p.id]) continue;
+    // con el detalle abierto, esperar: las miniaturas comparten soporte y lienzo con el visor
+    if (!$('#bqDetail').hidden) { while (!$('#bqDetail').hidden) await new Promise(r => setTimeout(r, 400)); R.setSize(sz, sz, false); camera.aspect = 1; camera.fov = 30; camera.updateProjectionMatrix(); controls.autoRotate = false; }
+    show(p); holder.rotation.y = -0.45; controls.update(); R.render(scene, camera); thumbs[p.id] = R.domElement.toDataURL('image/webp', 0.85);
     const img = document.querySelector(`.vitrine[data-id="${p.id}"] img.item`); if (img) { img.src = thumbs[p.id]; img.classList.add('in'); }
     await new Promise(r => requestAnimationFrame(r));
   }
@@ -194,6 +197,8 @@ function pumpPortraits() {
   if (portraitBusy) return;
   portraitBusy = true;
   const step = () => {
+    // con el detalle abierto, los retratos esperan: comparten escena, cámara y soporte con el visor y le robaban el reloj
+    if (!$('#bqDetail').hidden) { setTimeout(() => requestAnimationFrame(step), 500); return; }
     const id = portraitQ.shift();
     if (!id) {
       portraitBusy = false; pedestal.visible = true;
@@ -233,6 +238,7 @@ function loop() { raf = requestAnimationFrame(loop); controls.update(); R.render
 function openDetail(p) {
   setup(); const stageEl = $('#bqStage'); stageEl.appendChild(R.domElement);
   $('#bqDetail').hidden = false; const r = stageEl.getBoundingClientRect(); R.setSize(r.width, r.height); camera.aspect = r.width / r.height; camera.updateProjectionMatrix();
+  R.setClearColor(0x000000, 0); camera.fov = 30; holder.rotation.y = 0; // los retratos dejan fondo opaco y otro campo de visión
   show(p); controls.autoRotate = true; cancelAnimationFrame(raf); loop();
   const owned = wallet.owned().includes(p.id), can = wallet.balance >= p.price;
   $('#bqInfo').innerHTML = `<small class="cinzel">${BOUTIQUE_CATS.find(c => c.id === p.cat).line}</small><h2 class="foil">${p.name}</h2><p class="line">${p.line}</p><p>${p.desc}</p><ul>${p.specs.map(s => `<li>${s}</li>`).join('')}</ul>
@@ -244,6 +250,7 @@ window.addEventListener('resize', () => { if (R && !$('#bqDetail').hidden) { con
 export function openBoutique() {
   $('#boutique').hidden = false; renderShop();
   $('#bqClose').onclick = () => { closeDetail(); $('#boutique').hidden = true; };
+  $('#bqDetClose').onclick = () => $('#bqClose').onclick(); // el ✕ de arriba queda bajo el visor 3D del detalle: el detalle lleva el suyo
   $('#bqBack').onclick = closeDetail;
   document.querySelectorAll('.bqnav button').forEach(b => b.onclick = () => document.getElementById('bq-' + b.dataset.cat).scrollIntoView({ behavior: 'smooth', block: 'start' }));
   setTimeout(() => makeThumbs(PRODUCTS), 60);
